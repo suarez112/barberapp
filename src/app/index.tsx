@@ -14,253 +14,34 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BloqueoSemanal from "../components/BloqueoSemanal";
+import CarteraPanel from "../components/CarteraPanel";
+import FotoBarbero from "../components/FotoBarbero";
+import { DIAS, EMPRESAS_DB, HORARIOS_BASE } from "../data/datos";
+import {
+  Barbero,
+  BloqueoHorario,
+  ClienteRegistrado,
+  ElementoListaNegra,
+  EmpresaConfig,
+  NotificacionCliente,
+  Servicio,
+} from "../types";
 
-// --- INTERFACES DE TYPESCRIPT ---
-export interface Barbero {
-  id: string;
-  nombre: string;
-  usuario: string;
-  clave: string;
-  esAdmin: boolean;
-  especialidad: string;
-  equipo: string;
-  porcentajeGanancia: number;
-}
+// Fecha de hoy según el celular, en formato 2026-10-11
+const AHORA = new Date();
+const HOY_STR = `${AHORA.getFullYear()}-${String(AHORA.getMonth() + 1).padStart(2, "0")}-${String(AHORA.getDate()).padStart(2, "0")}`;
 
-export interface Servicio {
-  id: string;
-  nombre: string;
-  duracion: string;
-  precio: number;
-}
-
-export interface EmpresaConfig {
-  id: string;
-  codigoAcceso: string;
-  nombre: string;
-  colorPrimario: string;
-  colorSecundario: string;
-  barberos: Barbero[];
-  servicios: Servicio[];
-}
-
-export interface ClienteRegistrado {
-  telefono: string;
-  nombre: string;
-  fechaUltimaCita?: string;
-  totalCitas?: number;
-}
-
-export interface ElementoListaNegra {
-  id: string;
-  nombre: string;
-  telefono: string;
-}
-
-export interface BloqueoHorario {
-  id: string;
-  barberoId: string;
-  fechaBase: string;
-  diasSemana: string[];
-  hora: string;
-  frecuencia: "PUNTUAL" | "SEMANAL_RECURRENTE";
-}
-
-export interface NotificacionCliente {
-  id: string;
-  titulo: string;
-  mensaje: string;
-  fecha: string;
-}
-
-// Generador automático de días para octubre de 2026 (del 1 al 31)
-const GENERAR_DIAS_OCTUBRE = () => {
-  const diasSemanaNombres = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
-  const lista = [];
-  for (let dia = 1; dia <= 31; dia++) {
-    const fecha = new Date(2026, 9, dia);
-    const diaNom = diasSemanaNombres[fecha.getDay()];
-    const numStr = dia.toString();
-    const fechaFull = `2026-10-${dia < 10 ? "0" + dia : dia}`;
-    lista.push({
-      id: `d_oct_${dia}`,
-      diaNom,
-      num: numStr,
-      fechaFull,
-      diaNumero: dia,
-    });
-  }
-  return lista;
+// Dice si una hora de HOY ya pasó (para no ofrecerla al cliente)
+const horaYaPaso = (fecha: string, hora: string) => {
+  if (fecha !== HOY_STR) return false;
+  const [h12, resto] = hora.split(":");
+  const [min, ampm] = resto.split(" ");
+  let h = parseInt(h12) % 12;
+  if (ampm === "PM") h += 12;
+  const ahora = new Date();
+  return h * 60 + parseInt(min) <= ahora.getHours() * 60 + ahora.getMinutes();
 };
-
-const DIAS = GENERAR_DIAS_OCTUBRE();
-
-export const EMPRESAS_DB: Record<string, EmpresaConfig> = {
-  infinity: {
-    id: "infinity",
-    codigoAcceso: "INFINITY",
-    nombre: "INFINITY BARBER",
-    colorPrimario: "#EAB308",
-    colorSecundario: "#0D0D0D",
-    barberos: [
-      {
-        id: "b3",
-        nombre: "Jhon Álvarez",
-        usuario: "jhon",
-        clave: "1234",
-        esAdmin: true,
-        especialidad: "Jefe de Equipo · Cortes modernos",
-        equipo: "INFINITY TEAM",
-        porcentajeGanancia: 50,
-      },
-      {
-        id: "b1",
-        nombre: "Anthonny Beleño",
-        usuario: "anthonny",
-        clave: "1234",
-        esAdmin: false,
-        especialidad: "Corte · Barba · Diseño",
-        equipo: "INFINITY TEAM",
-        porcentajeGanancia: 50,
-      },
-      {
-        id: "b2",
-        nombre: "Donny del Valle",
-        usuario: "donny",
-        clave: "1234",
-        esAdmin: false,
-        especialidad: "Fade · Barba profesional",
-        equipo: "INFINITY TEAM",
-        porcentajeGanancia: 45,
-      },
-    ],
-    servicios: [
-      {
-        id: "s1",
-        nombre: "Arreglo de Barba",
-        duracion: "15 min",
-        precio: 20000,
-      },
-      {
-        id: "s2",
-        nombre: "Arreglo barba + pigmentación",
-        duracion: "30 min",
-        precio: 30000,
-      },
-      {
-        id: "s3",
-        nombre: "Corte + asesoría (cliente nuevo)",
-        duracion: "50 min",
-        precio: 30000,
-      },
-      { id: "s4", nombre: "Corte + Barba", duracion: "60 min", precio: 40000 },
-      { id: "s5", nombre: "Corte + cejas", duracion: "40 min", precio: 28000 },
-      {
-        id: "s6",
-        nombre: "Corte + tinte + barba",
-        duracion: "70 min",
-        precio: 60000,
-      },
-      { id: "s7", nombre: "Corte Clásico", duracion: "40 min", precio: 25000 },
-      { id: "s8", nombre: "Corte Premium", duracion: "60 min", precio: 50000 },
-    ],
-  },
-  el_bunker: {
-    id: "el_bunker",
-    codigoAcceso: "BUNKER",
-    nombre: "GLAMOUR BEAUTY SALON",
-    colorPrimario: "#E11D48",
-    colorSecundario: "#0F172A",
-    barberos: [
-      {
-        id: "b4",
-        nombre: "Valeria Rodríguez",
-        usuario: "carlos",
-        clave: "5678",
-        esAdmin: true,
-        especialidad: "Directora · Colorimetría y Balayage",
-        equipo: "GLAMOUR TEAM",
-        porcentajeGanancia: 60,
-      },
-      {
-        id: "b5",
-        nombre: "Camila López",
-        usuario: "mateo",
-        clave: "5678",
-        esAdmin: false,
-        especialidad: "Stylist · Cepillado y Manicure",
-        equipo: "GLAMOUR TEAM",
-        porcentajeGanancia: 50,
-      },
-    ],
-    servicios: [
-      {
-        id: "s101",
-        nombre: "Corte de Cabello + Cepillado",
-        duracion: "45 min",
-        precio: 35000,
-      },
-      {
-        id: "s102",
-        nombre: "Balayage / Tintura Glam",
-        duracion: "120 min",
-        precio: 150000,
-      },
-      {
-        id: "s103",
-        nombre: "Manicure Spa + Semipermanente",
-        duracion: "40 min",
-        precio: 30000,
-      },
-      {
-        id: "s104",
-        nombre: "Pedicure Spa Profundo",
-        duracion: "45 min",
-        precio: 35000,
-      },
-      {
-        id: "s105",
-        nombre: "Lifting de Pestañas + Cejas",
-        duracion: "50 min",
-        precio: 45000,
-      },
-      {
-        id: "s106",
-        nombre: "Hidratación Capilar Profunda",
-        duracion: "60 min",
-        precio: 50000,
-      },
-    ],
-  },
-};
-
-const HORARIOS_BASE = [
-  "09:40 AM",
-  "10:20 AM",
-  "11:00 AM",
-  "11:40 AM",
-  "12:20 PM",
-  "01:00 PM",
-  "01:40 PM",
-  "02:20 PM",
-  "03:00 PM",
-  "03:40 PM",
-  "04:20 PM",
-  "05:00 PM",
-  "05:40 PM",
-  "06:20 PM",
-  "07:00 PM",
-];
-
-const DIAS_SEMANA_SELECTOR = [
-  { clave: "DOM", label: "dom" },
-  { clave: "LUN", label: "lun" },
-  { clave: "MAR", label: "mar" },
-  { clave: "MIE", label: "mié" },
-  { clave: "JUE", label: "jue" },
-  { clave: "VIE", label: "vie" },
-  { clave: "SÁB", label: "sáb" },
-];
 
 export default function HomeScreen() {
   const [tema, setTema] = useState<"OSCURO" | "CLARO">("OSCURO");
@@ -376,7 +157,7 @@ export default function HomeScreen() {
       fecha: "2026-10-08",
       hora: "12:20 PM",
       precio: 25000,
-      estado: "ACEPTADA",
+      estado: "CONFIRMADA",
     },
     {
       id: "102",
@@ -389,7 +170,7 @@ export default function HomeScreen() {
       fecha: "2026-10-07",
       hora: "02:20 PM",
       precio: 40000,
-      estado: "ACEPTADA",
+      estado: "COMPLETADA",
     },
   ]);
 
@@ -408,8 +189,12 @@ export default function HomeScreen() {
   // Días y Filtros
   const [barberoSel, setBarberoSel] = useState<Barbero | null>(null);
   const [servicioSel, setServicioSel] = useState<Servicio | null>(null);
-  const [diaSel, setDiaSel] = useState<any>(DIAS[7]); // 8 de Octubre
-  const [diaFiltroCitas, setDiaFiltroCitas] = useState<any>(DIAS[7]);
+  const [diaSel, setDiaSel] = useState<any>(
+    DIAS.find((d) => d.fechaFull >= HOY_STR) ?? DIAS[0],
+  );
+  const [diaFiltroCitas, setDiaFiltroCitas] = useState<any>(
+    DIAS.find((d) => d.fechaFull === HOY_STR) ?? DIAS[7],
+  );
   const [horaSel, setHoraSel] = useState<string>("");
   const [nombre, setNombre] = useState("");
   const [celular, setCelular] = useState("");
@@ -462,15 +247,6 @@ export default function HomeScreen() {
 
   const manejarCambioTelefono = (val: string) => {
     setCelular(val);
-    const encontrado = clientesRegistrados.find(
-      (c) => c.telefono.trim() === val.trim(),
-    );
-    if (encontrado) {
-      setNombre(encontrado.nombre);
-      setEsClienteReconocido(true);
-    } else {
-      setEsClienteReconocido(false);
-    }
   };
 
   const validarCodigoBarberia = () => {
@@ -526,7 +302,7 @@ export default function HomeScreen() {
         c.barberoId === barberoSel.id &&
         c.fecha === diaSel.fechaFull &&
         c.hora === h &&
-        c.estado !== "RECHAZADA",
+        c.estado !== "CANCELADA",
     );
 
     const bloqueada = evaluarSiEstaBloqueado(
@@ -536,7 +312,7 @@ export default function HomeScreen() {
       h,
     );
 
-    return !reservada && !bloqueada;
+    return !reservada && !bloqueada && !horaYaPaso(diaSel.fechaFull, h);
   });
 
   const agendarCita = () => {
@@ -544,9 +320,7 @@ export default function HomeScreen() {
     const nomLimpio = nombre.trim().toLowerCase();
 
     const enListaNegra = listaNegra.some(
-      (item) =>
-        item.telefono.toLowerCase() === telLimpio ||
-        item.nombre.toLowerCase() === nomLimpio,
+      (item) => item.telefono.toLowerCase() === telLimpio,
     );
 
     if (enListaNegra) {
@@ -574,7 +348,11 @@ export default function HomeScreen() {
       return;
     }
 
-    if (!esClienteReconocido) {
+    const yaEsCliente = clientesRegistrados.some(
+      (c) => c.telefono.trim() === celular.trim(),
+    );
+
+    if (!yaEsCliente) {
       setClientesRegistrados([
         ...clientesRegistrados,
         {
@@ -609,13 +387,13 @@ export default function HomeScreen() {
       fecha: diaSel.fechaFull,
       hora: horaSel,
       precio: servicioSel?.precio,
-      estado: "PENDIENTE",
+      estado: "CONFIRMADA",
     };
 
     setCitas([...citas, nuevaCita]);
     Alert.alert(
-      "¡Cita Solicitada!",
-      `Solicitud enviada a ${barberoSel?.nombre} (${empresaActiva?.nombre}) para las ${horaSel}.`,
+      "¡Cita confirmada!",
+      `Tu cita con ${barberoSel?.nombre} (${empresaActiva?.nombre}) quedó confirmada para el ${diaSel.fechaFull} a las ${horaSel}.`,
     );
 
     setBarberoSel(null);
@@ -631,20 +409,27 @@ export default function HomeScreen() {
     const citaActualizada = citas.find((c) => c.id === id);
 
     setCitas(
-      citas.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c)),
+      citas.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              estado: nuevoEstado,
+              ...(nuevoEstado === "CANCELADA"
+                ? {
+                    canceladaEn: new Date().toISOString(),
+                    canceladaPor: barberoLogueado?.nombre,
+                  }
+                : {}),
+            }
+          : c,
+      ),
     );
 
-    if (citaActualizada) {
+    if (citaActualizada && nuevoEstado === "CANCELADA") {
       const msjNotif: NotificacionCliente = {
         id: Date.now().toString(),
-        titulo:
-          nuevoEstado === "ACEPTADA"
-            ? "🎉 ¡CITA CONFIRMADA!"
-            : "❌ CITA RECHAZADA",
-        mensaje:
-          nuevoEstado === "ACEPTADA"
-            ? `${citaActualizada.barberoNombre} aceptó tu cita para el ${citaActualizada.fecha} a las ${citaActualizada.hora}.`
-            : `${citaActualizada.barberoNombre} no pudo aceptar tu cita para las ${citaActualizada.hora}. Por favor elige otro horario.`,
+        titulo: "❌ CITA CANCELADA",
+        mensaje: `${citaActualizada.barberoNombre} canceló tu cita del ${citaActualizada.fecha} a las ${citaActualizada.hora}. Por favor elige otro horario.`,
         fecha: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -654,6 +439,83 @@ export default function HomeScreen() {
       setNotificacionesCliente([msjNotif, ...notificacionesCliente]);
       setHayNotificacionesSinLeer(true);
     }
+  };
+
+  // Poner en false cuando termines de probar
+  const MODO_PRUEBAS = true;
+
+  const fechaHoraCita = (fecha: string, hora: string) => {
+    const [h12, resto] = hora.split(":");
+    const [min, ampm] = resto.split(" ");
+    let h = parseInt(h12) % 12;
+    if (ampm === "PM") h += 12;
+    const [y, m, d] = fecha.split("-").map(Number);
+    return new Date(y, m - 1, d, h, parseInt(min));
+  };
+
+  const formatearHora = (iso: string) =>
+    new Date(iso).toLocaleTimeString("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const minutosDespuesDeLaCita = (c: any) =>
+    c.completadaEn
+      ? (new Date(c.completadaEn).getTime() -
+          fechaHoraCita(c.fecha, c.hora).getTime()) /
+        60000
+      : 0;
+
+  const completarCita = (c: any) => {
+    if (c.barberoId !== barberoLogueado?.id) {
+      Alert.alert(
+        "No permitido",
+        "Solo el profesional de la cita puede marcarla como completada.",
+      );
+      return;
+    }
+    if (!MODO_PRUEBAS && new Date() < fechaHoraCita(c.fecha, c.hora)) {
+      Alert.alert(
+        "Aún no es la hora",
+        "No puedes completar una cita antes de su hora.",
+      );
+      return;
+    }
+    Alert.alert(
+      "Completar servicio",
+      `¿Confirmas que el servicio de ${c.cliente} ya se realizó? Se registrará la hora exacta.`,
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Sí, completado",
+          onPress: () => {
+            const ahora = new Date().toISOString();
+            setCitas((prev) =>
+              prev.map((x) =>
+                x.id === c.id
+                  ? {
+                      ...x,
+                      estado: "COMPLETADA",
+                      completadaEn: ahora,
+                      completadaPor: barberoLogueado?.nombre,
+                    }
+                  : x,
+              ),
+            );
+            setNotificacionesCliente((prev) => [
+              {
+                id: Date.now().toString(),
+                titulo: "✅ SERVICIO REGISTRADO",
+                mensaje: `Se registró tu servicio de ${c.servicio} con ${c.barberoNombre} a las ${formatearHora(ahora)}. Si no fue así, avisa al establecimiento.`,
+                fecha: formatearHora(ahora),
+              },
+              ...prev,
+            ]);
+            setHayNotificacionesSinLeer(true);
+          },
+        },
+      ],
+    );
   };
 
   const abrirModalNotificaciones = () => {
@@ -667,6 +529,21 @@ export default function HomeScreen() {
 
   const borrarTodasNotificaciones = () => {
     setNotificacionesCliente([]);
+  };
+
+  const guardarFotoBarbero = (id: string, uri: string) => {
+    const nuevosBarberos = barberos.map((b) =>
+      b.id === id ? { ...b, foto: uri } : b,
+    );
+    setBarberos(nuevosBarberos);
+
+    if (empresaActiva && EMPRESAS_DB[empresaActiva.id]) {
+      EMPRESAS_DB[empresaActiva.id].barberos = nuevosBarberos;
+    }
+
+    if (barberoLogueado?.id === id) {
+      setBarberoLogueado({ ...barberoLogueado, foto: uri });
+    }
   };
 
   // CREAR O EDITAR INTEGRANTE
@@ -899,26 +776,35 @@ export default function HomeScreen() {
   };
 
   const agregarAListaNegra = () => {
-    if (!inputNombreListaNegra.trim() || !inputTelListaNegra.trim()) {
+    const tel = inputTelListaNegra.trim();
+
+    if (!tel) {
+      Alert.alert("Falta el teléfono", "Escribe el teléfono del cliente.");
+      return;
+    }
+
+    const cliente = clientesRegistrados.find((c) => c.telefono.trim() === tel);
+    if (!cliente) {
       Alert.alert(
-        "Campos incompletos",
-        "Por favor ingresa tanto el Nombre como el Teléfono del cliente.",
+        "No es cliente registrado",
+        "Este número no pertenece a ningún cliente que haya reservado.",
       );
       return;
     }
 
-    const nuevo: ElementoListaNegra = {
-      id: Date.now().toString(),
-      nombre: inputNombreListaNegra.trim(),
-      telefono: inputTelListaNegra.trim(),
-    };
+    if (listaNegra.some((i) => i.telefono.trim() === tel)) {
+      Alert.alert(
+        "Ya está bloqueado",
+        `${cliente.nombre} ya está en la lista negra.`,
+      );
+      return;
+    }
 
-    setListaNegra([...listaNegra, nuevo]);
-    Alert.alert(
-      "Agregado",
-      `"${nuevo.nombre}" añadido correctamente a la lista negra.`,
-    );
-    setInputNombreListaNegra("");
+    setListaNegra([
+      ...listaNegra,
+      { id: Date.now().toString(), nombre: cliente.nombre, telefono: tel },
+    ]);
+    Alert.alert("Agregado", `"${cliente.nombre}" añadido a la lista negra.`);
     setInputTelListaNegra("");
   };
 
@@ -1184,6 +1070,10 @@ export default function HomeScreen() {
 
   const listaClientesFiltrados = obtenerClientesProcesados();
 
+  const clienteEncontradoLN = clientesRegistrados.find(
+    (c) => c.telefono.trim() === inputTelListaNegra.trim(),
+  );
+
   // LISTA NEGRA FILTRADA CON BÚSQUEDA EN TIEMPO REAL
   const listaNegraFiltrada = listaNegra.filter((item) => {
     const q = busquedaBloqueados.toLowerCase().trim();
@@ -1191,13 +1081,13 @@ export default function HomeScreen() {
     return item.nombre.toLowerCase().includes(q) || item.telefono.includes(q);
   });
 
-  const obtenerCitasFiltradasPorPeriodo = () => {
+  const obtenerCitasFiltradasPorPeriodo = (estadoBuscado: string) => {
     if (!profesionalActivoEnPanel || !empresaActiva) return [];
 
     return citas.filter((c) => {
       const esDelEmpleado = c.barberoId === profesionalActivoEnPanel.id;
       const esDeEmpresa = c.empresaId === empresaActiva.id;
-      const esAceptada = c.estado === "ACEPTADA";
+      const esAceptada = c.estado === estadoBuscado;
 
       if (!esDelEmpleado || !esDeEmpresa || !esAceptada) return false;
 
@@ -1206,12 +1096,24 @@ export default function HomeScreen() {
       }
 
       if (filtroPeriodoCartera === "SEMANAL") {
-        const numDiaSel = diaFiltroCitas.diaNumero;
-        const inicioSemana = numDiaSel - 3 > 1 ? numDiaSel - 3 : 1;
-        const finSemana = numDiaSel + 3 < 31 ? numDiaSel + 3 : 31;
-
-        const diaCita = parseInt(c.fecha.split("-")[2]);
-        return diaCita >= inicioSemana && diaCita <= finSemana;
+        const sel = new Date(2026, 9, diaFiltroCitas.diaNumero);
+        const desdeLunes = (sel.getDay() + 6) % 7;
+        const inicioSemana = new Date(
+          2026,
+          9,
+          diaFiltroCitas.diaNumero - desdeLunes,
+        );
+        const finSemana = new Date(
+          2026,
+          9,
+          diaFiltroCitas.diaNumero - desdeLunes + 6,
+          23,
+          59,
+          59,
+        );
+        const [y, m, d] = c.fecha.split("-").map(Number);
+        const fechaCita = new Date(y, m - 1, d);
+        return fechaCita >= inicioSemana && fechaCita <= finSemana;
       }
 
       if (filtroPeriodoCartera === "MENSUAL") {
@@ -1222,13 +1124,21 @@ export default function HomeScreen() {
     });
   };
 
-  const citasFiltradasCartera = obtenerCitasFiltradasPorPeriodo();
+  const citasFiltradasCartera = obtenerCitasFiltradasPorPeriodo("COMPLETADA");
+  const citasProyectadas = obtenerCitasFiltradasPorPeriodo("CONFIRMADA");
+
   const recaudadoBruto = citasFiltradasCartera.reduce(
     (sum, c) => sum + c.precio,
     0,
   );
   const miPorcentaje = profesionalActivoEnPanel?.porcentajeGanancia ?? 50;
   const miGananciaNeta = (recaudadoBruto * miPorcentaje) / 100;
+
+  const proyeccionBruta = citasProyectadas.reduce(
+    (sum, c) => sum + c.precio,
+    0,
+  );
+  const proyeccionGanancia = (proyeccionBruta * miPorcentaje) / 100;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -1529,6 +1439,12 @@ export default function HomeScreen() {
                           ]}
                           onPress={() => setBarberoSel(b)}
                         >
+                          <FotoBarbero
+                            nombre={b.nombre}
+                            foto={b.foto}
+                            color={colors.primary}
+                            forma="rectangulo"
+                          />
                           <Text
                             style={[
                               styles.titleCard,
@@ -1605,7 +1521,7 @@ export default function HomeScreen() {
                     showsHorizontalScrollIndicator={false}
                     style={{ marginBottom: 15 }}
                   >
-                    {DIAS.map((d) => {
+                    {DIAS.filter((d) => d.fechaFull >= HOY_STR).map((d) => {
                       const esSel = diaSel.id === d.id;
                       return (
                         <TouchableOpacity
@@ -1733,10 +1649,7 @@ export default function HomeScreen() {
                           fontSize: 12,
                           fontWeight: "bold",
                         }}
-                      >
-                        ✅ ¡Hola de nuevo, {nombre}! Te hemos reconocido por tu
-                        número.
-                      </Text>
+                      ></Text>
                     </View>
                   ) : (
                     <TextInput
@@ -1748,7 +1661,7 @@ export default function HomeScreen() {
                           color: colors.textPrimary,
                         },
                       ]}
-                      placeholder="Nombre Completo (Primera vez)"
+                      placeholder="Nombre Completo"
                       placeholderTextColor={colors.textSecondary}
                       value={nombre}
                       onChangeText={setNombre}
@@ -2036,15 +1949,15 @@ export default function HomeScreen() {
                             <Text
                               style={[
                                 styles.badgeState,
-                                c.estado === "PENDIENTE" && {
-                                  backgroundColor: "#854D0E",
-                                  color: "#FFF",
-                                },
-                                c.estado === "ACEPTADA" && {
+                                c.estado === "CONFIRMADA" && {
                                   backgroundColor: "#166534",
                                   color: "#FFF",
                                 },
-                                c.estado === "RECHAZADA" && {
+                                c.estado === "COMPLETADA" && {
+                                  backgroundColor: "#1E3A8A",
+                                  color: "#FFF",
+                                },
+                                c.estado === "CANCELADA" && {
                                   backgroundColor: "#991B1B",
                                   color: "#FFF",
                                 },
@@ -2079,35 +1992,93 @@ export default function HomeScreen() {
                             )
                           </Text>
 
-                          {c.estado === "PENDIENTE" && (
+                          {c.estado === "CONFIRMADA" && (
                             <View style={styles.rowBox}>
-                              <TouchableOpacity
-                                style={[
-                                  styles.btnState,
-                                  { backgroundColor: "#166534" },
-                                ]}
-                                onPress={() =>
-                                  cambiarEstadoCita(c.id, "ACEPTADA")
-                                }
-                              >
-                                <Text style={styles.btnStateText}>
-                                  Aceptar Cita
-                                </Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={[
-                                  styles.btnState,
-                                  { backgroundColor: "#991B1B" },
-                                ]}
-                                onPress={() =>
-                                  cambiarEstadoCita(c.id, "RECHAZADA")
-                                }
-                              >
-                                <Text style={styles.btnStateText}>
-                                  Rechazar
-                                </Text>
-                              </TouchableOpacity>
+                              {c.barberoId === barberoLogueado.id && (
+                                <TouchableOpacity
+                                  style={[
+                                    styles.btnState,
+                                    { backgroundColor: "#166534" },
+                                  ]}
+                                  onPress={() => completarCita(c)}
+                                >
+                                  <Text style={styles.btnStateText}>
+                                    Marcar completada
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
+                              {barberoLogueado.esAdmin && (
+                                <TouchableOpacity
+                                  style={[
+                                    styles.btnState,
+                                    { backgroundColor: "#991B1B" },
+                                  ]}
+                                  onPress={() =>
+                                    Alert.alert(
+                                      "Cancelar cita",
+                                      `¿Cancelar la cita de ${c.cliente}?`,
+                                      [
+                                        { text: "No", style: "cancel" },
+                                        {
+                                          text: "Sí, cancelar",
+                                          style: "destructive",
+                                          onPress: () =>
+                                            cambiarEstadoCita(
+                                              c.id,
+                                              "CANCELADA",
+                                            ),
+                                        },
+                                      ],
+                                    )
+                                  }
+                                >
+                                  <Text style={styles.btnStateText}>
+                                    Cancelar cita
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
                             </View>
+                          )}
+
+                          {c.estado === "COMPLETADA" && c.completadaEn && (
+                            <View style={{ marginTop: 8 }}>
+                              <Text
+                                style={[
+                                  styles.subCard,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                ✅ Completada por {c.completadaPor} a las{" "}
+                                {formatearHora(c.completadaEn)}
+                              </Text>
+                              {barberoLogueado.esAdmin &&
+                                minutosDespuesDeLaCita(c) > 120 && (
+                                  <Text
+                                    style={{
+                                      fontSize: 11,
+                                      color: "#F59E0B",
+                                      fontWeight: "bold",
+                                      marginTop: 4,
+                                    }}
+                                  >
+                                    ⚠️ Registrada{" "}
+                                    {Math.round(minutosDespuesDeLaCita(c) / 60)}{" "}
+                                    h después de la cita
+                                  </Text>
+                                )}
+                            </View>
+                          )}
+
+                          {c.estado === "CANCELADA" && c.canceladaEn && (
+                            <Text
+                              style={[
+                                styles.subCard,
+                                { color: colors.textSecondary, marginTop: 8 },
+                              ]}
+                            >
+                              ❌ Cancelada por {c.canceladaPor} a las{" "}
+                              {formatearHora(c.canceladaEn)}
+                            </Text>
                           )}
                         </View>
                       ))
@@ -2116,272 +2087,19 @@ export default function HomeScreen() {
                 )}
 
                 {/* TAB 2: INHABILITAR CON CALENDARIO RESTAURADO Y BLOQUEOS POR REPETICIÓN O PUNTUAL */}
-                {menuBarbero === "BLOQUEOS" && barberoLogueado.esAdmin && (
-                  <View style={{ marginTop: 10 }}>
-                    <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                      1. SELECCIONA LA FECHA DE LA AGENDA
-                    </Text>
-
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={{ marginBottom: 15 }}
-                    >
-                      {DIAS.map((d) => {
-                        const esSel = diaSel.id === d.id;
-                        return (
-                          <TouchableOpacity
-                            key={d.id}
-                            style={[
-                              styles.dayCard,
-                              {
-                                backgroundColor: colors.cardBg,
-                                borderColor: colors.cardBorder,
-                              },
-                              esSel && {
-                                borderColor: colors.primary,
-                                backgroundColor: colors.cardSelectedBg,
-                              },
-                            ]}
-                            onPress={() => setDiaSel(d)}
-                          >
-                            <Text
-                              style={[
-                                styles.dayName,
-                                esSel && { color: colors.primary },
-                              ]}
-                            >
-                              {d.diaNom}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.dayNum,
-                                { color: colors.textPrimary },
-                                esSel && { color: colors.primary },
-                              ]}
-                            >
-                              {d.num}
-                            </Text>
-                            <Text
-                              style={{
-                                fontSize: 9,
-                                color: colors.textSecondary,
-                              }}
-                            >
-                              OCT
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-
-                    {/* TARJETA INTERACTIVA DE CONFIGURACIÓN DE BLOQUEOS */}
-                    <View
-                      style={[
-                        styles.cardConfigAlarma,
-                        {
-                          backgroundColor: colors.cardBg,
-                          borderColor: colors.cardBorder,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: colors.textSecondary,
-                          fontWeight: "bold",
-                          marginBottom: 8,
-                        }}
-                      >
-                        2. REPETIR BLOQUEO CADA (OPCIONAL):
-                      </Text>
-
-                      <View style={styles.rowDiasAlarma}>
-                        {DIAS_SEMANA_SELECTOR.map((item) => {
-                          const estaSel = diasBloqueoSeleccionados.includes(
-                            item.clave,
-                          );
-                          return (
-                            <TouchableOpacity
-                              key={item.clave}
-                              style={[
-                                styles.circleDiaAlarma,
-                                {
-                                  backgroundColor: colors.inputBg,
-                                  borderColor: colors.cardBorder,
-                                },
-                                estaSel && {
-                                  backgroundColor: colors.primary,
-                                  borderColor: colors.primary,
-                                },
-                              ]}
-                              onPress={() =>
-                                alternarDiaSeleccionBloqueo(item.clave)
-                              }
-                            >
-                              <Text
-                                style={[
-                                  styles.textDiaAlarma,
-                                  { color: colors.textPrimary },
-                                  estaSel && {
-                                    color: "#000",
-                                    fontWeight: "bold",
-                                  },
-                                ]}
-                              >
-                                {item.label}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          color: colors.textSecondary,
-                          fontWeight: "bold",
-                          marginTop: 15,
-                          marginBottom: 8,
-                        }}
-                      >
-                        3. HORAS A INHABILITAR PARA ({diaSel.diaNom}{" "}
-                        {diaSel.num} OCT):
-                      </Text>
-
-                      <View style={styles.grid4}>
-                        {HORARIOS_BASE.map((hStr) => {
-                          const estaSel =
-                            horasBloqueoSeleccionadas.includes(hStr);
-                          return (
-                            <TouchableOpacity
-                              key={hStr}
-                              style={[
-                                styles.timeCard,
-                                {
-                                  backgroundColor: colors.inputBg,
-                                  borderColor: colors.cardBorder,
-                                },
-                                estaSel && {
-                                  backgroundColor: "#7F1D1D",
-                                  borderColor: "#EF4444",
-                                },
-                              ]}
-                              onPress={() => alternarHoraSeleccionBloqueo(hStr)}
-                            >
-                              <Text
-                                style={[
-                                  styles.timeText,
-                                  { color: colors.textPrimary },
-                                  estaSel && { color: "#FECACA" },
-                                ]}
-                              >
-                                {hStr}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.rowOpcionRepetir}
-                        onPress={() =>
-                          setTipoBloqueoRecurrente(!tipoBloqueoRecurrente)
-                        }
-                      >
-                        <Ionicons
-                          name={
-                            tipoBloqueoRecurrente
-                              ? "checkbox"
-                              : "square-outline"
-                          }
-                          size={22}
-                          color={colors.primary}
-                        />
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: colors.textPrimary,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          Repetir todas las semanas (Recurrente)
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnGoldAction,
-                          { backgroundColor: colors.primary, marginTop: 15 },
-                        ]}
-                        onPress={aplicarBloqueosEstiloAlarma}
-                      >
-                        <Text style={styles.btnGoldText}>
-                          GUARDAR BLOQUEOS SELECCIONADOS
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 25 },
-                      ]}
-                    >
-                      BLOQUEOS REGISTRADOS EN SISTEMA ({bloqueos.length})
-                    </Text>
-
-                    {bloqueos.length === 0 ? (
-                      <Text style={styles.infoText}>
-                        No hay bloqueos configurados actualmente.
-                      </Text>
-                    ) : (
-                      bloqueos.map((b) => (
-                        <View
-                          key={b.id}
-                          style={[
-                            styles.cardServicioRealizado,
-                            {
-                              backgroundColor: colors.cardBg,
-                              borderColor: colors.cardBorder,
-                            },
-                          ]}
-                        >
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              style={[
-                                styles.titleCard,
-                                { color: colors.textPrimary },
-                              ]}
-                            >
-                              ⏰ Hora: {b.hora}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.subCard,
-                                { color: colors.textSecondary },
-                              ]}
-                            >
-                              Días: {b.diasSemana.join(", ")} · Modalidad:{" "}
-                              {b.frecuencia}
-                            </Text>
-                          </View>
-                          <TouchableOpacity
-                            onPress={() =>
-                              setBloqueos(bloqueos.filter((x) => x.id !== b.id))
-                            }
-                          >
-                            <Ionicons
-                              name="trash-outline"
-                              size={20}
-                              color="#EF4444"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      ))
-                    )}
-                  </View>
-                )}
+                {menuBarbero === "BLOQUEOS" &&
+                  barberoLogueado.esAdmin &&
+                  profesionalActivoEnPanel && (
+                    <BloqueoSemanal
+                      colors={colors}
+                      barberoId={profesionalActivoEnPanel.id}
+                      barberoNombre={profesionalActivoEnPanel.nombre}
+                      bloqueos={bloqueos}
+                      setBloqueos={setBloqueos}
+                      citas={citas}
+                      horarios={HORARIOS_BASE}
+                    />
+                  )}
 
                 {/* TAB 3: HISTORIAL DE CLIENTES CON OPCIÓN DE BLOQUEO Y DESBLOQUEO DIRECTO */}
                 {menuBarbero === "CLIENTES" && (
@@ -2935,6 +2653,13 @@ export default function HomeScreen() {
                         ]}
                       >
                         <View style={{ flex: 1 }}>
+                          <FotoBarbero
+                            nombre={b.nombre}
+                            foto={b.foto}
+                            color={colors.primary}
+                            editable
+                            onCambiar={(uri) => guardarFotoBarbero(b.id, uri)}
+                          />
                           <Text
                             style={[
                               styles.titleCard,
@@ -3178,214 +2903,17 @@ export default function HomeScreen() {
                 )}
 
                 {/* TAB 5: MÓDULO DE GANANCIAS */}
-                {menuBarbero === "CARTERA" && (
-                  <View>
-                    <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                      💰 CARTERA Y GANANCIAS DE{" "}
-                      {profesionalActivoEnPanel?.nombre.toUpperCase()}
-                    </Text>
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        backgroundColor: colors.cardBg,
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: colors.cardBorder,
-                        padding: 4,
-                        marginBottom: 15,
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroPeriodoCartera === "DIARIO" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroPeriodoCartera("DIARIO")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroPeriodoCartera === "DIARIO"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Diario ({diaFiltroCitas.diaNom} {diaFiltroCitas.num})
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroPeriodoCartera === "SEMANAL" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroPeriodoCartera("SEMANAL")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroPeriodoCartera === "SEMANAL"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Semanal
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroPeriodoCartera === "MENSUAL" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroPeriodoCartera("MENSUAL")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroPeriodoCartera === "MENSUAL"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Mensual
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.rowBox}>
-                      <View
-                        style={[
-                          styles.metricCard,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.metricNum,
-                            { color: colors.textPrimary },
-                          ]}
-                        >
-                          ${recaudadoBruto.toLocaleString("es-CO")}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.metricText,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          Recaudo Bruto ({filtroPeriodoCartera})
-                        </Text>
-                      </View>
-
-                      <View
-                        style={[
-                          styles.metricCard,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.primary,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[styles.metricNum, { color: colors.primary }]}
-                        >
-                          ${miGananciaNeta.toLocaleString("es-CO")}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.metricText,
-                            { color: colors.primary, fontWeight: "bold" },
-                          ]}
-                        >
-                          Tu Comisión ({miPorcentaje}%)
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 20 },
-                      ]}
-                    >
-                      DESGLOSE DE CITAS COMPLETADAS (
-                      {citasFiltradasCartera.length})
-                    </Text>
-
-                    {citasFiltradasCartera.length === 0 ? (
-                      <Text style={styles.infoText}>
-                        No hay cobros o citas registradas para el periodo
-                        seleccionado.
-                      </Text>
-                    ) : (
-                      citasFiltradasCartera.map((c) => {
-                        const gananciaServicio =
-                          (c.precio * miPorcentaje) / 100;
-                        return (
-                          <View
-                            key={c.id}
-                            style={[
-                              styles.cardServicioRealizado,
-                              {
-                                backgroundColor: colors.cardBg,
-                                borderColor: colors.cardBorder,
-                              },
-                            ]}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={[
-                                  styles.titleCard,
-                                  { color: colors.textPrimary },
-                                ]}
-                              >
-                                {c.servicio}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.subCard,
-                                  { color: colors.textSecondary },
-                                ]}
-                              >
-                                Cliente: {c.cliente} · Hora: {c.hora} ({c.fecha}
-                                )
-                              </Text>
-                            </View>
-
-                            <View style={{ alignItems: "flex-end" }}>
-                              <Text
-                                style={[
-                                  styles.precioCard,
-                                  { color: colors.primary },
-                                ]}
-                              >
-                                +${gananciaServicio.toLocaleString("es-CO")}
-                              </Text>
-                              <Text
-                                style={{
-                                  fontSize: 9,
-                                  color: colors.textSecondary,
-                                }}
-                              >
-                                Ganancia ({miPorcentaje}%)
-                              </Text>
-                            </View>
-                          </View>
-                        );
-                      })
+                {menuBarbero === "CARTERA" && profesionalActivoEnPanel && (
+                  <CarteraPanel
+                    colors={colors}
+                    nombre={profesionalActivoEnPanel.nombre}
+                    porcentaje={profesionalActivoEnPanel.porcentajeGanancia}
+                    citas={citas.filter(
+                      (c) =>
+                        c.barberoId === profesionalActivoEnPanel.id &&
+                        c.empresaId === empresaActiva.id,
                     )}
-                  </View>
+                  />
                 )}
 
                 {/* TAB 6: LISTA NEGRA CON BÚSQUEDA INTERACTIVA Y CAMPOS DE UNIFICADOS */}
@@ -3404,10 +2932,16 @@ export default function HomeScreen() {
                           color: colors.textPrimary,
                         },
                       ]}
-                      placeholder="Nombre del Cliente"
+                      placeholder={
+                        inputTelListaNegra.trim()
+                          ? "⚠️ Número no registrado como cliente"
+                          : "El nombre aparece al escribir el teléfono"
+                      }
                       placeholderTextColor={colors.textSecondary}
-                      value={inputNombreListaNegra}
-                      onChangeText={setInputNombreListaNegra}
+                      value={
+                        clienteEncontradoLN ? clienteEncontradoLN.nombre : ""
+                      }
+                      editable={false}
                     />
 
                     <TextInput
