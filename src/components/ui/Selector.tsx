@@ -1,12 +1,5 @@
-import {
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-} from "react-native";
+import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { COLORES } from "../../theme/paleta";
 
@@ -34,7 +27,7 @@ export default function Selector<T extends string>({
       {opciones.map((o) => {
         const activo = valor === o.id;
         return (
-          <Pressable
+          <Tocable
             key={o.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
@@ -57,7 +50,7 @@ export default function Selector<T extends string>({
             >
               {o.label}
             </Text>
-          </Pressable>
+          </Tocable>
         );
       })}
     </View>

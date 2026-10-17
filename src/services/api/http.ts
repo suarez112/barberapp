@@ -44,7 +44,14 @@ export async function request<T>(
     throw new ErrorDeConexion(error);
   }
 
-  const data = await response.json().catch(() => ({}));
+  // Una respuesta que no es JSON (ej. página de error de un proxy) se trata
+  // como fallo de conexión, igual que antes de centralizar las peticiones
+  let data: any;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ErrorDeConexion(error);
+  }
   if (!response.ok) {
     throw new ApiError(
       typeof data?.error === "string" ? data.error : "",

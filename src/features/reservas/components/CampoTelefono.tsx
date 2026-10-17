@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { PAISES } from "@/data/paises";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -32,7 +33,7 @@ export default function CampoTelefono({
   return (
     <>
       <View style={styles.fila}>
-        <Pressable
+        <Tocable
           style={[
             styles.botonPais,
             { backgroundColor: colors.inputBg, borderColor: colors.cardBorder },
@@ -45,7 +46,7 @@ export default function CampoTelefono({
             +{indicativo}
           </Text>
           <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
-        </Pressable>
+        </Tocable>
         <CampoTexto
           style={styles.campo}
           placeholder="Teléfono / Celular"
@@ -75,7 +76,7 @@ export default function CampoTelefono({
           >
             <ScrollView style={styles.scroll}>
               {PAISES.map((p) => (
-                <Pressable
+                <Tocable
                   key={p.indicativo}
                   accessibilityRole="button"
                   style={styles.pais}
@@ -97,7 +98,7 @@ export default function CampoTelefono({
                   <Text style={{ color: colors.textSecondary }}>
                     +{p.indicativo}
                   </Text>
-                </Pressable>
+                </Tocable>
               ))}
             </ScrollView>
           </View>

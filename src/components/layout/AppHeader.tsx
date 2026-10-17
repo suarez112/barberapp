@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import BotonNotificaciones from "@/features/notificaciones/BotonNotificaciones";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -28,14 +29,14 @@ export default function AppHeader({
       ]}
     >
       {onVolver ? (
-        <Pressable
+        <Tocable
           accessibilityRole="button"
           accessibilityLabel="Volver"
           style={styles.volver}
           onPress={onVolver}
         >
           <Ionicons name="arrow-back-outline" size={24} color={colors.primary} />
-        </Pressable>
+        </Tocable>
       ) : null}
 
       <Text style={[styles.titulo, { color: colors.primary }]}>
@@ -52,14 +53,14 @@ export default function AppHeader({
         />
 
         {onSalir ? (
-          <Pressable
+          <Tocable
             accessibilityRole="button"
             style={styles.salir}
             onPress={onSalir}
           >
             <Ionicons name="log-out-outline" size={14} color={COLORES.peligroSuave} />
             <Text style={styles.salirTexto}>Salir</Text>
-          </Pressable>
+          </Tocable>
         ) : null}
       </View>
     </View>

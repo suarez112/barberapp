@@ -1,13 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
-import {
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-} from "react-native";
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 
 type Props = {
@@ -30,7 +24,7 @@ export default function Acordeon({
   const bordes = { backgroundColor: colors.cardBg, borderColor: colors.cardBorder };
   return (
     <>
-      <Pressable
+      <Tocable
         accessibilityRole="button"
         accessibilityState={{ expanded: abierto }}
         style={[styles.cabecera, bordes, style]}
@@ -42,7 +36,7 @@ export default function Acordeon({
           size={20}
           color={colors.primary}
         />
-      </Pressable>
+      </Tocable>
       {abierto ? <View style={[styles.cuerpo, bordes]}>{children}</View> : null}
     </>
   );

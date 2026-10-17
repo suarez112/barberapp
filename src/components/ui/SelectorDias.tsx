@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { ScrollView, StyleSheet, Text } from "react-native";
+import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { COLORES } from "../../theme/paleta";
 import { Dia } from "../../types";
@@ -24,7 +25,7 @@ export default function SelectorDias({
       {dias.map((d) => {
         const esSel = seleccionado.id === d.id;
         return (
-          <Pressable
+          <Tocable
             key={d.id}
             accessibilityRole="button"
             accessibilityState={{ selected: esSel }}
@@ -52,7 +53,7 @@ export default function SelectorDias({
             <Text style={[styles.mes, { color: colors.textSecondary }]}>
               OCT
             </Text>
-          </Pressable>
+          </Tocable>
         );
       })}
     </ScrollView>

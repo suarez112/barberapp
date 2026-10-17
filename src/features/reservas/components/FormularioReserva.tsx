@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import Boton from "@/components/ui/Boton";
 import CampoTexto from "@/components/ui/CampoTexto";
 import SelectorDias from "@/components/ui/SelectorDias";
@@ -51,11 +52,11 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
           PASO 1 · SELECCIONA PROFESIONAL
         </TituloSeccion>
         {onCambiarCodigo ? (
-          <Pressable accessibilityRole="button" onPress={onCambiarCodigo}>
+          <Tocable accessibilityRole="button" onPress={onCambiarCodigo}>
             <Text style={[styles.enlace, { color: colors.textSecondary }]}>
               Cambiar Código
             </Text>
-          </Pressable>
+          </Tocable>
         ) : null}
       </View>
       <SelectorProfesional
@@ -105,7 +106,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
         onChangeText={setNombre}
       />
 
-      <Pressable
+      <Tocable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: aceptaHabeasData }}
         style={styles.habeasData}
@@ -120,7 +121,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
           Autorizo el tratamiento de mis datos personales exclusivamente para la
           gestión de mi cita (Ley 1581 de 2012).
         </Text>
-      </Pressable>
+      </Tocable>
 
       <Boton titulo="CONFIRMAR RESERVA" onPress={agendar} />
     </View>

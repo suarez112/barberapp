@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero } from "@/types";
@@ -25,7 +26,7 @@ export default function SelectorSupervision({
         {barberos.map((emp) => {
           const esSel = seleccionadoId === emp.id;
           return (
-            <Pressable
+            <Tocable
               key={emp.id}
               accessibilityRole="button"
               accessibilityState={{ selected: esSel }}
@@ -50,7 +51,7 @@ export default function SelectorSupervision({
               <Text style={[styles.comision, { color: colors.textSecondary }]}>
                 {emp.porcentajeGanancia}% Comisión
               </Text>
-            </Pressable>
+            </Tocable>
           );
         })}
       </ScrollView>

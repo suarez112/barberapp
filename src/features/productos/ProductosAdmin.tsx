@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
@@ -82,7 +83,7 @@ export default function ProductosAdmin() {
         onAlternar={alternar}
         style={styles.acordeon}
       >
-        <Pressable
+        <Tocable
           accessibilityRole="button"
           accessibilityLabel="Elegir foto del producto"
           onPress={elegirFoto}
@@ -98,7 +99,7 @@ export default function ProductosAdmin() {
               </Text>
             </>
           )}
-        </Pressable>
+        </Tocable>
         <CampoTexto
           placeholder="Nombre del Producto"
           value={campos.nombre}

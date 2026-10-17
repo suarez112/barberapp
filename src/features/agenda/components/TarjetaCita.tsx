@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import Insignia from "@/components/ui/Insignia";
 import { MINUTOS_ALERTA_COMPLETADA_TARDE } from "@/constants/config";
@@ -65,7 +66,7 @@ export default function TarjetaCita({
           📞 {c.indicativo ? `+${c.indicativo} ` : ""}
           {c.telefono}
         </Text>
-        <Pressable
+        <Tocable
           onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}
           accessibilityRole="button"
           accessibilityLabel={`Escribir por WhatsApp a ${c.cliente}`}
@@ -77,7 +78,7 @@ export default function TarjetaCita({
             size={26}
             color={tieneWhatsApp ? COLORES.whatsapp : colors.textSecondary}
           />
-        </Pressable>
+        </Tocable>
       </View>
       <Text style={subtitulo}>
         ✂️ {c.servicio} (${formatearPesos(c.precio)})
@@ -135,13 +136,13 @@ function BotonEstado({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Tocable
       accessibilityRole="button"
       style={[styles.botonEstado, { backgroundColor: color }]}
       onPress={onPress}
     >
       <Text style={styles.botonEstadoTexto}>{texto}</Text>
-    </Pressable>
+    </Tocable>
   );
 }
 

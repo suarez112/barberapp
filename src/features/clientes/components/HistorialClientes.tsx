@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import Insignia from "@/components/ui/Insignia";
 import TarjetaFila from "@/components/ui/TarjetaFila";
@@ -85,7 +86,7 @@ export default function HistorialClientes() {
         {filtros.map((f) => {
           const activo = filtro === f.id;
           return (
-            <Pressable
+            <Tocable
               key={f.id}
               accessibilityRole="tab"
               accessibilityState={{ selected: activo }}
@@ -104,7 +105,7 @@ export default function HistorialClientes() {
               >
                 {f.label}
               </Text>
-            </Pressable>
+            </Tocable>
           );
         })}
       </View>
@@ -121,7 +122,7 @@ export default function HistorialClientes() {
           const activo = orden === o.id;
           const color = activo ? colors.primary : colors.textSecondary;
           return (
-            <Pressable
+            <Tocable
               key={o.id}
               accessibilityRole="button"
               accessibilityState={{ selected: activo }}
@@ -137,7 +138,7 @@ export default function HistorialClientes() {
             >
               <Ionicons name={o.icono} size={12} color={color} />
               <Text style={[styles.pildoraTexto, { color }]}>{o.label}</Text>
-            </Pressable>
+            </Tocable>
           );
         })}
       </ScrollView>
@@ -186,7 +187,7 @@ export default function HistorialClientes() {
                     {cli.totalCitasCalculado} Citas
                   </Text>
                   {barbero?.esAdmin ? (
-                    <Pressable
+                    <Tocable
                       accessibilityRole="button"
                       style={[
                         styles.botonBloqueo,
@@ -201,7 +202,7 @@ export default function HistorialClientes() {
                       <Text style={styles.botonBloqueoTexto}>
                         {bloqueado ? "✅ Desbloquear" : "🚫 Bloquear"}
                       </Text>
-                    </Pressable>
+                    </Tocable>
                   ) : null}
                 </View>
               </View>

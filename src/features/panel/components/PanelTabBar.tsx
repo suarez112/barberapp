@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
 export type PestanaPanel =
@@ -45,7 +46,7 @@ export default function PanelTabBar({ activa, esAdmin, onCambiar }: Props) {
       {PESTANAS.filter((t) => !t.soloAdmin || esAdmin).map((t) => {
         const color = activa === t.id ? colors.primary : colors.textSecondary;
         return (
-          <Pressable
+          <Tocable
             key={t.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activa === t.id }}
@@ -54,7 +55,7 @@ export default function PanelTabBar({ activa, esAdmin, onCambiar }: Props) {
           >
             <Ionicons name={t.icono} size={18} color={color} />
             <Text style={[styles.label, { color }]}>{t.label}</Text>
-          </Pressable>
+          </Tocable>
         );
       })}
     </View>

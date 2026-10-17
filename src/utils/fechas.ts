@@ -22,8 +22,11 @@ const FORMATO_HORA = new Intl.DateTimeFormat("es-CO", {
 });
 
 // "2026-10-15T14:05:00Z" -> "09:05 a. m." (hora local)
-export const formatearHora = (iso: string | Date) =>
-  FORMATO_HORA.format(typeof iso === "string" ? new Date(iso) : iso);
+export const formatearHora = (iso: string | Date) => {
+  const fecha = typeof iso === "string" ? new Date(iso) : iso;
+  // Intl lanza un error con fechas inválidas; toLocaleTimeString no
+  return isNaN(fecha.getTime()) ? String(fecha) : FORMATO_HORA.format(fecha);
+};
 
 // Días completos entre "2026-10-01" y la fecha de referencia (nunca negativo)
 export const diasTranscurridos = (fechaStr: string, referencia: Date) => {

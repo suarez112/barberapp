@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, ReactNode } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
 export default function BotonCabecera({ icono, etiqueta, onPress, children }: Props) {
   const { colors } = useAppTheme();
   return (
-    <Pressable
+    <Tocable
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
       style={[
@@ -25,7 +26,7 @@ export default function BotonCabecera({ icono, etiqueta, onPress, children }: Pr
     >
       <Ionicons name={icono} size={16} color={colors.primary} />
       {children}
-    </Pressable>
+    </Tocable>
   );
 }
 

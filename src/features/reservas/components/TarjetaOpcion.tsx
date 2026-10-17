@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
 type Props = { seleccionada: boolean; onPress: () => void; children: ReactNode };
@@ -8,7 +9,7 @@ type Props = { seleccionada: boolean; onPress: () => void; children: ReactNode }
 export default function TarjetaOpcion({ seleccionada, onPress, children }: Props) {
   const { colors } = useAppTheme();
   return (
-    <Pressable
+    <Tocable
       accessibilityRole="button"
       accessibilityState={{ selected: seleccionada }}
       style={[
@@ -22,7 +23,7 @@ export default function TarjetaOpcion({ seleccionada, onPress, children }: Props
       onPress={onPress}
     >
       {children}
-    </Pressable>
+    </Tocable>
   );
 }
 

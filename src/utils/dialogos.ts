@@ -33,18 +33,13 @@ export const confirmar = ({
     return Promise.resolve(window.confirm(mensajeWeb ?? `${titulo}\n\n${mensaje}`));
   }
   return new Promise((resolve) => {
-    Alert.alert(
-      titulo,
-      mensaje,
-      [
-        { text: textoCancelar, style: "cancel", onPress: () => resolve(false) },
-        {
-          text: textoConfirmar,
-          style: destructivo ? "destructive" : "default",
-          onPress: () => resolve(true),
-        },
-      ],
-      { cancelable: true, onDismiss: () => resolve(false) },
-    );
+    Alert.alert(titulo, mensaje, [
+      { text: textoCancelar, style: "cancel", onPress: () => resolve(false) },
+      {
+        text: textoConfirmar,
+        style: destructivo ? "destructive" : "default",
+        onPress: () => resolve(true),
+      },
+    ]);
   });
 };

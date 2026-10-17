@@ -1,6 +1,6 @@
-import { Redirect } from "expo-router";
-import { useState } from "react";
-import { View } from "react-native";
+import { Redirect, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { BackHandler, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import { DIAS } from "@/data/datos";
 import { Dia } from "@/types";
@@ -31,10 +31,7 @@ export default function PanelScreen() {
   // Se guarda aquí para conservar el día elegido al cambiar de pestaña
   const [diaAgenda, setDiaAgenda] = useState<Dia>(diaDeHoy);
 
-  // Sin sesión (o al cerrarla) se vuelve al ingreso
-  if (!barbero || !empresa || !profesionalActivo) return <Redirect href="/login" />;
-
-  const salir = async () => {
+  const salir = useCallback(async () => {
     const ok = await confirmar({
       titulo: "Cerrar Sesión",
       mensaje: "¿Deseas salir del sistema?",
@@ -46,7 +43,21 @@ export default function PanelScreen() {
     if (!ok) return;
     cerrarSesion();
     setCitas([]);
-  };
+  }, [cerrarSesion, setCitas]);
+
+  // El botón atrás de Android no saca del panel con la sesión abierta: pide cerrarla
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        salir();
+        return true;
+      });
+      return () => sub.remove();
+    }, [salir]),
+  );
+
+  // Sin sesión (o al cerrarla) se vuelve al ingreso
+  if (!barbero || !empresa || !profesionalActivo) return <Redirect href="/login" />;
 
   const citasDelProfesional = citas.filter(
     (c) => c.barberoId === profesionalActivo.id && c.empresaId === empresa.id,

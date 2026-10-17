@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import BotonIcono from "@/components/ui/BotonIcono";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -36,9 +37,9 @@ export default function ModalNotificaciones({ visible, onCerrar }: Props) {
 
             <View style={[styles.fila, styles.accionesCabecera]}>
               {notificaciones.length > 0 ? (
-                <Pressable accessibilityRole="button" onPress={limpiar}>
+                <Tocable accessibilityRole="button" onPress={limpiar}>
                   <Text style={styles.limpiar}>Limpiar todas</Text>
-                </Pressable>
+                </Tocable>
               ) : null}
               <BotonIcono
                 icono="close"

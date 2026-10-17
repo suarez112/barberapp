@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, useFocusEffect, useRouter } from "expo-router";
 import { ComponentProps, useCallback } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Tocable from "@/components/ui/Tocable";
 import Pantalla from "@/components/layout/Pantalla";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
@@ -48,7 +49,7 @@ export default function SeleccionRolScreen() {
         </Text>
 
         {OPCIONES.map((o) => (
-          <Pressable
+          <Tocable
             key={o.titulo}
             accessibilityRole="button"
             style={[
@@ -73,7 +74,7 @@ export default function SeleccionRolScreen() {
               size={20}
               color={colors.textSecondary}
             />
-          </Pressable>
+          </Tocable>
         ))}
       </View>
     </Pantalla>
