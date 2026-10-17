@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Dispatch, SetStateAction, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BloqueoHorario } from "../types";
+import { BloqueoHorario, Cita } from "@/types";
 import {
   bloqueoAplicaEseDia,
   horaAMinutos,
   horario24AMinutos,
   minutosAHora,
-} from "../utils/disponibilidad";
+} from "@/utils/disponibilidad";
 
 const NOMBRES_DIA = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
 const PASO = 30; // cada casilla de la tabla = 30 minutos
@@ -27,10 +27,13 @@ type Props = {
   barberoNombre: string;
   bloqueos: BloqueoHorario[];
   setBloqueos: Dispatch<SetStateAction<BloqueoHorario[]>>;
-  citas: any[];
+  citas: Cita[];
   apertura: string; // "09:00"
   cierre: string; // "20:00"
 };
+
+// Fuera del componente: generar ids no es parte del render
+const nuevoIdBloqueo = () => `${Date.now()}_${Math.random()}`;
 
 const esDiaCompleto = (b: BloqueoHorario) =>
   b.desdeMin <= 0 && b.hastaMin >= 1440;
@@ -117,7 +120,7 @@ export default function BloqueoSemanal({
     hastaMin: number,
   ) => {
     const nuevo: BloqueoHorario = {
-      id: `${Date.now()}_${Math.random()}`,
+      id: nuevoIdBloqueo(),
       barberoId,
       fechaBase: dia.fechaFull,
       diasSemana: [dia.diaNom],

@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { agregarAlCalendario } from "../utils/calendario";
-import { horaAMinutos, minutosAHora } from "../utils/disponibilidad";
-import FotoBarbero from "./FotoBarbero";
+import { agregarAlCalendario } from "@/utils/calendario";
+import { horaAMinutos, minutosAHora } from "@/utils/disponibilidad";
+import FotoBarbero from "@/components/FotoBarbero";
 
 export type DatosConfirmacion = {
   negocio: string;

@@ -9,17 +9,12 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { Paleta } from "@/theme/paleta";
+import { Producto } from "@/types";
 
-export interface Producto {
-  id: string;
-  empresaId: string;
-  nombre: string;
-  precio: number;
-  foto?: string;
-}
 
 interface Props {
-  colors: any;
+  colors: Paleta;
   modo: "admin" | "cliente";
   empresaId: string;
   productos: Producto[];

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { horaAMinutos } from "../utils/disponibilidad";
+import { horaAMinutos } from "@/utils/disponibilidad";
 
 type Props = {
   horarios: string[];
@@ -24,25 +24,35 @@ const GRUPOS = [
   { nombre: "Noche", icono: "🌙", desde: 1080, hasta: 1440 }, // 6:00 PM en adelante
 ];
 
+const grupoDeHora = (hora: string): string | undefined => {
+  if (!hora) return undefined;
+  const min = horaAMinutos(hora);
+  return GRUPOS.find((g) => min >= g.desde && min < g.hasta)?.nombre;
+};
+
 export default function SelectorHoras({
   horarios,
   horaSel,
   onSeleccionar,
   colors,
 }: Props) {
-  // Cada momento del día es un desplegable; todos empiezan cerrados
-  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
+  // Cada momento del día es un desplegable; empiezan cerrados salvo el de la hora elegida
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>(() => {
+    const grupo = grupoDeHora(horaSel);
+    return grupo ? { [grupo]: true } : {};
+  });
+  const [horaPrevia, setHoraPrevia] = useState(horaSel);
 
   const alternarGrupo = (nombre: string) =>
     setAbiertos((prev) => ({ ...prev, [nombre]: !prev[nombre] }));
 
-  // Si hay una hora seleccionada, se abre el grupo que la contiene
-  useEffect(() => {
-    if (!horaSel) return;
-    const min = horaAMinutos(horaSel);
-    const grupo = GRUPOS.find((g) => min >= g.desde && min < g.hasta);
-    if (grupo) setAbiertos((prev) => ({ ...prev, [grupo.nombre]: true }));
-  }, [horaSel]);
+  // Si cambia la hora seleccionada, se abre el grupo que la contiene
+  // (ajuste durante el render en vez de un efecto: evita un render extra)
+  if (horaSel !== horaPrevia) {
+    setHoraPrevia(horaSel);
+    const grupo = grupoDeHora(horaSel);
+    if (grupo) setAbiertos((prev) => ({ ...prev, [grupo]: true }));
+  }
 
   if (horarios.length === 0) {
     return (
