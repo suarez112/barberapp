@@ -22,6 +22,8 @@ const GENERAR_DIAS_OCTUBRE = () => {
 
 export const DIAS = GENERAR_DIAS_OCTUBRE();
 
+// AQUÍ SE CONFIGURA CADA NEGOCIO.
+// horarioApertura y horarioCierre van en formato de 24 horas ("09:00", "20:00").
 export const EMPRESAS_DB: Record<string, EmpresaConfig> = {
   infinity: {
     id: "infinity",
@@ -29,6 +31,8 @@ export const EMPRESAS_DB: Record<string, EmpresaConfig> = {
     nombre: "INFINITY BARBER",
     colorPrimario: "#EAB308",
     colorSecundario: "#0D0D0D",
+    horarioApertura: "09:00",
+    horarioCierre: "20:00",
     barberos: [
       {
         id: "b3",
@@ -98,6 +102,9 @@ export const EMPRESAS_DB: Record<string, EmpresaConfig> = {
     nombre: "GLAMOUR BEAUTY SALON",
     colorPrimario: "#E11D48",
     colorSecundario: "#0F172A",
+    // Ejemplo: este negocio abre distinto a Infinity
+    horarioApertura: "09:00",
+    horarioCierre: "19:00",
     barberos: [
       {
         id: "b4",
@@ -160,24 +167,6 @@ export const EMPRESAS_DB: Record<string, EmpresaConfig> = {
     ],
   },
 };
-
-export const HORARIOS_BASE = [
-  "09:40 AM",
-  "10:20 AM",
-  "11:00 AM",
-  "11:40 AM",
-  "12:20 PM",
-  "01:00 PM",
-  "01:40 PM",
-  "02:20 PM",
-  "03:00 PM",
-  "03:40 PM",
-  "04:20 PM",
-  "05:00 PM",
-  "05:40 PM",
-  "06:20 PM",
-  "07:00 PM",
-];
 
 export const DIAS_SEMANA_SELECTOR = [
   { clave: "DOM", label: "dom" },

@@ -1,8 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import * as ImagePicker from "expo-image-picker";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -16,8 +20,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BloqueoSemanal from "../components/BloqueoSemanal";
 import CarteraPanel from "../components/CarteraPanel";
+import CatalogoProductos, { Producto } from "../components/CatalogoProductos";
+import ConfirmacionCita from "../components/ConfirmacionCita";
 import FotoBarbero from "../components/FotoBarbero";
-import { DIAS, EMPRESAS_DB, HORARIOS_BASE } from "../data/datos";
+import SelectorHoras from "../components/SelectorHoras";
+import { API_BASE_URL } from "../constants/api";
+import { DIAS, EMPRESAS_DB } from "../data/datos";
+import {
+  INDICATIVO_POR_DEFECTO,
+  PAISES,
+  detectarIndicativo,
+  separarIndicativo,
+} from "../data/paises";
 import {
   Barbero,
   BloqueoHorario,
@@ -27,34 +41,42 @@ import {
   NotificacionCliente,
   Servicio,
 } from "../types";
+import {
+  duracionEnMinutos,
+  horaAMinutos,
+  obtenerHorariosDisponibles,
+} from "../utils/disponibilidad";
 
 // Fecha de hoy según el celular, en formato 2026-10-11
 const AHORA = new Date();
 const HOY_STR = `${AHORA.getFullYear()}-${String(AHORA.getMonth() + 1).padStart(2, "0")}-${String(AHORA.getDate()).padStart(2, "0")}`;
 
-// Dice si una hora de HOY ya pasó (para no ofrecerla al cliente)
-const horaYaPaso = (fecha: string, hora: string) => {
-  if (fecha !== HOY_STR) return false;
-  const [h12, resto] = hora.split(":");
-  const [min, ampm] = resto.split(" ");
-  let h = parseInt(h12) % 12;
-  if (ampm === "PM") h += 12;
-  const ahora = new Date();
-  return h * 60 + parseInt(min) <= ahora.getHours() * 60 + ahora.getMinutes();
-};
-
 export default function HomeScreen() {
+  // Enlace o QR del negocio: ej. ...?codigo=INFINITY entra directo como cliente
+  const params = useLocalSearchParams<{ codigo?: string }>();
+  const codigoEnlace = (typeof params.codigo === "string" ? params.codigo : "")
+    .trim()
+    .toUpperCase();
+  const modoEnlace = codigoEnlace !== "";
+  const empresaDelEnlace = modoEnlace
+    ? Object.values(EMPRESAS_DB).find((e) => e.codigoAcceso === codigoEnlace)
+    : undefined;
+
   const [tema, setTema] = useState<"OSCURO" | "CLARO">("OSCURO");
   const [pantallaActual, setPantallaActual] = useState<
     "SELECCION_ROL" | "CLIENTE" | "LOGIN_BARBERO" | "PANEL_BARBERO"
-  >("SELECCION_ROL");
+  >(modoEnlace ? "CLIENTE" : "SELECCION_ROL");
 
   const [empresaActiva, setEmpresaActiva] = useState<EmpresaConfig | null>(
-    null,
+    empresaDelEnlace ?? null,
   );
   const [codigoIngresado, setCodigoIngresado] = useState("");
-  const [barberos, setBarberos] = useState<Barbero[]>([]);
-  const [serviciosEmpresa, setServiciosEmpresa] = useState<Servicio[]>([]);
+  const [barberos, setBarberos] = useState<Barbero[]>(
+    empresaDelEnlace?.barberos ?? [],
+  );
+  const [serviciosEmpresa, setServiciosEmpresa] = useState<Servicio[]>(
+    empresaDelEnlace?.servicios ?? [],
+  );
 
   const [clientesRegistrados, setClientesRegistrados] = useState<
     ClienteRegistrado[]
@@ -83,7 +105,6 @@ export default function HomeScreen() {
     { id: "1", nombre: "Laura Restrepo", telefono: "3001112233" },
     { id: "2", nombre: "Carlos Mendoza", telefono: "3109876543" },
   ]);
-  const [inputNombreListaNegra, setInputNombreListaNegra] = useState("");
   const [inputTelListaNegra, setInputTelListaNegra] = useState("");
   const [busquedaBloqueados, setBusquedaBloqueados] = useState("");
 
@@ -112,17 +133,19 @@ export default function HomeScreen() {
   const [userInput, setUserInput] = useState("");
   const [passInput, setPassInput] = useState("");
   const [barberoLogueado, setBarberoLogueado] = useState<Barbero | null>(null);
+  const [token, setToken] = useState("");
   const [empleadoSupervisado, setEmpleadoSupervisado] =
     useState<Barbero | null>(null);
 
   const [menuBarbero, setMenuBarbero] = useState<
-    | "AGENDAMIENTOS"
-    | "BLOQUEOS"
-    | "CLIENTES"
-    | "EQUIPO"
-    | "CARTERA"
-    | "LISTA_NEGRA"
+    "AGENDAMIENTOS" | "BLOQUEOS" | "CLIENTES" | "CARTERA" | "NEGOCIO"
   >("AGENDAMIENTOS");
+  const [subClientes, setSubClientes] = useState<"HISTORIAL" | "LISTA_NEGRA">(
+    "HISTORIAL",
+  );
+  const [subNegocio, setSubNegocio] = useState<
+    "EQUIPO" | "SERVICIOS" | "PRODUCTOS"
+  >("EQUIPO");
 
   // Filtros de Clientes
   const [filtroEstadoCliente, setFiltroEstadoCliente] = useState<
@@ -132,11 +155,6 @@ export default function HomeScreen() {
   const [criterioOrdenCliente, setCriterioOrdenCliente] = useState<
     "DIAS_DESC" | "DIAS_ASC" | "CITAS_DESC" | "CITAS_ASC"
   >("DIAS_DESC");
-
-  // Filtro de periodo de Cartera: DIARIO, SEMANAL, MENSUAL
-  const [filtroPeriodoCartera, setFiltroPeriodoCartera] = useState<
-    "DIARIO" | "SEMANAL" | "MENSUAL"
-  >("DIARIO");
 
   const [notificacionesCliente, setNotificacionesCliente] = useState<
     NotificacionCliente[]
@@ -175,16 +193,8 @@ export default function HomeScreen() {
   ]);
 
   const [bloqueos, setBloqueos] = useState<BloqueoHorario[]>([]);
-
-  // Estado para el Bloqueador Interactivo Estilo Alarma
-  const [diasBloqueoSeleccionados, setDiasBloqueoSeleccionados] = useState<
-    string[]
-  >([]);
-  const [horasBloqueoSeleccionadas, setHorasBloqueoSeleccionadas] = useState<
-    string[]
-  >([]);
-  const [tipoBloqueoRecurrente, setTipoBloqueoRecurrente] =
-    useState<boolean>(true);
+  // Horas ya tomadas en el negocio (sin datos personales), vienen del servidor
+  const [citasOcupadas, setCitasOcupadas] = useState<any[]>([]);
 
   // Días y Filtros
   const [barberoSel, setBarberoSel] = useState<Barbero | null>(null);
@@ -198,8 +208,39 @@ export default function HomeScreen() {
   const [horaSel, setHoraSel] = useState<string>("");
   const [nombre, setNombre] = useState("");
   const [celular, setCelular] = useState("");
-  const [esClienteReconocido, setEsClienteReconocido] = useState(false);
+  const [indicativo, setIndicativo] = useState(INDICATIVO_POR_DEFECTO);
+  const [mostrarPaises, setMostrarPaises] = useState(false);
+  // true cuando el cliente eligió el país a mano (o lo escribió con "+"): no se cambia solo
+  const [indicativoManual, setIndicativoManual] = useState(false);
   const [aceptaHabeasData, setAceptaHabeasData] = useState(false);
+  const [citaConfirmada, setCitaConfirmada] = useState<any>(null);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [vistaCliente, setVistaCliente] = useState<"RESERVAR" | "PRODUCTOS">(
+    "RESERVAR",
+  );
+
+  // Formulario de productos (administrador)
+  const [mostrarFormProducto, setMostrarFormProducto] = useState(false);
+  const [productoEnEdicion, setProductoEnEdicion] = useState<Producto | null>(
+    null,
+  );
+  const [nombreProducto, setNombreProducto] = useState("");
+  const [precioProducto, setPrecioProducto] = useState("");
+  const [fotoProducto, setFotoProducto] = useState<string | undefined>(
+    undefined,
+  );
+
+  // Si el código del enlace llega después de abrir la página, entra al negocio
+  useEffect(() => {
+    if (!codigoEnlace) return;
+    setPantallaActual("CLIENTE");
+    if (empresaDelEnlace) {
+      setEmpresaActiva(empresaDelEnlace);
+      setBarberos(empresaDelEnlace.barberos);
+      setServiciosEmpresa(empresaDelEnlace.servicios);
+      setVistaCliente("RESERVAR");
+    }
+  }, [codigoEnlace]);
 
   const colorPrimarioActivo = empresaActiva
     ? empresaActiva.colorPrimario
@@ -226,6 +267,8 @@ export default function HomeScreen() {
     const accionSalida = () => {
       setBarberoLogueado(null);
       setEmpleadoSupervisado(null);
+      setToken(""); // <- línea nueva
+      setCitas([]); // <- línea nueva
       setPantallaActual("LOGIN_BARBERO");
     };
 
@@ -246,78 +289,134 @@ export default function HomeScreen() {
   };
 
   const manejarCambioTelefono = (val: string) => {
+    // Si escribe o pega el número con "+52 ..." o "0052 ...", se detecta el país
+    const separado = separarIndicativo(val);
+    if (separado) {
+      setIndicativo(separado.indicativo);
+      setIndicativoManual(true);
+      setCelular(separado.telefono);
+      return;
+    }
     setCelular(val);
+    // Sin "+": se va adivinando el país según los dígitos que escribe
+    if (!indicativoManual) {
+      setIndicativo(detectarIndicativo(val.replace(/\D/g, "")));
+    }
   };
 
-  const validarCodigoBarberia = () => {
-    const cod = codigoIngresado.trim().toUpperCase();
-    const encontrada = Object.values(EMPRESAS_DB).find(
-      (e) => e.codigoAcceso === cod,
+  // Selector de opciones: todas visibles en una barra fija
+  const dibujarSelector = (
+    opciones: { id: string; label: string }[],
+    valor: string,
+    onCambiar: (id: any) => void,
+  ) => {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          marginTop: 15,
+          marginBottom: 10,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: colors.cardBorder,
+          overflow: "hidden",
+        }}
+      >
+        {opciones.map((o) => {
+          const activo = valor === o.id;
+          return (
+            <TouchableOpacity
+              key={o.id}
+              onPress={() => onCambiar(o.id)}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                alignItems: "center",
+                backgroundColor: activo ? colors.primary : colors.cardBg,
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 12,
+                  color: activo ? "#000" : colors.textSecondary,
+                }}
+              >
+                {o.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     );
+  };
 
-    if (encontrada) {
-      setEmpresaActiva(encontrada);
-      setBarberos(encontrada.barberos);
-      setServiciosEmpresa(encontrada.servicios);
-      setCodigoIngresado("");
-    } else {
+  const cargarCitasOcupadas = async (empresaId: string) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/citas/ocupadas?empresaId=${empresaId}`,
+      );
+      if (response.ok) setCitasOcupadas(await response.json());
+    } catch (error) {
+      console.error("Error al cargar horas ocupadas:", error);
+    }
+  };
+
+  const validarCodigoBarberia = async () => {
+    const cod = codigoIngresado.trim().toUpperCase();
+    if (!cod) {
+      Alert.alert("Código requerido", "Ingresa el código del establecimiento.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/empresas/validar/${cod}`,
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmpresaActiva(data.empresa);
+        setBarberos(data.barberos);
+        setServiciosEmpresa(data.servicios);
+        cargarCitasOcupadas(data.empresa.id);
+        setVistaCliente("RESERVAR");
+        setCodigoIngresado("");
+      } else {
+        Alert.alert(
+          "Código Inválido",
+          data.error || "Establecimiento no encontrado.",
+        );
+      }
+    } catch (error) {
+      console.error("Error al conectar con la API:", error);
       Alert.alert(
-        "Código Inválido",
-        "El código ingresado no corresponde a ningún establecimiento registrado.",
+        "Error de conexión",
+        "No fue posible conectar con el servidor backend. Verifica que el servidor esté activo.",
       );
     }
   };
 
-  const evaluarSiEstaBloqueado = (
-    barberoIdTarget: string,
-    fechaTarget: string,
-    diaSemanaTarget: string,
-    horaTarget: string,
-  ) => {
-    return bloqueos.some((b) => {
-      const coincideEmpleado =
-        b.barberoId === barberoIdTarget || b.barberoId === "TODOS";
-      if (!coincideEmpleado) return false;
+  const horariosDisponibles =
+    barberoSel && servicioSel && diaSel && empresaActiva
+      ? obtenerHorariosDisponibles({
+          empresa: empresaActiva,
+          barberoId: barberoSel.id,
+          servicio: servicioSel,
+          fecha: diaSel.fechaFull,
+          diaNom: diaSel.diaNom,
+          citas: [...citas, ...citasOcupadas],
+          bloqueos,
+          duracionMinimaServicios: serviciosEmpresa.length
+            ? Math.min(
+                ...serviciosEmpresa.map((s) => duracionEnMinutos(s.duracion)),
+              )
+            : undefined,
+        })
+      : [];
 
-      const coincideHora = b.hora === horaTarget || b.hora === "TODO_EL_DIA";
-      if (!coincideHora) return false;
-
-      if (b.frecuencia === "PUNTUAL" && b.fechaBase === fechaTarget)
-        return true;
-      if (
-        b.frecuencia === "SEMANAL_RECURRENTE" &&
-        b.diasSemana.includes(diaSemanaTarget)
-      )
-        return true;
-
-      return false;
-    });
-  };
-
-  const horariosDisponibles = HORARIOS_BASE.filter((h) => {
-    if (!barberoSel || !diaSel || !empresaActiva) return true;
-
-    const reservada = citas.some(
-      (c) =>
-        c.barberoId === barberoSel.id &&
-        c.fecha === diaSel.fechaFull &&
-        c.hora === h &&
-        c.estado !== "CANCELADA",
-    );
-
-    const bloqueada = evaluarSiEstaBloqueado(
-      barberoSel.id,
-      diaSel.fechaFull,
-      diaSel.diaNom,
-      h,
-    );
-
-    return !reservada && !bloqueada && !horaYaPaso(diaSel.fechaFull, h);
-  });
-
-  const agendarCita = () => {
+  const agendarCita = async () => {
     const telLimpio = celular.trim().toLowerCase();
-    const nomLimpio = nombre.trim().toLowerCase();
 
     const enListaNegra = listaNegra.some(
       (item) => item.telefono.toLowerCase() === telLimpio,
@@ -348,6 +447,49 @@ export default function HomeScreen() {
       return;
     }
 
+    if (!horariosDisponibles.includes(horaSel)) {
+      Alert.alert(
+        "Hora no disponible",
+        "Esa hora acaba de ocuparse. Por favor elige otra.",
+      );
+      setHoraSel("");
+      return;
+    }
+
+    // Enviamos la cita al servidor para que la guarde en la base de datos
+    let citaGuardada: any;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/citas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empresaId: empresaActiva?.id,
+          barberoId: barberoSel?.id,
+          servicioId: servicioSel?.id,
+          fecha: diaSel.fechaFull,
+          hora: horaSel,
+          nombre: nombre.trim(),
+          telefono: celular.trim(),
+          indicativo,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert("No se pudo agendar", data.error || "Intenta de nuevo.");
+        if (response.status === 409) {
+          setHoraSel("");
+          if (empresaActiva) cargarCitasOcupadas(empresaActiva.id);
+        }
+        return;
+      }
+      citaGuardada = data.cita;
+    } catch (error) {
+      console.error("Error al agendar:", error);
+      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
+      return;
+    }
+
     const yaEsCliente = clientesRegistrados.some(
       (c) => c.telefono.trim() === celular.trim(),
     );
@@ -357,6 +499,7 @@ export default function HomeScreen() {
         ...clientesRegistrados,
         {
           telefono: celular.trim(),
+          indicativo,
           nombre: nombre.trim(),
           fechaUltimaCita: diaSel.fechaFull,
           totalCitas: 1,
@@ -376,48 +519,69 @@ export default function HomeScreen() {
       );
     }
 
-    const nuevaCita = {
-      id: Date.now().toString(),
-      cliente: nombre,
-      telefono: celular,
-      servicio: servicioSel?.nombre,
-      barberoId: barberoSel?.id,
-      barberoNombre: barberoSel?.nombre,
-      empresaId: empresaActiva?.id,
-      fecha: diaSel.fechaFull,
-      hora: horaSel,
-      precio: servicioSel?.precio,
-      estado: "CONFIRMADA",
-    };
+    const nuevaCita = citaGuardada;
 
     setCitas([...citas, nuevaCita]);
-    Alert.alert(
-      "¡Cita confirmada!",
-      `Tu cita con ${barberoSel?.nombre} (${empresaActiva?.nombre}) quedó confirmada para el ${diaSel.fechaFull} a las ${horaSel}.`,
-    );
+    setCitaConfirmada({
+      negocio: empresaActiva?.nombre ?? "",
+      profesional: barberoSel?.nombre ?? "",
+      foto: barberoSel?.foto,
+      servicio: servicioSel?.nombre ?? "",
+      duracionMin: duracionEnMinutos(servicioSel?.duracion),
+      precio: servicioSel?.precio ?? 0,
+      fecha: diaSel.fechaFull,
+      hora: horaSel,
+    });
 
     setBarberoSel(null);
     setServicioSel(null);
     setHoraSel("");
     setNombre("");
     setCelular("");
-    setEsClienteReconocido(false);
+    setIndicativo(INDICATIVO_POR_DEFECTO);
+    setIndicativoManual(false);
     setAceptaHabeasData(false);
   };
 
-  const cambiarEstadoCita = (id: string, nuevoEstado: string) => {
+  const cambiarEstadoCita = async (id: string, nuevoEstado: string) => {
     const citaActualizada = citas.find((c) => c.id === id);
 
-    setCitas(
-      citas.map((c) =>
+    // Primero le pedimos permiso al servidor. Si lo rechaza, no cambiamos nada.
+    let datosServidor: any = {};
+    if (nuevoEstado === "CANCELADA") {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/citas/${id}/cancelar`,
+          { method: "PATCH", headers: { Authorization: `Bearer ${token}` } },
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          Alert.alert("No se pudo cancelar", data.error || "Intenta de nuevo.");
+          return;
+        }
+        datosServidor = data;
+      } catch (error) {
+        console.error("Error al cancelar:", error);
+        Alert.alert(
+          "Error de conexión",
+          "No se pudo conectar con el servidor.",
+        );
+        return;
+      }
+    }
+
+    setCitas((prev) =>
+      prev.map((c) =>
         c.id === id
           ? {
               ...c,
               estado: nuevoEstado,
               ...(nuevoEstado === "CANCELADA"
                 ? {
-                    canceladaEn: new Date().toISOString(),
-                    canceladaPor: barberoLogueado?.nombre,
+                    canceladaEn:
+                      datosServidor.canceladaEn ?? new Date().toISOString(),
+                    canceladaPor:
+                      datosServidor.canceladaPor ?? barberoLogueado?.nombre,
                   }
                 : {}),
             }
@@ -436,7 +600,7 @@ export default function HomeScreen() {
         }),
       };
 
-      setNotificacionesCliente([msjNotif, ...notificacionesCliente]);
+      setNotificacionesCliente((prev) => [msjNotif, ...prev]);
       setHayNotificacionesSinLeer(true);
     }
   };
@@ -488,30 +652,54 @@ export default function HomeScreen() {
         { text: "No", style: "cancel" },
         {
           text: "Sí, completado",
-          onPress: () => {
-            const ahora = new Date().toISOString();
-            setCitas((prev) =>
-              prev.map((x) =>
-                x.id === c.id
-                  ? {
-                      ...x,
-                      estado: "COMPLETADA",
-                      completadaEn: ahora,
-                      completadaPor: barberoLogueado?.nombre,
-                    }
-                  : x,
-              ),
-            );
-            setNotificacionesCliente((prev) => [
-              {
-                id: Date.now().toString(),
-                titulo: "✅ SERVICIO REGISTRADO",
-                mensaje: `Se registró tu servicio de ${c.servicio} con ${c.barberoNombre} a las ${formatearHora(ahora)}. Si no fue así, avisa al establecimiento.`,
-                fecha: formatearHora(ahora),
-              },
-              ...prev,
-            ]);
-            setHayNotificacionesSinLeer(true);
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/api/v1/citas/${c.id}/completar`,
+                {
+                  method: "PATCH",
+                  headers: { Authorization: `Bearer ${token}` },
+                },
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                Alert.alert(
+                  "No se pudo completar",
+                  data.error || "Intenta de nuevo.",
+                );
+                return;
+              }
+
+              const ahora = data.completadaEn;
+              setCitas((prev) =>
+                prev.map((x) =>
+                  x.id === c.id
+                    ? {
+                        ...x,
+                        estado: "COMPLETADA",
+                        completadaEn: data.completadaEn,
+                        completadaPor: data.completadaPor,
+                      }
+                    : x,
+                ),
+              );
+              setNotificacionesCliente((prev) => [
+                {
+                  id: Date.now().toString(),
+                  titulo: "✅ SERVICIO REGISTRADO",
+                  mensaje: `Se registró tu servicio de ${c.servicio} con ${c.barberoNombre} a las ${formatearHora(ahora)}. Si no fue así, avisa al establecimiento.`,
+                  fecha: formatearHora(ahora),
+                },
+                ...prev,
+              ]);
+              setHayNotificacionesSinLeer(true);
+            } catch (error) {
+              console.error("Error al completar:", error);
+              Alert.alert(
+                "Error de conexión",
+                "No se pudo conectar con el servidor.",
+              );
+            }
           },
         },
       ],
@@ -775,6 +963,85 @@ export default function HomeScreen() {
     ]);
   };
 
+  const elegirFotoProducto = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!r.canceled && r.assets?.length) setFotoProducto(r.assets[0].uri);
+  };
+
+  const cancelarEdicionProducto = () => {
+    setProductoEnEdicion(null);
+    setNombreProducto("");
+    setPrecioProducto("");
+    setFotoProducto(undefined);
+    setMostrarFormProducto(false);
+  };
+
+  const guardarProducto = () => {
+    const valor = parseInt(precioProducto.replace(/\D/g, ""), 10);
+    if (!nombreProducto.trim() || !valor) {
+      Alert.alert(
+        "Faltan datos",
+        "Escribe el nombre y el precio del producto.",
+      );
+      return;
+    }
+    if (!empresaActiva) return;
+
+    if (productoEnEdicion) {
+      setProductos(
+        productos.map((p) =>
+          p.id === productoEnEdicion.id
+            ? {
+                ...p,
+                nombre: nombreProducto.trim(),
+                precio: valor,
+                foto: fotoProducto,
+              }
+            : p,
+        ),
+      );
+    } else {
+      setProductos([
+        ...productos,
+        {
+          id: Date.now().toString(),
+          empresaId: empresaActiva.id,
+          nombre: nombreProducto.trim(),
+          precio: valor,
+          foto: fotoProducto,
+        },
+      ]);
+    }
+    cancelarEdicionProducto();
+  };
+
+  const iniciarEdicionProducto = (p: Producto) => {
+    setMostrarFormProducto(true);
+    setProductoEnEdicion(p);
+    setNombreProducto(p.nombre);
+    setPrecioProducto(p.precio.toString());
+    setFotoProducto(p.foto);
+  };
+
+  const eliminarProducto = (p: Producto) => {
+    Alert.alert("Confirmar", `¿Eliminar producto "${p.nombre}"?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => {
+          setProductos(productos.filter((x) => x.id !== p.id));
+          if (productoEnEdicion?.id === p.id) cancelarEdicionProducto();
+        },
+      },
+    ]);
+  };
+
   const agregarAListaNegra = () => {
     const tel = inputTelListaNegra.trim();
 
@@ -881,34 +1148,74 @@ export default function HomeScreen() {
     setListaNegra(listaNegra.filter((item) => item.id !== id));
   };
 
-  const iniciarSesionBarbero = () => {
-    let barberoEncontrado: any = null;
-    let empresaEncontrada: any = null;
-
-    Object.values(EMPRESAS_DB).forEach((emp: any) => {
-      const match = emp.barberos.find(
-        (b: any) =>
-          b.usuario.toLowerCase() === userInput.trim().toLowerCase() &&
-          b.clave === passInput.trim(),
+  const iniciarSesionBarbero = async () => {
+    if (!userInput.trim() || !passInput.trim()) {
+      Alert.alert(
+        "Campos requeridos",
+        "Por favor ingresa usuario y contraseña.",
       );
-      if (match) {
-        barberoEncontrado = match;
-        empresaEncontrada = emp;
-      }
-    });
+      return;
+    }
 
-    if (barberoEncontrado && empresaEncontrada) {
-      setEmpresaActiva(empresaEncontrada);
-      setBarberos(empresaEncontrada.barberos);
-      setServiciosEmpresa(empresaEncontrada.servicios);
-      setBarberoLogueado(barberoEncontrado);
-      setEmpleadoSupervisado(barberoEncontrado);
-      setPantallaActual("PANEL_BARBERO");
+    try {
+      // 1. Le preguntamos al servidor si el usuario y la clave son correctos
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuario: userInput,
+          clave: passInput,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert(
+          "Error de acceso",
+          data.error || "Credenciales incorrectas.",
+        );
+        return;
+      }
+
+      // 2. Con el código del negocio, traemos sus colores, equipo y servicios
+      const resNegocio = await fetch(
+        `${API_BASE_URL}/api/v1/empresas/validar/${data.barbero.empresaCodigo}`,
+      );
+      const negocio = await resNegocio.json();
+
+      if (!resNegocio.ok) {
+        Alert.alert(
+          "Error",
+          negocio.error || "No se pudieron cargar los datos del negocio.",
+        );
+        return;
+      }
+
+      // Traemos las citas reales. El servidor solo las entrega
+      // si mostramos el token que recibimos al iniciar sesión
+      const resAgenda = await fetch(`${API_BASE_URL}/api/v1/citas/agenda`, {
+        headers: { Authorization: `Bearer ${data.token}` },
+      });
+      setCitas(resAgenda.ok ? await resAgenda.json() : []);
+      setToken(data.token);
+
+      // 3. Guardamos todo y abrimos el panel
+      setEmpresaActiva(negocio.empresa);
+      setBarberos(negocio.barberos);
+      setServiciosEmpresa(negocio.servicios);
+      setBarberoLogueado(data.barbero);
+      setEmpleadoSupervisado(null);
       setMenuBarbero("AGENDAMIENTOS");
       setUserInput("");
       setPassInput("");
-    } else {
-      Alert.alert("Acceso Denegado", "Usuario o contraseña incorrectos.");
+      setPantallaActual("PANEL_BARBERO");
+      Alert.alert("¡Bienvenido!", `Hola, ${data.barbero.nombre}`);
+    } catch (error) {
+      console.error("Error en login:", error);
+      Alert.alert("Error de conexión", "No se pudo conectar con el servidor.");
     }
   };
 
@@ -916,77 +1223,6 @@ export default function HomeScreen() {
     barberoLogueado?.esAdmin && empleadoSupervisado
       ? empleadoSupervisado
       : barberoLogueado;
-
-  // LÓGICA DEL PANEL DE BLOQUEO ESTILO ALARMA / CALENDARIO
-  const alternarDiaSeleccionBloqueo = (diaClave: string) => {
-    if (diasBloqueoSeleccionados.includes(diaClave)) {
-      setDiasBloqueoSeleccionados(
-        diasBloqueoSeleccionados.filter((d) => d !== diaClave),
-      );
-    } else {
-      setDiasBloqueoSeleccionados([...diasBloqueoSeleccionados, diaClave]);
-    }
-  };
-
-  const alternarHoraSeleccionBloqueo = (horaStr: string) => {
-    if (horasBloqueoSeleccionadas.includes(horaStr)) {
-      setHorasBloqueoSeleccionadas(
-        horasBloqueoSeleccionadas.filter((h) => h !== horaStr),
-      );
-    } else {
-      setHorasBloqueoSeleccionadas([...horasBloqueoSeleccionadas, horaStr]);
-    }
-  };
-
-  const aplicarBloqueosEstiloAlarma = () => {
-    if (!profesionalActivoEnPanel) return;
-
-    if (horasBloqueoSeleccionadas.length === 0) {
-      Alert.alert(
-        "Selecciona Horas",
-        "Por favor selecciona al menos una hora a inhabilitar.",
-      );
-      return;
-    }
-
-    const nuevosBloqueos: BloqueoHorario[] = [];
-
-    // SI HAY DÍAS RECURRENTES SELECCIONADOS
-    if (diasBloqueoSeleccionados.length > 0) {
-      horasBloqueoSeleccionadas.forEach((horaItem) => {
-        nuevosBloqueos.push({
-          id: `${Date.now()}_${Math.random()}`,
-          barberoId: profesionalActivoEnPanel.id,
-          fechaBase: diaSel.fechaFull,
-          diasSemana: diasBloqueoSeleccionados,
-          hora: horaItem,
-          frecuencia: tipoBloqueoRecurrente ? "SEMANAL_RECURRENTE" : "PUNTUAL",
-        });
-      });
-    } else {
-      // BLOQUEO PUNTUAL ÚNICAMENTE PARA LA FECHA SELECCIONADA
-      horasBloqueoSeleccionadas.forEach((horaItem) => {
-        nuevosBloqueos.push({
-          id: `${Date.now()}_${Math.random()}`,
-          barberoId: profesionalActivoEnPanel.id,
-          fechaBase: diaSel.fechaFull,
-          diasSemana: [diaSel.diaNom],
-          hora: horaItem,
-          frecuencia: "PUNTUAL",
-        });
-      });
-    }
-
-    setBloqueos([...bloqueos, ...nuevosBloqueos]);
-
-    Alert.alert(
-      "¡Bloqueo Aplicado!",
-      `Se han bloqueado las horas seleccionadas para el profesional.`,
-    );
-
-    setDiasBloqueoSeleccionados([]);
-    setHorasBloqueoSeleccionadas([]);
-  };
 
   const citasDelPanelPorDia =
     profesionalActivoEnPanel && empresaActiva
@@ -997,11 +1233,42 @@ export default function HomeScreen() {
               c.empresaId === empresaActiva.id &&
               c.fecha === diaFiltroCitas.fechaFull,
           )
-          .sort(
-            (a, b) =>
-              HORARIOS_BASE.indexOf(a.hora) - HORARIOS_BASE.indexOf(b.hora),
-          )
+          .sort((a, b) => horaAMinutos(a.hora) - horaAMinutos(b.hora))
       : [];
+
+  // WhatsApp: arma el número internacional (solo dígitos) con el indicativo
+  // guardado en la cita. Las citas antiguas sin indicativo se tratan así:
+  // 10 dígitos -> Colombia (57); 11 a 15 dígitos -> ya traen indicativo.
+  const numeroParaWhatsApp = (
+    telefono?: string,
+    indicativoCita?: string,
+  ): string | null => {
+    const digitos = (telefono ?? "").replace(/\D/g, "");
+    if (!digitos) return null;
+    const ind = (indicativoCita ?? "").replace(/\D/g, "");
+    let numero: string;
+    if (ind) numero = `${ind}${digitos}`;
+    else if (digitos.length === 10) numero = `57${digitos}`;
+    else numero = digitos;
+    return numero.length >= 8 && numero.length <= 15 ? numero : null;
+  };
+
+  const abrirWhatsApp = async (telefono?: string, indicativoCita?: string) => {
+    const numero = numeroParaWhatsApp(telefono, indicativoCita);
+    if (!numero) {
+      Alert.alert(
+        "Sin número disponible",
+        "Este cliente no tiene un número de teléfono válido registrado.",
+      );
+      return;
+    }
+    try {
+      await Linking.openURL(`https://wa.me/${numero}`);
+    } catch (error) {
+      console.error("Error al abrir WhatsApp:", error);
+      Alert.alert("No se pudo abrir WhatsApp", "Verifica que esté instalado.");
+    }
+  };
 
   const calcularDiasTranscurridos = (fechaStr?: string) => {
     if (!fechaStr) return 999;
@@ -1081,65 +1348,6 @@ export default function HomeScreen() {
     return item.nombre.toLowerCase().includes(q) || item.telefono.includes(q);
   });
 
-  const obtenerCitasFiltradasPorPeriodo = (estadoBuscado: string) => {
-    if (!profesionalActivoEnPanel || !empresaActiva) return [];
-
-    return citas.filter((c) => {
-      const esDelEmpleado = c.barberoId === profesionalActivoEnPanel.id;
-      const esDeEmpresa = c.empresaId === empresaActiva.id;
-      const esAceptada = c.estado === estadoBuscado;
-
-      if (!esDelEmpleado || !esDeEmpresa || !esAceptada) return false;
-
-      if (filtroPeriodoCartera === "DIARIO") {
-        return c.fecha === diaFiltroCitas.fechaFull;
-      }
-
-      if (filtroPeriodoCartera === "SEMANAL") {
-        const sel = new Date(2026, 9, diaFiltroCitas.diaNumero);
-        const desdeLunes = (sel.getDay() + 6) % 7;
-        const inicioSemana = new Date(
-          2026,
-          9,
-          diaFiltroCitas.diaNumero - desdeLunes,
-        );
-        const finSemana = new Date(
-          2026,
-          9,
-          diaFiltroCitas.diaNumero - desdeLunes + 6,
-          23,
-          59,
-          59,
-        );
-        const [y, m, d] = c.fecha.split("-").map(Number);
-        const fechaCita = new Date(y, m - 1, d);
-        return fechaCita >= inicioSemana && fechaCita <= finSemana;
-      }
-
-      if (filtroPeriodoCartera === "MENSUAL") {
-        return c.fecha.startsWith("2026-10");
-      }
-
-      return false;
-    });
-  };
-
-  const citasFiltradasCartera = obtenerCitasFiltradasPorPeriodo("COMPLETADA");
-  const citasProyectadas = obtenerCitasFiltradasPorPeriodo("CONFIRMADA");
-
-  const recaudadoBruto = citasFiltradasCartera.reduce(
-    (sum, c) => sum + c.precio,
-    0,
-  );
-  const miPorcentaje = profesionalActivoEnPanel?.porcentajeGanancia ?? 50;
-  const miGananciaNeta = (recaudadoBruto * miPorcentaje) / 100;
-
-  const proyeccionBruta = citasProyectadas.reduce(
-    (sum, c) => sum + c.precio,
-    0,
-  );
-  const proyeccionGanancia = (proyeccionBruta * miPorcentaje) / 100;
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <StatusBar
@@ -1164,6 +1372,8 @@ export default function HomeScreen() {
             onPress={() => {
               setPantallaActual("SELECCION_ROL");
               setEmpresaActiva(null);
+              setUserInput("");
+              setPassInput("");
             }}
           >
             <Ionicons
@@ -1173,6 +1383,7 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
         ) : (
+          !modoEnlace &&
           pantallaActual !== "SELECCION_ROL" &&
           pantallaActual !== "PANEL_BARBERO" && (
             <TouchableOpacity
@@ -1391,313 +1602,438 @@ export default function HomeScreen() {
                   <View
                     style={{
                       flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
                       marginTop: 10,
+                      marginBottom: 6,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: colors.cardBorder,
+                      overflow: "hidden",
                     }}
                   >
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 0 },
-                      ]}
-                    >
-                      PASO 1 · SELECCIONA PROFESIONAL
-                    </Text>
-                    <TouchableOpacity onPress={() => setEmpresaActiva(null)}>
-                      <Text
+                    {(["RESERVAR", "PRODUCTOS"] as const).map((v) => (
+                      <TouchableOpacity
+                        key={v}
+                        onPress={() => setVistaCliente(v)}
                         style={{
-                          fontSize: 11,
-                          color: colors.textSecondary,
-                          textDecorationLine: "underline",
+                          flex: 1,
+                          paddingVertical: 10,
+                          alignItems: "center",
+                          backgroundColor:
+                            vistaCliente === v ? colors.primary : colors.cardBg,
                         }}
                       >
-                        Cambiar Código
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.grid2}>
-                    {(empresaActiva
-                      ? EMPRESAS_DB[empresaActiva.id].barberos
-                      : barberos
-                    ).map((b) => {
-                      const esSel = barberoSel?.id === b.id;
-                      return (
-                        <TouchableOpacity
-                          key={b.id}
-                          style={[
-                            styles.cardDark,
-                            {
-                              backgroundColor: colors.cardBg,
-                              borderColor: colors.cardBorder,
-                            },
-                            esSel && {
-                              borderColor: colors.primary,
-                              backgroundColor: colors.cardSelectedBg,
-                            },
-                          ]}
-                          onPress={() => setBarberoSel(b)}
-                        >
-                          <FotoBarbero
-                            nombre={b.nombre}
-                            foto={b.foto}
-                            color={colors.primary}
-                            forma="rectangulo"
-                          />
-                          <Text
-                            style={[
-                              styles.titleCard,
-                              { color: colors.textPrimary },
-                            ]}
-                          >
-                            {b.nombre}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.subCard,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {b.especialidad}
-                          </Text>
-                          <Text style={styles.teamTag}>{b.equipo}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                    SERVICIO
-                  </Text>
-                  <View style={styles.grid2}>
-                    {(empresaActiva
-                      ? EMPRESAS_DB[empresaActiva.id].servicios
-                      : serviciosEmpresa
-                    ).map((s) => {
-                      const esSel = servicioSel?.id === s.id;
-                      return (
-                        <TouchableOpacity
-                          key={s.id}
-                          style={[
-                            styles.cardDark,
-                            {
-                              backgroundColor: colors.cardBg,
-                              borderColor: colors.cardBorder,
-                            },
-                            esSel && {
-                              borderColor: colors.primary,
-                              backgroundColor: colors.cardSelectedBg,
-                            },
-                          ]}
-                          onPress={() => setServicioSel(s)}
-                        >
-                          <Text
-                            style={[
-                              styles.titleCard,
-                              { color: colors.textPrimary },
-                            ]}
-                          >
-                            {s.nombre}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.precioCard,
-                              { color: colors.primary },
-                            ]}
-                          >
-                            {s.duracion} · ${s.precio.toLocaleString("es-CO")}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                    PASO 2 · DÍA
-                  </Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{ marginBottom: 15 }}
-                  >
-                    {DIAS.filter((d) => d.fechaFull >= HOY_STR).map((d) => {
-                      const esSel = diaSel.id === d.id;
-                      return (
-                        <TouchableOpacity
-                          key={d.id}
-                          style={[
-                            styles.dayCard,
-                            {
-                              backgroundColor: colors.cardBg,
-                              borderColor: colors.cardBorder,
-                            },
-                            esSel && {
-                              borderColor: colors.primary,
-                              backgroundColor: colors.cardSelectedBg,
-                            },
-                          ]}
-                          onPress={() => {
-                            setDiaSel(d);
-                            setHoraSel("");
+                        <Text
+                          style={{
+                            fontWeight: "bold",
+                            color:
+                              vistaCliente === v
+                                ? "#000"
+                                : colors.textSecondary,
                           }}
                         >
-                          <Text
-                            style={[
-                              styles.dayName,
-                              esSel && { color: colors.primary },
-                            ]}
-                          >
-                            {d.diaNom}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.dayNum,
-                              { color: colors.textPrimary },
-                              esSel && { color: colors.primary },
-                            ]}
-                          >
-                            {d.num}
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 9,
-                              color: colors.textSecondary,
-                            }}
-                          >
-                            OCT
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
+                          {v === "RESERVAR" ? "Reservar" : "Productos"}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
 
-                  <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                    HORA DISPONIBLE ({horariosDisponibles.length} DISPONIBLES)
-                  </Text>
-                  {!barberoSel ? (
-                    <Text style={styles.infoText}>
-                      ⚠️ Selecciona primero un Profesional en el Paso 1.
-                    </Text>
-                  ) : (
-                    <View style={styles.grid4}>
-                      {horariosDisponibles.map((h) => {
-                        const esSel = horaSel === h;
-                        return (
+                  {vistaCliente === "PRODUCTOS" && (
+                    <View style={{ marginTop: 10 }}>
+                      <CatalogoProductos
+                        colors={colors}
+                        modo="cliente"
+                        empresaId={empresaActiva.id}
+                        productos={productos}
+                      />
+                    </View>
+                  )}
+
+                  {vistaCliente === "RESERVAR" && (
+                    <View>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginTop: 10,
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.pasoTag,
+                            { color: colors.primary, marginTop: 0 },
+                          ]}
+                        >
+                          PASO 1 · SELECCIONA PROFESIONAL
+                        </Text>
+                        {!modoEnlace && (
                           <TouchableOpacity
-                            key={h}
-                            style={[
-                              styles.timeCard,
-                              {
-                                backgroundColor: colors.cardBg,
-                                borderColor: colors.cardBorder,
-                              },
-                              esSel && {
-                                borderColor: colors.primary,
-                                backgroundColor: colors.cardSelectedBg,
-                              },
-                            ]}
-                            onPress={() => setHoraSel(h)}
+                            onPress={() => setEmpresaActiva(null)}
                           >
                             <Text
-                              style={[
-                                styles.timeText,
-                                { color: colors.textPrimary },
-                                esSel && { color: colors.primary },
-                              ]}
+                              style={{
+                                fontSize: 11,
+                                color: colors.textSecondary,
+                                textDecorationLine: "underline",
+                              }}
                             >
-                              {h}
+                              Cambiar Código
                             </Text>
                           </TouchableOpacity>
-                        );
-                      })}
+                        )}
+                      </View>
+
+                      {/* ✅ CÓDIGO CORREGIDO: */}
+                      <View style={styles.grid2}>
+                        {barberos.map((b) => {
+                          const esSel = barberoSel?.id === b.id;
+                          return (
+                            <TouchableOpacity
+                              key={b.id}
+                              style={[
+                                styles.cardDark,
+                                {
+                                  backgroundColor: colors.cardBg,
+                                  borderColor: colors.cardBorder,
+                                },
+                                esSel && {
+                                  borderColor: colors.primary,
+                                  backgroundColor: colors.cardSelectedBg,
+                                },
+                              ]}
+                              onPress={() => {
+                                setBarberoSel(b);
+                                setHoraSel("");
+                              }}
+                            >
+                              <FotoBarbero
+                                nombre={b.nombre}
+                                foto={b.foto}
+                                color={colors.primary}
+                                forma="rectangulo"
+                              />
+                              <Text
+                                style={[
+                                  styles.titleCard,
+                                  { color: colors.textPrimary },
+                                ]}
+                              >
+                                {b.nombre}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.subCard,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                {b.especialidad}
+                              </Text>
+                              <Text style={styles.teamTag}>{b.equipo}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        SERVICIO
+                      </Text>
+                      <View style={styles.grid2}>
+                        {serviciosEmpresa.map((s) => {
+                          const esSel = servicioSel?.id === s.id;
+                          return (
+                            <TouchableOpacity
+                              key={s.id}
+                              style={[
+                                styles.cardDark,
+                                {
+                                  backgroundColor: colors.cardBg,
+                                  borderColor: colors.cardBorder,
+                                },
+                                esSel && {
+                                  borderColor: colors.primary,
+                                  backgroundColor: colors.cardSelectedBg,
+                                },
+                              ]}
+                              onPress={() => {
+                                setServicioSel(s);
+                                setHoraSel("");
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.titleCard,
+                                  { color: colors.textPrimary },
+                                ]}
+                              >
+                                {s.nombre}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.precioCard,
+                                  { color: colors.primary },
+                                ]}
+                              >
+                                {s.duracion} · $
+                                {s.precio.toLocaleString("es-CO")}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        PASO 2 · DÍA
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginBottom: 15 }}
+                      >
+                        {DIAS.filter((d) => d.fechaFull >= HOY_STR).map((d) => {
+                          const esSel = diaSel.id === d.id;
+                          return (
+                            <TouchableOpacity
+                              key={d.id}
+                              style={[
+                                styles.dayCard,
+                                {
+                                  backgroundColor: colors.cardBg,
+                                  borderColor: colors.cardBorder,
+                                },
+                                esSel && {
+                                  borderColor: colors.primary,
+                                  backgroundColor: colors.cardSelectedBg,
+                                },
+                              ]}
+                              onPress={() => {
+                                setDiaSel(d);
+                                setHoraSel("");
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.dayName,
+                                  esSel && { color: colors.primary },
+                                ]}
+                              >
+                                {d.diaNom}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.dayNum,
+                                  { color: colors.textPrimary },
+                                  esSel && { color: colors.primary },
+                                ]}
+                              >
+                                {d.num}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 9,
+                                  color: colors.textSecondary,
+                                }}
+                              >
+                                OCT
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        HORA DISPONIBLE ({horariosDisponibles.length}{" "}
+                        DISPONIBLES)
+                      </Text>
+                      {!barberoSel || !servicioSel ? (
+                        <Text style={styles.infoText}>
+                          ⚠️ Selecciona primero un profesional y un servicio.
+                        </Text>
+                      ) : (
+                        <SelectorHoras
+                          horarios={horariosDisponibles}
+                          horaSel={horaSel}
+                          onSeleccionar={setHoraSel}
+                          colors={colors}
+                        />
+                      )}
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        PASO 3 · TUS DATOS
+                      </Text>
+
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <TouchableOpacity
+                          style={[
+                            styles.inputDark,
+                            {
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.cardBorder,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            },
+                          ]}
+                          onPress={() => setMostrarPaises(true)}
+                          accessibilityLabel="Elegir indicativo del país"
+                        >
+                          <Text
+                            style={{
+                              color: colors.textPrimary,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            +{indicativo}
+                          </Text>
+                          <Ionicons
+                            name="chevron-down"
+                            size={14}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                        <TextInput
+                          style={[
+                            styles.inputDark,
+                            {
+                              flex: 1,
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.cardBorder,
+                              color: colors.textPrimary,
+                            },
+                          ]}
+                          placeholder="Teléfono / Celular"
+                          placeholderTextColor={colors.textSecondary}
+                          keyboardType="phone-pad"
+                          value={celular}
+                          onChangeText={manejarCambioTelefono}
+                        />
+                      </View>
+                      {celular.trim() !== "" && (
+                        <Text
+                          style={{
+                            color: colors.textSecondary,
+                            fontSize: 11,
+                            marginTop: -4,
+                            marginBottom: 10,
+                          }}
+                        >
+                          País:{" "}
+                          {PAISES.find((p) => p.indicativo === indicativo)
+                            ?.nombre ?? `+${indicativo}`}{" "}
+                          · si no es, toca el +{indicativo} para cambiarlo
+                        </Text>
+                      )}
+
+                      <Modal
+                        visible={mostrarPaises}
+                        transparent
+                        animationType="fade"
+                        onRequestClose={() => setMostrarPaises(false)}
+                      >
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            backgroundColor: "rgba(0,0,0,0.6)",
+                            justifyContent: "center",
+                            padding: 24,
+                          }}
+                          activeOpacity={1}
+                          onPress={() => setMostrarPaises(false)}
+                        >
+                          <View
+                            style={{
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                              borderWidth: 1,
+                              borderRadius: 10,
+                              padding: 8,
+                            }}
+                          >
+                            <ScrollView style={{ maxHeight: 380 }}>
+                              {PAISES.map((p) => (
+                                <TouchableOpacity
+                                  key={p.indicativo}
+                                  style={{
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    padding: 12,
+                                  }}
+                                  onPress={() => {
+                                    setIndicativo(p.indicativo);
+                                    setIndicativoManual(true);
+                                    setMostrarPaises(false);
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color:
+                                        p.indicativo === indicativo
+                                          ? colors.primary
+                                          : colors.textPrimary,
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {p.nombre}
+                                  </Text>
+                                  <Text style={{ color: colors.textSecondary }}>
+                                    +{p.indicativo}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                          </View>
+                        </TouchableOpacity>
+                      </Modal>
+
+                      <TextInput
+                        style={[
+                          styles.inputDark,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.cardBorder,
+                            color: colors.textPrimary,
+                          },
+                        ]}
+                        placeholder="Nombre Completo"
+                        placeholderTextColor={colors.textSecondary}
+                        value={nombre}
+                        onChangeText={setNombre}
+                      />
+
+                      <TouchableOpacity
+                        style={styles.boxHabeasData}
+                        onPress={() => setAceptaHabeasData(!aceptaHabeasData)}
+                      >
+                        <Ionicons
+                          name={
+                            aceptaHabeasData ? "checkbox" : "square-outline"
+                          }
+                          size={22}
+                          color={colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.textHabeasData,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          Autorizo el tratamiento de mis datos personales
+                          exclusivamente para la gestión de mi cita (Ley 1581 de
+                          2012).
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.btnGoldAction,
+                          { backgroundColor: colors.primary },
+                        ]}
+                        onPress={agendarCita}
+                      >
+                        <Text style={styles.btnGoldText}>
+                          CONFIRMAR RESERVA
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   )}
-
-                  <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                    PASO 3 · TUS DATOS
-                  </Text>
-
-                  <TextInput
-                    style={[
-                      styles.inputDark,
-                      {
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.cardBorder,
-                        color: colors.textPrimary,
-                      },
-                    ]}
-                    placeholder="Teléfono / Celular"
-                    placeholderTextColor={colors.textSecondary}
-                    keyboardType="phone-pad"
-                    value={celular}
-                    onChangeText={manejarCambioTelefono}
-                  />
-
-                  {esClienteReconocido ? (
-                    <View
-                      style={{
-                        padding: 10,
-                        backgroundColor: "#166534",
-                        borderRadius: 6,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#FFF",
-                          fontSize: 12,
-                          fontWeight: "bold",
-                        }}
-                      ></Text>
-                    </View>
-                  ) : (
-                    <TextInput
-                      style={[
-                        styles.inputDark,
-                        {
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.cardBorder,
-                          color: colors.textPrimary,
-                        },
-                      ]}
-                      placeholder="Nombre Completo"
-                      placeholderTextColor={colors.textSecondary}
-                      value={nombre}
-                      onChangeText={setNombre}
-                    />
-                  )}
-
-                  <TouchableOpacity
-                    style={styles.boxHabeasData}
-                    onPress={() => setAceptaHabeasData(!aceptaHabeasData)}
-                  >
-                    <Ionicons
-                      name={aceptaHabeasData ? "checkbox" : "square-outline"}
-                      size={22}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.textHabeasData,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      Autorizo el tratamiento de mis datos personales
-                      exclusivamente para la gestión de mi cita (Ley 1581 de
-                      2012).
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.btnGoldAction,
-                      { backgroundColor: colors.primary },
-                    ]}
-                    onPress={agendarCita}
-                  >
-                    <Text style={styles.btnGoldText}>CONFIRMAR RESERVA</Text>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -1974,14 +2310,48 @@ export default function HomeScreen() {
                           >
                             {c.cliente}
                           </Text>
-                          <Text
-                            style={[
-                              styles.subCard,
-                              { color: colors.textSecondary },
-                            ]}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
                           >
-                            📞 {c.telefono}
-                          </Text>
+                            <Text
+                              style={[
+                                styles.subCard,
+                                { color: colors.textSecondary },
+                              ]}
+                            >
+                              📞 {c.indicativo ? `+${c.indicativo} ` : ""}
+                              {c.telefono}
+                            </Text>
+                            <TouchableOpacity
+                              onPress={() =>
+                                abrirWhatsApp(c.telefono, c.indicativo)
+                              }
+                              accessibilityLabel={`Escribir por WhatsApp a ${c.cliente}`}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              style={{
+                                opacity: numeroParaWhatsApp(
+                                  c.telefono,
+                                  c.indicativo,
+                                )
+                                  ? 1
+                                  : 0.35,
+                              }}
+                            >
+                              <Ionicons
+                                name="logo-whatsapp"
+                                size={26}
+                                color={
+                                  numeroParaWhatsApp(c.telefono, c.indicativo)
+                                    ? "#25D366"
+                                    : colors.textSecondary
+                                }
+                              />
+                            </TouchableOpacity>
+                          </View>
                           <Text
                             style={[
                               styles.subCard,
@@ -2097,271 +2467,801 @@ export default function HomeScreen() {
                       bloqueos={bloqueos}
                       setBloqueos={setBloqueos}
                       citas={citas}
-                      horarios={HORARIOS_BASE}
+                      apertura={empresaActiva.horarioApertura}
+                      cierre={empresaActiva.horarioCierre}
                     />
                   )}
 
-                {/* TAB 3: HISTORIAL DE CLIENTES CON OPCIÓN DE BLOQUEO Y DESBLOQUEO DIRECTO */}
-                {menuBarbero === "CLIENTES" && (
-                  <View>
-                    <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                      📋 HISTORIAL DE CLIENTES Y FRECUENCIA
-                    </Text>
+                {/* TAB 3: CLIENTES (HISTORIAL + LISTA NEGRA) */}
+                {menuBarbero === "CLIENTES" &&
+                  barberoLogueado.esAdmin &&
+                  dibujarSelector(
+                    [
+                      { id: "HISTORIAL", label: "Historial" },
+                      { id: "LISTA_NEGRA", label: "Lista negra" },
+                    ],
+                    subClientes,
+                    setSubClientes,
+                  )}
 
-                    {/* SELECTOR DE ESTADO CLIENTE */}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        backgroundColor: colors.cardBg,
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: colors.cardBorder,
-                        padding: 4,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroEstadoCliente === "TODOS" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroEstadoCliente("TODOS")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroEstadoCliente === "TODOS"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Todos ({listaClientesFiltrados.length})
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroEstadoCliente === "ACTIVOS" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroEstadoCliente("ACTIVOS")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroEstadoCliente === "ACTIVOS"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Activos / Frecuentes
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnSegment,
-                          filtroEstadoCliente === "INACTIVOS" && {
-                            backgroundColor: colors.primary,
-                          },
-                        ]}
-                        onPress={() => setFiltroEstadoCliente("INACTIVOS")}
-                      >
-                        <Text
-                          style={[
-                            styles.btnSegmentText,
-                            filtroEstadoCliente === "INACTIVOS"
-                              ? { color: "#000" }
-                              : { color: colors.textSecondary },
-                          ]}
-                        >
-                          Inactivos
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* FILTRO DE ORDENAMIENTO ASCENDENTE / DESCENDENTE */}
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        color: colors.textSecondary,
-                        fontWeight: "bold",
-                        marginBottom: 6,
-                      }}
-                    >
-                      ORDENAR POR:
-                    </Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={{ marginBottom: 15 }}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          styles.btnOrdenPill,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                          criterioOrdenCliente === "DIAS_DESC" && {
-                            borderColor: colors.primary,
-                            backgroundColor: colors.cardSelectedBg,
-                          },
-                        ]}
-                        onPress={() => setCriterioOrdenCliente("DIAS_DESC")}
-                      >
-                        <Ionicons
-                          name="arrow-down-outline"
-                          size={12}
-                          color={
-                            criterioOrdenCliente === "DIAS_DESC"
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.textOrdenPill,
-                            { color: colors.textSecondary },
-                            criterioOrdenCliente === "DIAS_DESC" && {
-                              color: colors.primary,
-                            },
-                          ]}
-                        >
-                          Más tiempo sin venir
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnOrdenPill,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                          criterioOrdenCliente === "DIAS_ASC" && {
-                            borderColor: colors.primary,
-                            backgroundColor: colors.cardSelectedBg,
-                          },
-                        ]}
-                        onPress={() => setCriterioOrdenCliente("DIAS_ASC")}
-                      >
-                        <Ionicons
-                          name="arrow-up-outline"
-                          size={12}
-                          color={
-                            criterioOrdenCliente === "DIAS_ASC"
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.textOrdenPill,
-                            { color: colors.textSecondary },
-                            criterioOrdenCliente === "DIAS_ASC" && {
-                              color: colors.primary,
-                            },
-                          ]}
-                        >
-                          Más recientes
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnOrdenPill,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                          criterioOrdenCliente === "CITAS_DESC" && {
-                            borderColor: colors.primary,
-                            backgroundColor: colors.cardSelectedBg,
-                          },
-                        ]}
-                        onPress={() => setCriterioOrdenCliente("CITAS_DESC")}
-                      >
-                        <Ionicons
-                          name="arrow-down-outline"
-                          size={12}
-                          color={
-                            criterioOrdenCliente === "CITAS_DESC"
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.textOrdenPill,
-                            { color: colors.textSecondary },
-                            criterioOrdenCliente === "CITAS_DESC" && {
-                              color: colors.primary,
-                            },
-                          ]}
-                        >
-                          Mayor nº de citas
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.btnOrdenPill,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                          criterioOrdenCliente === "CITAS_ASC" && {
-                            borderColor: colors.primary,
-                            backgroundColor: colors.cardSelectedBg,
-                          },
-                        ]}
-                        onPress={() => setCriterioOrdenCliente("CITAS_ASC")}
-                      >
-                        <Ionicons
-                          name="arrow-up-outline"
-                          size={12}
-                          color={
-                            criterioOrdenCliente === "CITAS_ASC"
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.textOrdenPill,
-                            { color: colors.textSecondary },
-                            criterioOrdenCliente === "CITAS_ASC" && {
-                              color: colors.primary,
-                            },
-                          ]}
-                        >
-                          Menor nº de citas
-                        </Text>
-                      </TouchableOpacity>
-                    </ScrollView>
-
-                    {listaClientesFiltrados.length === 0 ? (
-                      <Text style={styles.infoText}>
-                        No hay clientes registrados en este grupo.
+                {menuBarbero === "CLIENTES" &&
+                  (subClientes === "HISTORIAL" || !barberoLogueado.esAdmin) && (
+                    <View>
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        📋 HISTORIAL DE CLIENTES Y FRECUENCIA
                       </Text>
-                    ) : (
-                      listaClientesFiltrados.map((cli, idx) => {
-                        const estaBloqueado = listaNegra.some(
-                          (b) =>
-                            b.telefono.trim().toLowerCase() ===
-                              cli.telefono.trim().toLowerCase() ||
-                            b.nombre.trim().toLowerCase() ===
-                              cli.nombre.trim().toLowerCase(),
-                        );
 
-                        return (
+                      {/* SELECTOR DE ESTADO CLIENTE */}
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          backgroundColor: colors.cardBg,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: colors.cardBorder,
+                          padding: 4,
+                          marginBottom: 10,
+                        }}
+                      >
+                        <TouchableOpacity
+                          style={[
+                            styles.btnSegment,
+                            filtroEstadoCliente === "TODOS" && {
+                              backgroundColor: colors.primary,
+                            },
+                          ]}
+                          onPress={() => setFiltroEstadoCliente("TODOS")}
+                        >
+                          <Text
+                            style={[
+                              styles.btnSegmentText,
+                              filtroEstadoCliente === "TODOS"
+                                ? { color: "#000" }
+                                : { color: colors.textSecondary },
+                            ]}
+                          >
+                            Todos ({listaClientesFiltrados.length})
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.btnSegment,
+                            filtroEstadoCliente === "ACTIVOS" && {
+                              backgroundColor: colors.primary,
+                            },
+                          ]}
+                          onPress={() => setFiltroEstadoCliente("ACTIVOS")}
+                        >
+                          <Text
+                            style={[
+                              styles.btnSegmentText,
+                              filtroEstadoCliente === "ACTIVOS"
+                                ? { color: "#000" }
+                                : { color: colors.textSecondary },
+                            ]}
+                          >
+                            Activos / Frecuentes
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.btnSegment,
+                            filtroEstadoCliente === "INACTIVOS" && {
+                              backgroundColor: colors.primary,
+                            },
+                          ]}
+                          onPress={() => setFiltroEstadoCliente("INACTIVOS")}
+                        >
+                          <Text
+                            style={[
+                              styles.btnSegmentText,
+                              filtroEstadoCliente === "INACTIVOS"
+                                ? { color: "#000" }
+                                : { color: colors.textSecondary },
+                            ]}
+                          >
+                            Inactivos
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* FILTRO DE ORDENAMIENTO ASCENDENTE / DESCENDENTE */}
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: colors.textSecondary,
+                          fontWeight: "bold",
+                          marginBottom: 6,
+                        }}
+                      >
+                        ORDENAR POR:
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ marginBottom: 15 }}
+                      >
+                        <TouchableOpacity
+                          style={[
+                            styles.btnOrdenPill,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                            },
+                            criterioOrdenCliente === "DIAS_DESC" && {
+                              borderColor: colors.primary,
+                              backgroundColor: colors.cardSelectedBg,
+                            },
+                          ]}
+                          onPress={() => setCriterioOrdenCliente("DIAS_DESC")}
+                        >
+                          <Ionicons
+                            name="arrow-down-outline"
+                            size={12}
+                            color={
+                              criterioOrdenCliente === "DIAS_DESC"
+                                ? colors.primary
+                                : colors.textSecondary
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.textOrdenPill,
+                              { color: colors.textSecondary },
+                              criterioOrdenCliente === "DIAS_DESC" && {
+                                color: colors.primary,
+                              },
+                            ]}
+                          >
+                            Más tiempo sin venir
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.btnOrdenPill,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                            },
+                            criterioOrdenCliente === "DIAS_ASC" && {
+                              borderColor: colors.primary,
+                              backgroundColor: colors.cardSelectedBg,
+                            },
+                          ]}
+                          onPress={() => setCriterioOrdenCliente("DIAS_ASC")}
+                        >
+                          <Ionicons
+                            name="arrow-up-outline"
+                            size={12}
+                            color={
+                              criterioOrdenCliente === "DIAS_ASC"
+                                ? colors.primary
+                                : colors.textSecondary
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.textOrdenPill,
+                              { color: colors.textSecondary },
+                              criterioOrdenCliente === "DIAS_ASC" && {
+                                color: colors.primary,
+                              },
+                            ]}
+                          >
+                            Más recientes
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.btnOrdenPill,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                            },
+                            criterioOrdenCliente === "CITAS_DESC" && {
+                              borderColor: colors.primary,
+                              backgroundColor: colors.cardSelectedBg,
+                            },
+                          ]}
+                          onPress={() => setCriterioOrdenCliente("CITAS_DESC")}
+                        >
+                          <Ionicons
+                            name="arrow-down-outline"
+                            size={12}
+                            color={
+                              criterioOrdenCliente === "CITAS_DESC"
+                                ? colors.primary
+                                : colors.textSecondary
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.textOrdenPill,
+                              { color: colors.textSecondary },
+                              criterioOrdenCliente === "CITAS_DESC" && {
+                                color: colors.primary,
+                              },
+                            ]}
+                          >
+                            Mayor nº de citas
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.btnOrdenPill,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                            },
+                            criterioOrdenCliente === "CITAS_ASC" && {
+                              borderColor: colors.primary,
+                              backgroundColor: colors.cardSelectedBg,
+                            },
+                          ]}
+                          onPress={() => setCriterioOrdenCliente("CITAS_ASC")}
+                        >
+                          <Ionicons
+                            name="arrow-up-outline"
+                            size={12}
+                            color={
+                              criterioOrdenCliente === "CITAS_ASC"
+                                ? colors.primary
+                                : colors.textSecondary
+                            }
+                          />
+                          <Text
+                            style={[
+                              styles.textOrdenPill,
+                              { color: colors.textSecondary },
+                              criterioOrdenCliente === "CITAS_ASC" && {
+                                color: colors.primary,
+                              },
+                            ]}
+                          >
+                            Menor nº de citas
+                          </Text>
+                        </TouchableOpacity>
+                      </ScrollView>
+
+                      {listaClientesFiltrados.length === 0 ? (
+                        <Text style={styles.infoText}>
+                          No hay clientes registrados en este grupo.
+                        </Text>
+                      ) : (
+                        listaClientesFiltrados.map((cli, idx) => {
+                          const estaBloqueado = listaNegra.some(
+                            (b) =>
+                              b.telefono.trim().toLowerCase() ===
+                                cli.telefono.trim().toLowerCase() ||
+                              b.nombre.trim().toLowerCase() ===
+                                cli.nombre.trim().toLowerCase(),
+                          );
+
+                          return (
+                            <View
+                              key={idx}
+                              style={[
+                                styles.cardServicioRealizado,
+                                {
+                                  backgroundColor: colors.cardBg,
+                                  borderColor: colors.cardBorder,
+                                },
+                              ]}
+                            >
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={[
+                                    styles.titleCard,
+                                    { color: colors.textPrimary },
+                                  ]}
+                                >
+                                  👤 {cli.nombre}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.subCard,
+                                    { color: colors.textSecondary },
+                                  ]}
+                                >
+                                  📞 Teléfono: {cli.telefono}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.subCard,
+                                    { color: colors.textSecondary },
+                                  ]}
+                                >
+                                  📅 Última visita:{" "}
+                                  {cli.fechaUltimaCita
+                                    ? `${cli.fechaUltimaCita} (${
+                                        cli.diasTranscurridos === 0
+                                          ? "Hoy"
+                                          : `hace ${cli.diasTranscurridos} días`
+                                      })`
+                                    : "Sin registro"}
+                                </Text>
+                              </View>
+
+                              <View style={{ alignItems: "flex-end", gap: 6 }}>
+                                <Text
+                                  style={[
+                                    styles.badgeState,
+                                    cli.estadoCliente === "ACTIVO"
+                                      ? {
+                                          backgroundColor: "#166534",
+                                          color: "#FFF",
+                                        }
+                                      : {
+                                          backgroundColor: "#854D0E",
+                                          color: "#FFF",
+                                        },
+                                  ]}
+                                >
+                                  {cli.estadoCliente === "ACTIVO"
+                                    ? "FRECUENTE / ACTIVO"
+                                    : "INACTIVO"}
+                                </Text>
+
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 8,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      fontSize: 10,
+                                      color: colors.primary,
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {cli.totalCitasCalculado} Citas
+                                  </Text>
+
+                                  {/* BOTÓN TOGGLE DE BLOQUEO / DESBLOQUEO EN TIEMPO REAL */}
+                                  {barberoLogueado?.esAdmin && (
+                                    <TouchableOpacity
+                                      style={{
+                                        backgroundColor: estaBloqueado
+                                          ? "#166534"
+                                          : "#7F1D1D",
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 4,
+                                        borderRadius: 4,
+                                      }}
+                                      onPress={() =>
+                                        alternarBloqueoClienteDirecto(
+                                          cli.nombre,
+                                          cli.telefono,
+                                        )
+                                      }
+                                    >
+                                      <Text
+                                        style={{
+                                          color: "#FFF",
+                                          fontSize: 9,
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {estaBloqueado
+                                          ? "✅ Desbloquear"
+                                          : "🚫 Bloquear"}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  )}
+                                </View>
+                              </View>
+                            </View>
+                          );
+                        })
+                      )}
+                    </View>
+                  )}
+
+                {/* TAB 4: NEGOCIO (EQUIPO, SERVICIOS Y PRODUCTOS) */}
+                {menuBarbero === "NEGOCIO" &&
+                  barberoLogueado.esAdmin &&
+                  dibujarSelector(
+                    [
+                      { id: "EQUIPO", label: "Equipo" },
+                      { id: "SERVICIOS", label: "Servicios" },
+                      { id: "PRODUCTOS", label: "Productos" },
+                    ],
+                    subNegocio,
+                    setSubNegocio,
+                  )}
+
+                {menuBarbero === "NEGOCIO" && barberoLogueado.esAdmin && (
+                  <View>
+                    {subNegocio === "EQUIPO" && (
+                      <>
+                        {/* ACORDEÓN FORMULARIO INTEGRANTE */}
+                        <TouchableOpacity
+                          style={[
+                            styles.headerAcordeonForm,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                              marginTop: 15,
+                            },
+                          ]}
+                          onPress={() =>
+                            setMostrarFormIntegrante(!mostrarFormIntegrante)
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.titleAcordeon,
+                              { color: colors.primary },
+                            ]}
+                          >
+                            {integranteEnEdicion
+                              ? "✏️ EDITANDO INTEGRANTE"
+                              : "➕ REGISTRAR NUEVO INTEGRANTE"}
+                          </Text>
+                          <Ionicons
+                            name={
+                              mostrarFormIntegrante
+                                ? "chevron-up"
+                                : "chevron-down"
+                            }
+                            size={20}
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+
+                        {mostrarFormIntegrante && (
                           <View
-                            key={idx}
+                            style={[
+                              styles.bodyAcordeonForm,
+                              {
+                                backgroundColor: colors.cardBg,
+                                borderColor: colors.cardBorder,
+                              },
+                            ]}
+                          >
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Nombre Completo"
+                              placeholderTextColor={colors.textSecondary}
+                              value={nuevoNombreBarbero}
+                              onChangeText={setNuevoNombreBarbero}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Usuario para ingresar"
+                              placeholderTextColor={colors.textSecondary}
+                              autoCapitalize="none"
+                              value={nuevoUsuarioBarbero}
+                              onChangeText={setNuevoUsuarioBarbero}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Contraseña"
+                              placeholderTextColor={colors.textSecondary}
+                              secureTextEntry
+                              value={nuevaClaveBarbero}
+                              onChangeText={setNuevaClaveBarbero}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Especialidad (ej: Colorimetría · Manicure)"
+                              placeholderTextColor={colors.textSecondary}
+                              value={nuevaEspecialidadBarbero}
+                              onChangeText={setNuevaEspecialidadBarbero}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Porcentaje de Comisión % (Ej: 50)"
+                              placeholderTextColor={colors.textSecondary}
+                              keyboardType="numeric"
+                              value={nuevoPorcentajeBarbero}
+                              onChangeText={setNuevoPorcentajeBarbero}
+                            />
+
+                            <View style={{ flexDirection: "row", gap: 10 }}>
+                              <TouchableOpacity
+                                style={[
+                                  styles.btnGoldAction,
+                                  { backgroundColor: colors.primary, flex: 1 },
+                                ]}
+                                onPress={guardarIntegrante}
+                              >
+                                <Text style={styles.btnGoldText}>
+                                  {integranteEnEdicion
+                                    ? "GUARDAR CAMBIOS"
+                                    : "REGISTRAR INTEGRANTE"}
+                                </Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                style={[
+                                  styles.btnGoldAction,
+                                  { backgroundColor: "#333", flex: 1 },
+                                ]}
+                                onPress={cancelarEdicionIntegrante}
+                              >
+                                <Text
+                                  style={[
+                                    styles.btnGoldText,
+                                    { color: "#FFF" },
+                                  ]}
+                                >
+                                  CANCELAR
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        )}
+
+                        <Text
+                          style={[
+                            styles.pasoTag,
+                            { color: colors.primary, marginTop: 20 },
+                          ]}
+                        >
+                          INTEGRANTES REGISTRADOS ({barberos.length})
+                        </Text>
+                        {barberos.map((b) => (
+                          <View
+                            key={b.id}
+                            style={[
+                              styles.cardServicioRealizado,
+                              {
+                                backgroundColor: colors.cardBg,
+                                borderColor: colors.cardBorder,
+                              },
+                            ]}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <FotoBarbero
+                                nombre={b.nombre}
+                                foto={b.foto}
+                                color={colors.primary}
+                                editable
+                                onCambiar={(uri) =>
+                                  guardarFotoBarbero(b.id, uri)
+                                }
+                              />
+                              <Text
+                                style={[
+                                  styles.titleCard,
+                                  { color: colors.textPrimary },
+                                ]}
+                              >
+                                {b.nombre} {b.esAdmin && "👑 (Admin)"}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.subCard,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                {b.especialidad} · Comisión:{" "}
+                                {b.porcentajeGanancia}%
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 10,
+                                  color: colors.textSecondary,
+                                  marginTop: 2,
+                                }}
+                              >
+                                Usuario: {b.usuario}
+                              </Text>
+                            </View>
+
+                            <View style={{ flexDirection: "row", gap: 12 }}>
+                              <TouchableOpacity
+                                onPress={() => iniciarEdicionIntegrante(b)}
+                              >
+                                <Ionicons
+                                  name="create-outline"
+                                  size={20}
+                                  color={colors.primary}
+                                />
+                              </TouchableOpacity>
+                              {!b.esAdmin && (
+                                <TouchableOpacity
+                                  onPress={() =>
+                                    eliminarBarberoDelEquipo(
+                                      b.id,
+                                      b.nombre,
+                                      b.esAdmin,
+                                    )
+                                  }
+                                >
+                                  <Ionicons
+                                    name="trash-outline"
+                                    size={20}
+                                    color="#EF4444"
+                                  />
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          </View>
+                        ))}
+                      </>
+                    )}
+
+                    {subNegocio === "SERVICIOS" && (
+                      <>
+                        {/* ACORDEÓN FORMULARIO SERVICIO */}
+                        <TouchableOpacity
+                          style={[
+                            styles.headerAcordeonForm,
+                            {
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.cardBorder,
+                              marginTop: 20,
+                            },
+                          ]}
+                          onPress={() =>
+                            setMostrarFormServicio(!mostrarFormServicio)
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.titleAcordeon,
+                              { color: colors.primary },
+                            ]}
+                          >
+                            {servicioEnEdicion
+                              ? "✏️ EDITANDO SERVICIO"
+                              : "➕ AGREGAR NUEVO SERVICIO"}
+                          </Text>
+                          <Ionicons
+                            name={
+                              mostrarFormServicio
+                                ? "chevron-up"
+                                : "chevron-down"
+                            }
+                            size={20}
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+
+                        {mostrarFormServicio && (
+                          <View
+                            style={[
+                              styles.bodyAcordeonForm,
+                              {
+                                backgroundColor: colors.cardBg,
+                                borderColor: colors.cardBorder,
+                              },
+                            ]}
+                          >
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Nombre del Servicio"
+                              placeholderTextColor={colors.textSecondary}
+                              value={nombreServicio}
+                              onChangeText={setNombreServicio}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Precio en $ (Ej: 35000)"
+                              placeholderTextColor={colors.textSecondary}
+                              keyboardType="numeric"
+                              value={precioServicio}
+                              onChangeText={setPrecioServicio}
+                            />
+                            <TextInput
+                              style={[
+                                styles.inputDark,
+                                {
+                                  backgroundColor: colors.inputBg,
+                                  borderColor: colors.cardBorder,
+                                  color: colors.textPrimary,
+                                },
+                              ]}
+                              placeholder="Duración estimada (Ej: 45 min)"
+                              placeholderTextColor={colors.textSecondary}
+                              value={duracionServicio}
+                              onChangeText={setDuracionServicio}
+                            />
+
+                            <View style={{ flexDirection: "row", gap: 10 }}>
+                              <TouchableOpacity
+                                style={[
+                                  styles.btnGoldAction,
+                                  { backgroundColor: colors.primary, flex: 1 },
+                                ]}
+                                onPress={guardarServicioEmpresa}
+                              >
+                                <Text style={styles.btnGoldText}>
+                                  {servicioEnEdicion
+                                    ? "GUARDAR CAMBIOS"
+                                    : "AGREGAR SERVICIO"}
+                                </Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                style={[
+                                  styles.btnGoldAction,
+                                  { backgroundColor: "#333", flex: 1 },
+                                ]}
+                                onPress={cancelarEdicionServicio}
+                              >
+                                <Text
+                                  style={[
+                                    styles.btnGoldText,
+                                    { color: "#FFF" },
+                                  ]}
+                                >
+                                  CANCELAR
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        )}
+
+                        <Text
+                          style={[
+                            styles.pasoTag,
+                            { color: colors.primary, marginTop: 20 },
+                          ]}
+                        >
+                          SERVICIOS ACTIVOS ({serviciosEmpresa.length})
+                        </Text>
+                        {serviciosEmpresa.map((s) => (
+                          <View
+                            key={s.id}
                             style={[
                               styles.cardServicioRealizado,
                               {
@@ -2377,7 +3277,7 @@ export default function HomeScreen() {
                                   { color: colors.textPrimary },
                                 ]}
                               >
-                                👤 {cli.nombre}
+                                {s.nombre}
                               </Text>
                               <Text
                                 style={[
@@ -2385,520 +3285,37 @@ export default function HomeScreen() {
                                   { color: colors.textSecondary },
                                 ]}
                               >
-                                📞 Teléfono: {cli.telefono}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.subCard,
-                                  { color: colors.textSecondary },
-                                ]}
-                              >
-                                📅 Última visita:{" "}
-                                {cli.fechaUltimaCita
-                                  ? `${cli.fechaUltimaCita} (${
-                                      cli.diasTranscurridos === 0
-                                        ? "Hoy"
-                                        : `hace ${cli.diasTranscurridos} días`
-                                    })`
-                                  : "Sin registro"}
+                                {s.duracion} · $
+                                {s.precio.toLocaleString("es-CO")}
                               </Text>
                             </View>
 
-                            <View style={{ alignItems: "flex-end", gap: 6 }}>
-                              <Text
-                                style={[
-                                  styles.badgeState,
-                                  cli.estadoCliente === "ACTIVO"
-                                    ? {
-                                        backgroundColor: "#166534",
-                                        color: "#FFF",
-                                      }
-                                    : {
-                                        backgroundColor: "#854D0E",
-                                        color: "#FFF",
-                                      },
-                                ]}
+                            <View style={{ flexDirection: "row", gap: 12 }}>
+                              <TouchableOpacity
+                                onPress={() => iniciarEdicionServicio(s)}
                               >
-                                {cli.estadoCliente === "ACTIVO"
-                                  ? "FRECUENTE / ACTIVO"
-                                  : "INACTIVO"}
-                              </Text>
-
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 8,
-                                }}
+                                <Ionicons
+                                  name="create-outline"
+                                  size={20}
+                                  color={colors.primary}
+                                />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() =>
+                                  eliminarServicioEmpresa(s.id, s.nombre)
+                                }
                               >
-                                <Text
-                                  style={{
-                                    fontSize: 10,
-                                    color: colors.primary,
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {cli.totalCitasCalculado} Citas
-                                </Text>
-
-                                {/* BOTÓN TOGGLE DE BLOQUEO / DESBLOQUEO EN TIEMPO REAL */}
-                                {barberoLogueado?.esAdmin && (
-                                  <TouchableOpacity
-                                    style={{
-                                      backgroundColor: estaBloqueado
-                                        ? "#166534"
-                                        : "#7F1D1D",
-                                      paddingHorizontal: 8,
-                                      paddingVertical: 4,
-                                      borderRadius: 4,
-                                    }}
-                                    onPress={() =>
-                                      alternarBloqueoClienteDirecto(
-                                        cli.nombre,
-                                        cli.telefono,
-                                      )
-                                    }
-                                  >
-                                    <Text
-                                      style={{
-                                        color: "#FFF",
-                                        fontSize: 9,
-                                        fontWeight: "bold",
-                                      }}
-                                    >
-                                      {estaBloqueado
-                                        ? "✅ Desbloquear"
-                                        : "🚫 Bloquear"}
-                                    </Text>
-                                  </TouchableOpacity>
-                                )}
-                              </View>
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={20}
+                                  color="#EF4444"
+                                />
+                              </TouchableOpacity>
                             </View>
                           </View>
-                        );
-                      })
+                        ))}
+                      </>
                     )}
-                  </View>
-                )}
-
-                {/* TAB 4: EQUIPO Y SERVICIOS CON ESPACIADO CORREGIDO */}
-                {menuBarbero === "EQUIPO" && barberoLogueado.esAdmin && (
-                  <View>
-                    {/* ACORDEÓN FORMULARIO INTEGRANTE */}
-                    <TouchableOpacity
-                      style={[
-                        styles.headerAcordeonForm,
-                        {
-                          backgroundColor: colors.cardBg,
-                          borderColor: colors.cardBorder,
-                          marginTop: 15,
-                        },
-                      ]}
-                      onPress={() =>
-                        setMostrarFormIntegrante(!mostrarFormIntegrante)
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.titleAcordeon,
-                          { color: colors.primary },
-                        ]}
-                      >
-                        {integranteEnEdicion
-                          ? "✏️ EDITANDO INTEGRANTE"
-                          : "➕ REGISTRAR NUEVO INTEGRANTE"}
-                      </Text>
-                      <Ionicons
-                        name={
-                          mostrarFormIntegrante ? "chevron-up" : "chevron-down"
-                        }
-                        size={20}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-
-                    {mostrarFormIntegrante && (
-                      <View
-                        style={[
-                          styles.bodyAcordeonForm,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Nombre Completo"
-                          placeholderTextColor={colors.textSecondary}
-                          value={nuevoNombreBarbero}
-                          onChangeText={setNuevoNombreBarbero}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Usuario para ingresar"
-                          placeholderTextColor={colors.textSecondary}
-                          autoCapitalize="none"
-                          value={nuevoUsuarioBarbero}
-                          onChangeText={setNuevoUsuarioBarbero}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Contraseña"
-                          placeholderTextColor={colors.textSecondary}
-                          secureTextEntry
-                          value={nuevaClaveBarbero}
-                          onChangeText={setNuevaClaveBarbero}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Especialidad (ej: Colorimetría · Manicure)"
-                          placeholderTextColor={colors.textSecondary}
-                          value={nuevaEspecialidadBarbero}
-                          onChangeText={setNuevaEspecialidadBarbero}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Porcentaje de Comisión % (Ej: 50)"
-                          placeholderTextColor={colors.textSecondary}
-                          keyboardType="numeric"
-                          value={nuevoPorcentajeBarbero}
-                          onChangeText={setNuevoPorcentajeBarbero}
-                        />
-
-                        <View style={{ flexDirection: "row", gap: 10 }}>
-                          <TouchableOpacity
-                            style={[
-                              styles.btnGoldAction,
-                              { backgroundColor: colors.primary, flex: 1 },
-                            ]}
-                            onPress={guardarIntegrante}
-                          >
-                            <Text style={styles.btnGoldText}>
-                              {integranteEnEdicion
-                                ? "GUARDAR CAMBIOS"
-                                : "REGISTRAR INTEGRANTE"}
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.btnGoldAction,
-                              { backgroundColor: "#333", flex: 1 },
-                            ]}
-                            onPress={cancelarEdicionIntegrante}
-                          >
-                            <Text
-                              style={[styles.btnGoldText, { color: "#FFF" }]}
-                            >
-                              CANCELAR
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 20 },
-                      ]}
-                    >
-                      INTEGRANTES REGISTRADOS ({barberos.length})
-                    </Text>
-                    {barberos.map((b) => (
-                      <View
-                        key={b.id}
-                        style={[
-                          styles.cardServicioRealizado,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <FotoBarbero
-                            nombre={b.nombre}
-                            foto={b.foto}
-                            color={colors.primary}
-                            editable
-                            onCambiar={(uri) => guardarFotoBarbero(b.id, uri)}
-                          />
-                          <Text
-                            style={[
-                              styles.titleCard,
-                              { color: colors.textPrimary },
-                            ]}
-                          >
-                            {b.nombre} {b.esAdmin && "👑 (Admin)"}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.subCard,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {b.especialidad} · Comisión: {b.porcentajeGanancia}%
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              color: colors.textSecondary,
-                              marginTop: 2,
-                            }}
-                          >
-                            Usuario: {b.usuario}
-                          </Text>
-                        </View>
-
-                        <View style={{ flexDirection: "row", gap: 12 }}>
-                          <TouchableOpacity
-                            onPress={() => iniciarEdicionIntegrante(b)}
-                          >
-                            <Ionicons
-                              name="create-outline"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          </TouchableOpacity>
-                          {!b.esAdmin && (
-                            <TouchableOpacity
-                              onPress={() =>
-                                eliminarBarberoDelEquipo(
-                                  b.id,
-                                  b.nombre,
-                                  b.esAdmin,
-                                )
-                              }
-                            >
-                              <Ionicons
-                                name="trash-outline"
-                                size={20}
-                                color="#EF4444"
-                              />
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
-                    ))}
-
-                    {/* ACORDEÓN FORMULARIO SERVICIO */}
-                    <TouchableOpacity
-                      style={[
-                        styles.headerAcordeonForm,
-                        {
-                          backgroundColor: colors.cardBg,
-                          borderColor: colors.cardBorder,
-                          marginTop: 20,
-                        },
-                      ]}
-                      onPress={() =>
-                        setMostrarFormServicio(!mostrarFormServicio)
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.titleAcordeon,
-                          { color: colors.primary },
-                        ]}
-                      >
-                        {servicioEnEdicion
-                          ? "✏️ EDITANDO SERVICIO"
-                          : "➕ AGREGAR NUEVO SERVICIO"}
-                      </Text>
-                      <Ionicons
-                        name={
-                          mostrarFormServicio ? "chevron-up" : "chevron-down"
-                        }
-                        size={20}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-
-                    {mostrarFormServicio && (
-                      <View
-                        style={[
-                          styles.bodyAcordeonForm,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Nombre del Servicio"
-                          placeholderTextColor={colors.textSecondary}
-                          value={nombreServicio}
-                          onChangeText={setNombreServicio}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Precio en $ (Ej: 35000)"
-                          placeholderTextColor={colors.textSecondary}
-                          keyboardType="numeric"
-                          value={precioServicio}
-                          onChangeText={setPrecioServicio}
-                        />
-                        <TextInput
-                          style={[
-                            styles.inputDark,
-                            {
-                              backgroundColor: colors.inputBg,
-                              borderColor: colors.cardBorder,
-                              color: colors.textPrimary,
-                            },
-                          ]}
-                          placeholder="Duración estimada (Ej: 45 min)"
-                          placeholderTextColor={colors.textSecondary}
-                          value={duracionServicio}
-                          onChangeText={setDuracionServicio}
-                        />
-
-                        <View style={{ flexDirection: "row", gap: 10 }}>
-                          <TouchableOpacity
-                            style={[
-                              styles.btnGoldAction,
-                              { backgroundColor: colors.primary, flex: 1 },
-                            ]}
-                            onPress={guardarServicioEmpresa}
-                          >
-                            <Text style={styles.btnGoldText}>
-                              {servicioEnEdicion
-                                ? "GUARDAR CAMBIOS"
-                                : "AGREGAR SERVICIO"}
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={[
-                              styles.btnGoldAction,
-                              { backgroundColor: "#333", flex: 1 },
-                            ]}
-                            onPress={cancelarEdicionServicio}
-                          >
-                            <Text
-                              style={[styles.btnGoldText, { color: "#FFF" }]}
-                            >
-                              CANCELAR
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 20 },
-                      ]}
-                    >
-                      SERVICIOS ACTIVOS ({serviciosEmpresa.length})
-                    </Text>
-                    {serviciosEmpresa.map((s) => (
-                      <View
-                        key={s.id}
-                        style={[
-                          styles.cardServicioRealizado,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={[
-                              styles.titleCard,
-                              { color: colors.textPrimary },
-                            ]}
-                          >
-                            {s.nombre}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.subCard,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {s.duracion} · ${s.precio.toLocaleString("es-CO")}
-                          </Text>
-                        </View>
-
-                        <View style={{ flexDirection: "row", gap: 12 }}>
-                          <TouchableOpacity
-                            onPress={() => iniciarEdicionServicio(s)}
-                          >
-                            <Ionicons
-                              name="create-outline"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              eliminarServicioEmpresa(s.id, s.nombre)
-                            }
-                          >
-                            <Ionicons
-                              name="trash-outline"
-                              size={20}
-                              color="#EF4444"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))}
                   </View>
                 )}
 
@@ -2916,142 +3333,401 @@ export default function HomeScreen() {
                   />
                 )}
 
-                {/* TAB 6: LISTA NEGRA CON BÚSQUEDA INTERACTIVA Y CAMPOS DE UNIFICADOS */}
-                {menuBarbero === "LISTA_NEGRA" && barberoLogueado.esAdmin && (
-                  <View>
-                    <Text style={[styles.pasoTag, { color: colors.primary }]}>
-                      LISTA NEGRA (BLOQUEAR CLIENTES)
-                    </Text>
-
-                    <TextInput
-                      style={[
-                        styles.inputDark,
-                        {
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.cardBorder,
-                          color: colors.textPrimary,
-                        },
-                      ]}
-                      placeholder={
-                        inputTelListaNegra.trim()
-                          ? "⚠️ Número no registrado como cliente"
-                          : "El nombre aparece al escribir el teléfono"
-                      }
-                      placeholderTextColor={colors.textSecondary}
-                      value={
-                        clienteEncontradoLN ? clienteEncontradoLN.nombre : ""
-                      }
-                      editable={false}
-                    />
-
-                    <TextInput
-                      style={[
-                        styles.inputDark,
-                        {
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.cardBorder,
-                          color: colors.textPrimary,
-                        },
-                      ]}
-                      placeholder="Teléfono del Cliente"
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="phone-pad"
-                      value={inputTelListaNegra}
-                      onChangeText={setInputTelListaNegra}
-                    />
-
-                    <TouchableOpacity
-                      style={[
-                        styles.btnGoldAction,
-                        { backgroundColor: "#7F1D1D" },
-                      ]}
-                      onPress={agregarAListaNegra}
-                    >
-                      <Text style={[styles.btnGoldText, { color: "#FFF" }]}>
-                        AGREGAR A LISTA NEGRA
-                      </Text>
-                    </TouchableOpacity>
-
-                    {/* BUSCADOR INTERACTIVO LETRA POR LETRA */}
-                    <Text
-                      style={[
-                        styles.pasoTag,
-                        { color: colors.primary, marginTop: 25 },
-                      ]}
-                    >
-                      CLIENTES RESTRINGIDOS ({listaNegraFiltrada.length})
-                    </Text>
-
-                    <TextInput
-                      style={[
-                        styles.inputDark,
-                        {
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.primary,
-                          color: colors.textPrimary,
-                          marginBottom: 15,
-                        },
-                      ]}
-                      placeholder="🔍 Buscar bloqueado por nombre o teléfono..."
-                      placeholderTextColor={colors.textSecondary}
-                      value={busquedaBloqueados}
-                      onChangeText={setBusquedaBloqueados}
-                    />
-
-                    {listaNegraFiltrada.length === 0 ? (
-                      <Text style={styles.infoText}>
-                        No hay coincidencias en la lista negra.
-                      </Text>
-                    ) : (
-                      listaNegraFiltrada.map((item) => (
-                        <View
-                          key={item.id}
+                {/* TAB 7: PRODUCTOS (SOLO ADMINISTRADOR), MISMA ESTRUCTURA QUE EQUIPO Y SERVICIOS */}
+                {menuBarbero === "NEGOCIO" &&
+                  subNegocio === "PRODUCTOS" &&
+                  barberoLogueado.esAdmin &&
+                  empresaActiva && (
+                    <View>
+                      {/* ACORDEÓN FORMULARIO PRODUCTO */}
+                      <TouchableOpacity
+                        style={[
+                          styles.headerAcordeonForm,
+                          {
+                            backgroundColor: colors.cardBg,
+                            borderColor: colors.cardBorder,
+                            marginTop: 15,
+                          },
+                        ]}
+                        onPress={() =>
+                          setMostrarFormProducto(!mostrarFormProducto)
+                        }
+                      >
+                        <Text
                           style={[
-                            styles.cardServicioRealizado,
+                            styles.titleAcordeon,
+                            { color: colors.primary },
+                          ]}
+                        >
+                          {productoEnEdicion
+                            ? "✏️ EDITANDO PRODUCTO"
+                            : "➕ AGREGAR NUEVO PRODUCTO"}
+                        </Text>
+                        <Ionicons
+                          name={
+                            mostrarFormProducto ? "chevron-up" : "chevron-down"
+                          }
+                          size={20}
+                          color={colors.primary}
+                        />
+                      </TouchableOpacity>
+
+                      {mostrarFormProducto && (
+                        <View
+                          style={[
+                            styles.bodyAcordeonForm,
                             {
                               backgroundColor: colors.cardBg,
                               borderColor: colors.cardBorder,
                             },
                           ]}
                         >
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              style={[
-                                styles.titleCard,
-                                { color: colors.textPrimary },
-                              ]}
-                            >
-                              🚫 {item.nombre}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.subCard,
-                                { color: colors.textSecondary },
-                              ]}
-                            >
-                              📞 Teléfono: {item.telefono}
-                            </Text>
-                          </View>
-
                           <TouchableOpacity
-                            onPress={() => eliminarDeListaNegra(item.id)}
+                            onPress={elegirFotoProducto}
+                            style={{
+                              height: 120,
+                              borderRadius: 8,
+                              borderWidth: 1,
+                              borderStyle: "dashed",
+                              borderColor: colors.cardBorder,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: 10,
+                              overflow: "hidden",
+                            }}
                           >
-                            <Ionicons
-                              name="trash-outline"
-                              size={20}
-                              color="#EF4444"
-                            />
+                            {fotoProducto ? (
+                              <Image
+                                source={{ uri: fotoProducto }}
+                                style={{ width: "100%", height: "100%" }}
+                              />
+                            ) : (
+                              <>
+                                <Ionicons
+                                  name="camera"
+                                  size={28}
+                                  color={colors.textSecondary}
+                                />
+                                <Text
+                                  style={{
+                                    color: colors.textSecondary,
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  Agregar foto
+                                </Text>
+                              </>
+                            )}
                           </TouchableOpacity>
+
+                          <TextInput
+                            style={[
+                              styles.inputDark,
+                              {
+                                backgroundColor: colors.inputBg,
+                                borderColor: colors.cardBorder,
+                                color: colors.textPrimary,
+                              },
+                            ]}
+                            placeholder="Nombre del Producto"
+                            placeholderTextColor={colors.textSecondary}
+                            value={nombreProducto}
+                            onChangeText={setNombreProducto}
+                          />
+                          <TextInput
+                            style={[
+                              styles.inputDark,
+                              {
+                                backgroundColor: colors.inputBg,
+                                borderColor: colors.cardBorder,
+                                color: colors.textPrimary,
+                              },
+                            ]}
+                            placeholder="Precio en $ (Ej: 25000)"
+                            placeholderTextColor={colors.textSecondary}
+                            keyboardType="numeric"
+                            value={precioProducto}
+                            onChangeText={setPrecioProducto}
+                          />
+
+                          <View style={{ flexDirection: "row", gap: 10 }}>
+                            <TouchableOpacity
+                              style={[
+                                styles.btnGoldAction,
+                                { backgroundColor: colors.primary, flex: 1 },
+                              ]}
+                              onPress={guardarProducto}
+                            >
+                              <Text style={styles.btnGoldText}>
+                                {productoEnEdicion
+                                  ? "GUARDAR CAMBIOS"
+                                  : "AGREGAR PRODUCTO"}
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[
+                                styles.btnGoldAction,
+                                { backgroundColor: "#333", flex: 1 },
+                              ]}
+                              onPress={cancelarEdicionProducto}
+                            >
+                              <Text
+                                style={[styles.btnGoldText, { color: "#FFF" }]}
+                              >
+                                CANCELAR
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                      ))
-                    )}
-                  </View>
-                )}
+                      )}
+
+                      <Text
+                        style={[
+                          styles.pasoTag,
+                          { color: colors.primary, marginTop: 20 },
+                        ]}
+                      >
+                        PRODUCTOS ACTIVOS (
+                        {
+                          productos.filter(
+                            (p) => p.empresaId === empresaActiva.id,
+                          ).length
+                        }
+                        )
+                      </Text>
+
+                      {productos
+                        .filter((p) => p.empresaId === empresaActiva.id)
+                        .map((p) => (
+                          <View
+                            key={p.id}
+                            style={[
+                              styles.cardServicioRealizado,
+                              {
+                                backgroundColor: colors.cardBg,
+                                borderColor: colors.cardBorder,
+                              },
+                            ]}
+                          >
+                            {p.foto ? (
+                              <Image
+                                source={{ uri: p.foto }}
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 6,
+                                  marginRight: 12,
+                                }}
+                              />
+                            ) : (
+                              <View
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 6,
+                                  marginRight: 12,
+                                  backgroundColor: colors.inputBg,
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <Ionicons
+                                  name="cube-outline"
+                                  size={22}
+                                  color={colors.textSecondary}
+                                />
+                              </View>
+                            )}
+
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.titleCard,
+                                  { color: colors.textPrimary },
+                                ]}
+                              >
+                                {p.nombre}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.subCard,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                ${p.precio.toLocaleString("es-CO")}
+                              </Text>
+                            </View>
+
+                            <View style={{ flexDirection: "row", gap: 12 }}>
+                              <TouchableOpacity
+                                onPress={() => iniciarEdicionProducto(p)}
+                              >
+                                <Ionicons
+                                  name="create-outline"
+                                  size={20}
+                                  color={colors.primary}
+                                />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => eliminarProducto(p)}
+                              >
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={20}
+                                  color="#EF4444"
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        ))}
+                    </View>
+                  )}
+
+                {/* TAB 6: LISTA NEGRA CON BÚSQUEDA INTERACTIVA Y CAMPOS DE UNIFICADOS */}
+                {menuBarbero === "CLIENTES" &&
+                  subClientes === "LISTA_NEGRA" &&
+                  barberoLogueado.esAdmin && (
+                    <View>
+                      <Text style={[styles.pasoTag, { color: colors.primary }]}>
+                        LISTA NEGRA (BLOQUEAR CLIENTES)
+                      </Text>
+
+                      <TextInput
+                        style={[
+                          styles.inputDark,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.cardBorder,
+                            color: colors.textPrimary,
+                          },
+                        ]}
+                        placeholder={
+                          inputTelListaNegra.trim()
+                            ? "⚠️ Número no registrado como cliente"
+                            : "El nombre aparece al escribir el teléfono"
+                        }
+                        placeholderTextColor={colors.textSecondary}
+                        value={
+                          clienteEncontradoLN ? clienteEncontradoLN.nombre : ""
+                        }
+                        editable={false}
+                      />
+
+                      <TextInput
+                        style={[
+                          styles.inputDark,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.cardBorder,
+                            color: colors.textPrimary,
+                          },
+                        ]}
+                        placeholder="Teléfono del Cliente"
+                        placeholderTextColor={colors.textSecondary}
+                        keyboardType="phone-pad"
+                        value={inputTelListaNegra}
+                        onChangeText={setInputTelListaNegra}
+                      />
+
+                      <TouchableOpacity
+                        style={[
+                          styles.btnGoldAction,
+                          { backgroundColor: "#7F1D1D" },
+                        ]}
+                        onPress={agregarAListaNegra}
+                      >
+                        <Text style={[styles.btnGoldText, { color: "#FFF" }]}>
+                          AGREGAR A LISTA NEGRA
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* BUSCADOR INTERACTIVO LETRA POR LETRA */}
+                      <Text
+                        style={[
+                          styles.pasoTag,
+                          { color: colors.primary, marginTop: 25 },
+                        ]}
+                      >
+                        CLIENTES RESTRINGIDOS ({listaNegraFiltrada.length})
+                      </Text>
+
+                      <TextInput
+                        style={[
+                          styles.inputDark,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.primary,
+                            color: colors.textPrimary,
+                            marginBottom: 15,
+                          },
+                        ]}
+                        placeholder="🔍 Buscar bloqueado por nombre o teléfono..."
+                        placeholderTextColor={colors.textSecondary}
+                        value={busquedaBloqueados}
+                        onChangeText={setBusquedaBloqueados}
+                      />
+
+                      {listaNegraFiltrada.length === 0 ? (
+                        <Text style={styles.infoText}>
+                          No hay coincidencias en la lista negra.
+                        </Text>
+                      ) : (
+                        listaNegraFiltrada.map((item) => (
+                          <View
+                            key={item.id}
+                            style={[
+                              styles.cardServicioRealizado,
+                              {
+                                backgroundColor: colors.cardBg,
+                                borderColor: colors.cardBorder,
+                              },
+                            ]}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.titleCard,
+                                  { color: colors.textPrimary },
+                                ]}
+                              >
+                                🚫 {item.nombre}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.subCard,
+                                  { color: colors.textSecondary },
+                                ]}
+                              >
+                                📞 Teléfono: {item.telefono}
+                              </Text>
+                            </View>
+
+                            <TouchableOpacity
+                              onPress={() => eliminarDeListaNegra(item.id)}
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={20}
+                                color="#EF4444"
+                              />
+                            </TouchableOpacity>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  )}
               </View>
             )}
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConfirmacionCita
+        visible={citaConfirmada !== null}
+        datos={citaConfirmada}
+        colors={colors}
+        onCerrar={() => setCitaConfirmada(null)}
+      />
 
       {/* MODAL DE NOTIFICACIONES */}
       <Modal
@@ -3200,155 +3876,65 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => setMenuBarbero("AGENDAMIENTOS")}
-          >
-            <Ionicons
-              name="list"
-              size={18}
-              color={
-                menuBarbero === "AGENDAMIENTOS"
-                  ? colors.primary
-                  : colors.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                { color: colors.textSecondary },
-                menuBarbero === "AGENDAMIENTOS" && { color: colors.primary },
-              ]}
-            >
-              Citas
-            </Text>
-          </TouchableOpacity>
-
-          {barberoLogueado?.esAdmin && (
-            <TouchableOpacity
-              style={styles.tabItem}
-              onPress={() => setMenuBarbero("BLOQUEOS")}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={18}
-                color={
-                  menuBarbero === "BLOQUEOS"
-                    ? colors.primary
-                    : colors.textSecondary
-                }
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color: colors.textSecondary },
-                  menuBarbero === "BLOQUEOS" && { color: colors.primary },
-                ]}
+          {(
+            [
+              {
+                id: "AGENDAMIENTOS",
+                icono: "list",
+                label: "Agenda",
+                admin: false,
+              },
+              {
+                id: "BLOQUEOS",
+                icono: "calendar-outline",
+                label: "Bloqueos",
+                admin: true,
+              },
+              {
+                id: "CLIENTES",
+                icono: "person-add-outline",
+                label: "Clientes",
+                admin: false,
+              },
+              {
+                id: "CARTERA",
+                icono: "wallet-outline",
+                label: "Cartera",
+                admin: false,
+              },
+              {
+                id: "NEGOCIO",
+                icono: "storefront-outline",
+                label: "Negocio",
+                admin: true,
+              },
+            ] as const
+          )
+            .filter((t) => !t.admin || barberoLogueado?.esAdmin)
+            .map((t) => (
+              <TouchableOpacity
+                key={t.id}
+                style={styles.tabItem}
+                onPress={() => setMenuBarbero(t.id)}
               >
-                Bloqueos
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => setMenuBarbero("CLIENTES")}
-          >
-            <Ionicons
-              name="person-add-outline"
-              size={18}
-              color={
-                menuBarbero === "CLIENTES"
-                  ? colors.primary
-                  : colors.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                { color: colors.textSecondary },
-                menuBarbero === "CLIENTES" && { color: colors.primary },
-              ]}
-            >
-              Clientes
-            </Text>
-          </TouchableOpacity>
-
-          {barberoLogueado?.esAdmin && (
-            <TouchableOpacity
-              style={styles.tabItem}
-              onPress={() => setMenuBarbero("EQUIPO")}
-            >
-              <Ionicons
-                name="people-outline"
-                size={18}
-                color={
-                  menuBarbero === "EQUIPO"
-                    ? colors.primary
-                    : colors.textSecondary
-                }
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color: colors.textSecondary },
-                  menuBarbero === "EQUIPO" && { color: colors.primary },
-                ]}
-              >
-                Equipo
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => setMenuBarbero("CARTERA")}
-          >
-            <Ionicons
-              name="wallet-outline"
-              size={18}
-              color={
-                menuBarbero === "CARTERA"
-                  ? colors.primary
-                  : colors.textSecondary
-              }
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                { color: colors.textSecondary },
-                menuBarbero === "CARTERA" && { color: colors.primary },
-              ]}
-            >
-              Cartera
-            </Text>
-          </TouchableOpacity>
-
-          {barberoLogueado?.esAdmin && (
-            <TouchableOpacity
-              style={styles.tabItem}
-              onPress={() => setMenuBarbero("LISTA_NEGRA")}
-            >
-              <Ionicons
-                name="ban-outline"
-                size={18}
-                color={
-                  menuBarbero === "LISTA_NEGRA"
-                    ? colors.primary
-                    : colors.textSecondary
-                }
-              />
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color: colors.textSecondary },
-                  menuBarbero === "LISTA_NEGRA" && { color: colors.primary },
-                ]}
-              >
-                Bloqueados
-              </Text>
-            </TouchableOpacity>
-          )}
+                <Ionicons
+                  name={t.icono}
+                  size={18}
+                  color={
+                    menuBarbero === t.id ? colors.primary : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    { color: colors.textSecondary },
+                    menuBarbero === t.id && { color: colors.primary },
+                  ]}
+                >
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
         </View>
       )}
     </SafeAreaView>
@@ -3437,15 +4023,6 @@ const styles = StyleSheet.create({
   },
   dayName: { color: "#737373", fontSize: 10, fontWeight: "bold" },
   dayNum: { fontSize: 20, fontWeight: "bold", marginVertical: 2 },
-  grid4: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  timeCard: {
-    width: "31%",
-    paddingVertical: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  timeText: { fontSize: 12, fontWeight: "bold" },
   infoText: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
   inputDark: { padding: 14, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
   boxHabeasData: {
@@ -3469,15 +4046,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   rowBox: { flexDirection: "row", gap: 10, marginTop: 10 },
-  metricCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  metricNum: { fontSize: 20, fontWeight: "bold" },
-  metricText: { fontSize: 11, marginTop: 4, textAlign: "center" },
   cardCita: { padding: 14, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
   cardServicioRealizado: {
     flexDirection: "row",
@@ -3546,10 +4114,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    boxShadow: "0px 4px 5px rgba(0, 0, 0, 0.3)",
   },
   modalHeader: {
     flexDirection: "row",
@@ -3577,30 +4142,5 @@ const styles = StyleSheet.create({
     marginTop: -2,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-  },
-  cardConfigAlarma: {
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  rowDiasAlarma: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 4,
-  },
-  circleDiaAlarma: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  textDiaAlarma: { fontSize: 11 },
-  rowOpcionRepetir: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 15,
   },
 });
