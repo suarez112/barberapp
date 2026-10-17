@@ -1,0 +1,54 @@
+import { ReactNode } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import AppHeader, { OpcionesCabecera } from "./AppHeader";
+
+type Props = {
+  children: ReactNode;
+  cabecera?: OpcionesCabecera;
+  // Contenido fijo bajo el scroll (ej. barra de pestañas)
+  pie?: ReactNode;
+};
+
+// Estructura común de todas las pantallas: cabecera, contenido con scroll y pie
+export default function Pantalla({ children, cabecera, pie }: Props) {
+  const { colors, esOscuro } = useAppTheme();
+  return (
+    <SafeAreaView style={[styles.contenedor, { backgroundColor: colors.bg }]}>
+      <StatusBar
+        barStyle={esOscuro ? "light-content" : "dark-content"}
+        backgroundColor={colors.bg}
+      />
+      <AppHeader {...cabecera} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.contenedor}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+      >
+        <ScrollView
+          style={styles.scroll}
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+          <View style={styles.espacioFinal} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+      {pie}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  contenedor: { flex: 1 },
+  scroll: { paddingHorizontal: 16 },
+  espacioFinal: { height: 40 },
+});

@@ -1,4 +1,5 @@
-import { BloqueoHorario, EmpresaConfig, Servicio } from "../types";
+import { BloqueoHorario, Empresa, HorarioOcupado, Servicio } from "../types";
+import { fechaISO } from "./fechas";
 
 // Cada cuántos minutos puede empezar una cita
 export const INTERVALO_MIN = 15;
@@ -46,12 +47,12 @@ export const bloqueoAplicaEseDia = (
   (b.frecuencia === "SEMANAL_RECURRENTE" && b.diasSemana.includes(diaNom));
 
 type Parametros = {
-  empresa: EmpresaConfig;
+  empresa: Pick<Empresa, "horarioApertura" | "horarioCierre">;
   barberoId: string;
   servicio: Servicio;
   fecha: string; // "2026-10-15"
   diaNom: string; // "JUE"
-  citas: any[];
+  citas: HorarioOcupado[];
   bloqueos: BloqueoHorario[];
   // Duración del servicio más corto del negocio (para saber qué espacio ya no sirve)
   duracionMinimaServicios?: number;
@@ -154,7 +155,7 @@ export const obtenerHorariosDisponibles = ({
 
   // 2. Si es hoy, no ofrecemos horas que ya pasaron
   const ahora = new Date();
-  const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+  const hoyStr = fechaISO(ahora);
   const minutosAhora =
     fecha === hoyStr ? ahora.getHours() * 60 + ahora.getMinutes() : -1;
 

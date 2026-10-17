@@ -1,9 +1,9 @@
-import { EmpresaConfig } from "../types";
+import { Dia, EmpresaConfig } from "../types";
 
 // Generador automático de días para octubre de 2026 (del 1 al 31)
 const GENERAR_DIAS_OCTUBRE = () => {
   const diasSemanaNombres = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
-  const lista = [];
+  const lista: Dia[] = [];
   for (let dia = 1; dia <= 31; dia++) {
     const fecha = new Date(2026, 9, dia);
     const diaNom = diasSemanaNombres[fecha.getDay()];
