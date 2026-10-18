@@ -25,6 +25,8 @@ type Opciones = {
   token?: string;
 };
 
+const TIEMPO_LIMITE_MS = 15_000;
+
 export async function request<T>(
   ruta: string,
   { method = "GET", body, token }: Opciones = {},
@@ -33,32 +35,47 @@ export async function request<T>(
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // Un servidor que no responde se corta en lugar de dejar la pantalla esperando
+  const controlador = new AbortController();
+  const temporizador = setTimeout(() => controlador.abort(), TIEMPO_LIMITE_MS);
+
   let response: Response;
+  let texto: string;
   try {
     response = await fetch(`${API_BASE_URL}${ruta}`, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controlador.signal,
     });
+    texto = await response.text();
   } catch (error) {
     throw new ErrorDeConexion(error);
+  } finally {
+    clearTimeout(temporizador);
   }
 
-  // Una respuesta que no es JSON (ej. página de error de un proxy) se trata
-  // como fallo de conexión, igual que antes de centralizar las peticiones
-  let data: any;
-  try {
-    data = await response.json();
-  } catch (error) {
-    throw new ErrorDeConexion(error);
-  }
+  const data = leerJSON(texto);
   if (!response.ok) {
-    throw new ApiError(
-      typeof data?.error === "string" ? data.error : "",
-      response.status,
-    );
+    // Un error sin JSON (ej. página de un proxy) conserva su código de estado
+    const mensaje = (data as { error?: unknown } | undefined)?.error;
+    throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status);
   }
+  // Una respuesta exitosa que no es JSON (ej. portal cautivo) no viene del backend
+  if (data === NO_ES_JSON) throw new ErrorDeConexion(texto);
   return data as T;
+}
+
+const NO_ES_JSON = Symbol("NO_ES_JSON");
+
+// Cuerpo vacío (ej. 204 No Content) → undefined
+function leerJSON(texto: string): unknown {
+  if (!texto.trim()) return undefined;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return NO_ES_JSON;
+  }
 }
 
 // Mensaje del servidor si lo hay; si no, el texto por defecto de la pantalla
