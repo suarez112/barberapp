@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Cita } from "@/types";
 
 type Periodo = "DIARIO" | "SEMANAL" | "MENSUAL";
 
@@ -14,7 +15,7 @@ type Props = {
   };
   nombre: string;
   porcentaje: number;
-  citas: any[]; // citas del profesional que se está viendo
+  citas: Cita[]; // citas del profesional que se está viendo
 };
 
 const MESES = [

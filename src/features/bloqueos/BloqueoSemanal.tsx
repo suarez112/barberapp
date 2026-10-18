@@ -1,10 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Dispatch, SetStateAction, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BloqueoHorario } from "../types";
+import { BloqueoHorario, Cita } from "@/types";
+import {
+  bloqueoAplicaEseDia,
+  horaAMinutos,
+  horario24AMinutos,
+  minutosAHora,
+} from "@/utils/disponibilidad";
 
 const NOMBRES_DIA = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
-const TODO_EL_DIA = "TODO_EL_DIA";
+const PASO = 30; // cada casilla de la tabla = 30 minutos
 
 type Modo = "PUNTUAL" | "SEMANAL_RECURRENTE";
 
@@ -21,9 +27,16 @@ type Props = {
   barberoNombre: string;
   bloqueos: BloqueoHorario[];
   setBloqueos: Dispatch<SetStateAction<BloqueoHorario[]>>;
-  citas: any[];
-  horarios: string[];
+  citas: Cita[];
+  apertura: string; // "09:00"
+  cierre: string; // "20:00"
 };
+
+// Fuera del componente: generar ids no es parte del render
+const nuevoIdBloqueo = () => `${Date.now()}_${Math.random()}`;
+
+const esDiaCompleto = (b: BloqueoHorario) =>
+  b.desdeMin <= 0 && b.hastaMin >= 1440;
 
 export default function BloqueoSemanal({
   colors,
@@ -32,11 +45,19 @@ export default function BloqueoSemanal({
   bloqueos,
   setBloqueos,
   citas,
-  horarios,
+  apertura,
+  cierre,
 }: Props) {
   // Número de día del lunes de la semana que se ve (5 = lunes 5 de octubre)
   const [inicioDia, setInicioDia] = useState(5);
   const [modo, setModo] = useState<Modo>("PUNTUAL");
+
+  const inicioNegocio = horario24AMinutos(apertura);
+  const finNegocio = horario24AMinutos(cierre);
+
+  // Las filas de la tabla: una cada 30 minutos entre apertura y cierre
+  const filas: number[] = [];
+  for (let t = inicioNegocio; t < finNegocio; t += PASO) filas.push(t);
 
   const dias = Array.from({ length: 7 }, (_, i) => {
     const f = new Date(2026, 9, inicioDia + i);
@@ -53,14 +74,27 @@ export default function BloqueoSemanal({
   const diasDelMes = dias.filter((d) => d.enMes);
   const etiquetaSemana = `${diasDelMes[0].num} – ${diasDelMes[diasDelMes.length - 1].num} OCT`;
 
-  const buscarBloqueo = (fecha: string, diaNom: string, hora: string) =>
+  // ¿Hay un bloqueo que toque este rango de tiempo?
+  const buscarBloqueo = (
+    fecha: string,
+    diaNom: string,
+    ini: number,
+    fin: number,
+  ) =>
     bloqueos.find(
       (b) =>
         b.barberoId === barberoId &&
-        (b.hora === hora || b.hora === TODO_EL_DIA) &&
-        ((b.frecuencia === "PUNTUAL" && b.fechaBase === fecha) ||
-          (b.frecuencia === "SEMANAL_RECURRENTE" &&
-            b.diasSemana.includes(diaNom))),
+        bloqueoAplicaEseDia(b, fecha, diaNom) &&
+        ini < b.hastaMin &&
+        b.desdeMin < fin,
+    );
+
+  const buscarBloqueoDiaCompleto = (fecha: string, diaNom: string) =>
+    bloqueos.find(
+      (b) =>
+        b.barberoId === barberoId &&
+        bloqueoAplicaEseDia(b, fecha, diaNom) &&
+        esDiaCompleto(b),
     );
 
   const citaActiva = (c: any) =>
@@ -68,19 +102,30 @@ export default function BloqueoSemanal({
     c.estado !== "RECHAZADA" &&
     c.estado !== "CANCELADA";
 
-  const hayCita = (fecha: string, hora: string) =>
-    citas.some((c) => citaActiva(c) && c.fecha === fecha && c.hora === hora);
+  // ¿Hay una cita que ocupe este rango de tiempo?
+  const hayCita = (fecha: string, ini: number, fin: number) =>
+    citas.some((c) => {
+      if (!citaActiva(c) || c.fecha !== fecha) return false;
+      const ci = horaAMinutos(c.hora);
+      const cf = ci + (c.duracionMin ?? 40);
+      return ini < cf && ci < fin;
+    });
 
   const hayCitasEseDia = (fecha: string) =>
     citas.some((c) => citaActiva(c) && c.fecha === fecha);
 
-  const crear = (dia: { diaNom: string; fechaFull: string }, hora: string) => {
+  const crear = (
+    dia: { diaNom: string; fechaFull: string },
+    desdeMin: number,
+    hastaMin: number,
+  ) => {
     const nuevo: BloqueoHorario = {
-      id: `${Date.now()}_${Math.random()}`,
+      id: nuevoIdBloqueo(),
       barberoId,
       fechaBase: dia.fechaFull,
       diasSemana: [dia.diaNom],
-      hora,
+      desdeMin,
+      hastaMin,
       frecuencia: modo,
     };
     setBloqueos((prev) => [...prev, nuevo]);
@@ -111,16 +156,19 @@ export default function BloqueoSemanal({
 
   const tocarCelda = (
     dia: { diaNom: string; fechaFull: string; enMes: boolean },
-    hora: string,
+    ini: number,
   ) => {
     if (!dia.enMes) return;
-    if (hayCita(dia.fechaFull, hora)) {
-      Alert.alert("Hay una cita", "Esa hora ya tiene una cita agendada.");
+    const fin = ini + PASO;
+
+    if (hayCita(dia.fechaFull, ini, fin)) {
+      Alert.alert("Hay una cita", "Ese espacio ya tiene una cita agendada.");
       return;
     }
-    const existente = buscarBloqueo(dia.fechaFull, dia.diaNom, hora);
+
+    const existente = buscarBloqueo(dia.fechaFull, dia.diaNom, ini, fin);
     if (existente) {
-      if (existente.hora === TODO_EL_DIA) {
+      if (esDiaCompleto(existente)) {
         Alert.alert(
           "Día bloqueado",
           "Este día está bloqueado completo. Toca el día arriba para liberarlo.",
@@ -134,7 +182,7 @@ export default function BloqueoSemanal({
       quitar(existente, dia.diaNom);
       return;
     }
-    crear(dia, hora);
+    crear(dia, ini, fin);
   };
 
   const tocarDia = (dia: {
@@ -143,7 +191,8 @@ export default function BloqueoSemanal({
     enMes: boolean;
   }) => {
     if (!dia.enMes) return;
-    const existente = buscarBloqueo(dia.fechaFull, dia.diaNom, TODO_EL_DIA);
+
+    const existente = buscarBloqueoDiaCompleto(dia.fechaFull, dia.diaNom);
     if (existente) {
       if (existente.frecuencia !== modo) {
         avisoCambiarModo(existente);
@@ -152,14 +201,15 @@ export default function BloqueoSemanal({
       quitar(existente, dia.diaNom);
       return;
     }
+
     if (hayCitasEseDia(dia.fechaFull)) {
       Alert.alert(
         "Ese día tiene citas",
-        "Hay citas agendadas ese día. Bloquea solo las horas libres.",
+        "Hay citas agendadas ese día. Bloquea solo los espacios libres.",
       );
       return;
     }
-    crear(dia, TODO_EL_DIA);
+    crear(dia, 0, 1440);
   };
 
   const estiloBloqueo = (frecuencia: Modo) =>
@@ -216,7 +266,9 @@ export default function BloqueoSemanal({
       </View>
 
       <Text style={[s.ayuda, { color: colors.textSecondary }]}>
-        Toca una hora para bloquearla o liberarla. Toca el día de arriba para
+        Horario del negocio: {minutosAHora(inicioNegocio)} a{" "}
+        {minutosAHora(finNegocio)}. Cada casilla es de 30 minutos. Toca una
+        casilla para bloquearla o liberarla, o toca el día de arriba para
         bloquear el día completo.
       </Text>
 
@@ -249,11 +301,7 @@ export default function BloqueoSemanal({
         <View style={s.fila}>
           <View style={s.colHora} />
           {dias.map((d) => {
-            const bloqueoDia = buscarBloqueo(
-              d.fechaFull,
-              d.diaNom,
-              TODO_EL_DIA,
-            );
+            const bloqueoDia = buscarBloqueoDiaCompleto(d.fechaFull, d.diaNom);
             const est = bloqueoDia
               ? estiloBloqueo(bloqueoDia.frecuencia)
               : null;
@@ -294,17 +342,17 @@ export default function BloqueoSemanal({
           })}
         </View>
 
-        {horarios.map((hora) => (
-          <View key={hora} style={s.fila}>
+        {filas.map((ini) => (
+          <View key={ini} style={s.fila}>
             <View style={s.colHora}>
               <Text style={{ fontSize: 9, color: colors.textSecondary }}>
-                {hora}
+                {minutosAHora(ini)}
               </Text>
             </View>
             {dias.map((d) => {
-              const conCita = d.enMes && hayCita(d.fechaFull, hora);
+              const conCita = d.enMes && hayCita(d.fechaFull, ini, ini + PASO);
               const bloqueo = d.enMes
-                ? buscarBloqueo(d.fechaFull, d.diaNom, hora)
+                ? buscarBloqueo(d.fechaFull, d.diaNom, ini, ini + PASO)
                 : undefined;
               const est = bloqueo ? estiloBloqueo(bloqueo.frecuencia) : null;
 
@@ -326,9 +374,9 @@ export default function BloqueoSemanal({
 
               return (
                 <TouchableOpacity
-                  key={d.fechaFull + hora}
+                  key={d.fechaFull + ini}
                   disabled={!d.enMes}
-                  onPress={() => tocarCelda(d, hora)}
+                  onPress={() => tocarCelda(d, ini)}
                   style={[
                     s.celda,
                     {
@@ -458,7 +506,7 @@ const s = StyleSheet.create({
   },
   celda: {
     flex: 1,
-    height: 30,
+    height: 28,
     borderRadius: 4,
     borderWidth: 1,
     marginHorizontal: 1.5,
