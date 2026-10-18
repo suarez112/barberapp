@@ -9,6 +9,7 @@ import CatalogoProductos from "@/features/productos/CatalogoProductos";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import ConfirmacionCita from "./components/ConfirmacionCita";
 import FormularioReserva from "./components/FormularioReserva";
+import InfoNegocio from "./components/InfoNegocio";
 import IngresoCodigo from "./components/IngresoCodigo";
 import { useReserva } from "./hooks/useReserva";
 
@@ -74,6 +75,7 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
 
   return (
     <View>
+      <InfoNegocio codigo={empresa.codigoAcceso} />
       <Selector
         opciones={VISTAS}
         valor={vista}

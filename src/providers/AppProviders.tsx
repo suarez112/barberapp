@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AgendaProvider } from "@/features/agenda/AgendaProvider";
+import { CuentaProvider } from "@/features/cuenta/CuentaProvider";
 import { ClientesProvider } from "@/features/clientes/ClientesProvider";
 import { NegocioProvider } from "@/features/negocio/NegocioProvider";
 import { NotificacionesProvider } from "@/features/notificaciones/NotificacionesProvider";
@@ -12,11 +13,13 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     <NegocioProvider>
       <ThemeProvider>
         <SesionProvider>
-          <AgendaProvider>
-            <ClientesProvider>
-              <NotificacionesProvider>{children}</NotificacionesProvider>
-            </ClientesProvider>
-          </AgendaProvider>
+          <CuentaProvider>
+            <AgendaProvider>
+              <ClientesProvider>
+                <NotificacionesProvider>{children}</NotificacionesProvider>
+              </ClientesProvider>
+            </AgendaProvider>
+          </CuentaProvider>
         </SesionProvider>
       </ThemeProvider>
     </NegocioProvider>

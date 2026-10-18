@@ -16,3 +16,25 @@ export const validarCodigoEmpresa = (codigo: string) =>
 // Negocio de la sesión iniciada, con los usuarios del equipo
 export const obtenerNegocioActual = (token: string) =>
   request<DatosNegocio>("/api/v1/empresas/actual", { token });
+
+// Información pública del negocio con su foto (sin NIT ni datos de suscripción)
+export type PerfilPublico = {
+  id: string;
+  nombre: string;
+  codigoAcceso: string;
+  categoria: string | null;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  ciudad: string | null;
+  diasAtencion: number[] | null;
+  horarioApertura: string | null;
+  horarioCierre: string | null;
+  logoUrl: string | null;
+  fotoUrl: string | null;
+};
+
+export const obtenerPerfilPublico = (codigo: string) =>
+  request<PerfilPublico>(
+    `/api/v1/empresas/perfil/${encodeURIComponent(codigo)}`,
+  );

@@ -58,19 +58,20 @@ Barbershop booking app (Expo SDK 57, React Native 0.86, Expo Router, TypeScript)
 src/
   app/             Expo Router routes (each file is a screen). Keep them thin: they re-export a feature screen.
     _layout.tsx    root Stack (no header) wrapped in AppProviders
-    index.tsx      role selection (redirects /?codigo=X to /cliente?codigo=X)
-    cliente.tsx    -> features/reservas/ClienteScreen (customer booking)
-    login.tsx      -> staff login
-    panel.tsx      -> features/panel/PanelScreen (staff/admin panel)
-    explore.tsx    leftover from the Expo template, not linked from the app
+    index.tsx      role selection: "Soy empresa", "Soy cliente", login link (redirects /?codigo=X to /cliente?codigo=X)
+    registro.tsx   -> features/cuenta/RegistroEmpresaScreen (company registration)
+    login.tsx      -> login with two modes: staff (usuario) and company account (correo)
+    cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile)
+    panel.tsx      -> features/panel/PanelScreen (staff panel, staff token)
+    admin.tsx      -> features/admin/AdminPanelScreen (company admin panel, account token)
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
                    context Provider for shared state and an api.ts with its backend calls
-                   (agenda, bloqueos, cartera, clientes, equipo, inicio, negocio, notificaciones,
-                   panel, productos, reservas, servicios, sesion)
+                   (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, negocio,
+                   notificaciones, panel, productos, reservas, servicios, sesion)
   components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader)
-  providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Agenda > Clientes > Notificaciones)
+  providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > Agenda > Clientes > Notificaciones)
   services/api/    config.ts (backend URL) and http.ts (fetch wrapper)
-  data/            local demo data: mocks.ts (fake clients, blacklist, appointments), datos.ts (fixed October 2026 calendar)
+  data/            local demo data: mocks.ts (fake clients, blacklist), datos.ts (demo businesses)
   theme/, constants/, hooks/, types/, utils/
 ```
 
@@ -105,4 +106,13 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - Staff login: `features/sesion/useIniciarSesion.ts` calls `POST /api/v1/auth/login`, then loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with the token.
 - The token and logged-in staff member live in React state in `features/sesion/SesionProvider.tsx` (`useSesion()` -> `token`, `barbero`, `iniciarSesion`, `cerrarSesion`).
 - **The session is not persisted**: there is no AsyncStorage/SecureStore, so closing or reloading the app logs the user out.
-- The backend has two token types that do not mix: staff tokens (`/api/v1/auth/login`) and account tokens (`/api/v1/cuentas/...`, used by `/api/v1/admin/...`). The app currently only uses staff tokens.
+- The backend has two token types that do not mix: staff tokens (`/api/v1/auth/login`) and account tokens (`/api/v1/cuentas/...`, used by `/api/v1/admin/...`).
+- Account session: `features/cuenta/CuentaProvider.tsx` (`useCuenta()` -> `usuario` with `rol` `admin` | `cliente`, `token`, `iniciarCuenta`, `cerrarCuenta`), also in memory only. Calls live in `features/cuenta/api.ts`.
+- A company registered with `POST /api/v1/cuentas/registro/empresa` only gets an account admin, not a staff user, so it uses `/admin` (trial days, expired-trial screen on 402, "Mi negocio" with photo upload), not `/panel` (agenda needs a staff token).
+- Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/panel` redirects to `/login` without a staff session.
+- `request()` sends a `FormData` body as multipart (no JSON `Content-Type`); used by the business photo upload.
+
+## Calendar
+
+- Days come from `utils/fechas.ts` (`diasDelMes`, `crearDia`, `diaDeHoy`) for the real current date; `components/ui/SelectorDias.tsx` owns month navigation (`desde` hides past days in booking).
+- `features/bloqueos/BloqueoSemanal.tsx` still uses a fixed October 2026 month.

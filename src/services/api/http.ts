@@ -31,8 +31,11 @@ export async function request<T>(
   ruta: string,
   { method = "GET", body, token }: Opciones = {},
 ): Promise<T> {
+  // Un FormData (ej. una foto) se envía tal cual: fetch arma su Content-Type
+  const esFormulario = body instanceof FormData;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (body !== undefined && !esFormulario)
+    headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
   // Un servidor que no responde se corta en lugar de dejar la pantalla esperando
@@ -45,7 +48,11 @@ export async function request<T>(
     response = await fetch(`${API_BASE_URL}${ruta}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: esFormulario
+        ? body
+        : body !== undefined
+          ? JSON.stringify(body)
+          : undefined,
       signal: controlador.signal,
     });
     texto = await response.text();

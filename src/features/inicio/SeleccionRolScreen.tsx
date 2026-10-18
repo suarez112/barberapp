@@ -17,16 +17,16 @@ type Opcion = {
 
 const OPCIONES: Opcion[] = [
   {
-    ruta: "/cliente",
-    icono: "person-outline",
-    titulo: "Soy Cliente",
-    descripcion: "Agendar citas con el código del establecimiento",
+    ruta: "/registro",
+    icono: "storefront-outline",
+    titulo: "Soy empresa",
+    descripcion: "Registra tu negocio y empieza tu prueba gratuita de 15 días",
   },
   {
-    ruta: "/login",
-    icono: "key-outline",
-    titulo: "Acceso Equipo / Administrador",
-    descripcion: "Ingreso directo con credenciales",
+    ruta: "/cliente",
+    icono: "person-outline",
+    titulo: "Soy cliente",
+    descripcion: "Agenda tu cita con el código del establecimiento",
   },
 ];
 
@@ -76,6 +76,17 @@ export default function SeleccionRolScreen() {
             />
           </Tocable>
         ))}
+
+        <Tocable
+          accessibilityRole="link"
+          style={styles.enlace}
+          onPress={() => push("/login")}
+        >
+          <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>
+            ¿Ya tienes cuenta?{" "}
+            <Text style={{ color: colors.primary }}>Inicia sesión</Text>
+          </Text>
+        </Tocable>
       </View>
     </Pantalla>
   );
@@ -104,4 +115,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   textos: { marginLeft: 14, flex: 1 },
+  enlace: { alignSelf: "center", padding: 12, marginTop: 10 },
+  textoEnlace: { fontSize: 14, fontWeight: "600" },
 });
