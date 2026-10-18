@@ -32,7 +32,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     celular,
     indicativo,
     aceptaHabeasData,
-    diasDisponibles,
+    primerDia,
     horariosDisponibles,
     elegirBarbero,
     elegirServicio,
@@ -74,7 +74,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
 
       <TituloSeccion>PASO 2 · DÍA</TituloSeccion>
       <SelectorDias
-        dias={diasDisponibles}
+        desde={primerDia}
         seleccionado={dia}
         onSeleccionar={elegirDia}
       />

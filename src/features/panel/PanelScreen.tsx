@@ -2,10 +2,9 @@ import { Redirect, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { BackHandler, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
-import { DIAS } from "@/data/datos";
 import { Dia } from "@/types";
 import { confirmar } from "@/utils/dialogos";
-import { hoyISO } from "@/utils/fechas";
+import { diaDeHoy } from "@/utils/fechas";
 import AgendaTab from "../agenda/AgendaTab";
 import { useAgenda } from "../agenda/AgendaProvider";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
@@ -18,8 +17,6 @@ import NegocioTab from "./NegocioTab";
 import PanelTabBar, { PestanaPanel } from "./components/PanelTabBar";
 import PerfilBadge from "./components/PerfilBadge";
 import SelectorSupervision from "./components/SelectorSupervision";
-
-const diaDeHoy = () => DIAS.find((d) => d.fechaFull === hoyISO()) ?? DIAS[7];
 
 // Panel del integrante / administrador
 export default function PanelScreen() {

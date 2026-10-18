@@ -1,26 +1,4 @@
-import { Dia, EmpresaConfig } from "../types";
-
-// Generador automático de días para octubre de 2026 (del 1 al 31)
-const GENERAR_DIAS_OCTUBRE = () => {
-  const diasSemanaNombres = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
-  const lista: Dia[] = [];
-  for (let dia = 1; dia <= 31; dia++) {
-    const fecha = new Date(2026, 9, dia);
-    const diaNom = diasSemanaNombres[fecha.getDay()];
-    const numStr = dia.toString();
-    const fechaFull = `2026-10-${dia < 10 ? "0" + dia : dia}`;
-    lista.push({
-      id: `d_oct_${dia}`,
-      diaNom,
-      num: numStr,
-      fechaFull,
-      diaNumero: dia,
-    });
-  }
-  return lista;
-};
-
-export const DIAS = GENERAR_DIAS_OCTUBRE();
+import { EmpresaConfig } from "../types";
 
 // AQUÍ SE CONFIGURA CADA NEGOCIO.
 // horarioApertura y horarioCierre van en formato de 24 horas ("09:00", "20:00").

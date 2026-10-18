@@ -1,5 +1,4 @@
 import { Dispatch, ReactNode, SetStateAction, useState } from "react";
-import { CITAS_INICIALES } from "../../data/mocks";
 import { BloqueoHorario, Cita, HorarioOcupado } from "../../types";
 import { crearContexto } from "../../utils/crearContexto";
 import { listarHorasOcupadas } from "./api";
@@ -20,7 +19,7 @@ const [AgendaContext, useAgenda] = crearContexto<ValorAgenda>("Agenda");
 export { useAgenda };
 
 export function AgendaProvider({ children }: { children: ReactNode }) {
-  const [citas, setCitas] = useState<Cita[]>(CITAS_INICIALES);
+  const [citas, setCitas] = useState<Cita[]>([]);
   const [citasOcupadas, setCitasOcupadas] = useState<HorarioOcupado[]>([]);
   const [bloqueos, setBloqueos] = useState<BloqueoHorario[]>([]);
 

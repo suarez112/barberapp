@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DIAS } from "@/data/datos";
 import {
   INDICATIVO_POR_DEFECTO,
   detectarIndicativo,
@@ -16,13 +15,8 @@ import {
   duracionEnMinutos,
   obtenerHorariosDisponibles,
 } from "@/utils/disponibilidad";
-import { hoyISO } from "@/utils/fechas";
+import { diaDeHoy, hoyISO } from "@/utils/fechas";
 import { DatosConfirmacion } from "../components/ConfirmacionCita";
-
-const diaInicial = () => {
-  const hoy = hoyISO();
-  return DIAS.find((d) => d.fechaFull >= hoy) ?? DIAS[0];
-};
 
 // Estado y reglas del formulario de reserva del cliente
 export function useReserva() {
@@ -33,7 +27,7 @@ export function useReserva() {
 
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [servicio, setServicio] = useState<Servicio | null>(null);
-  const [dia, setDia] = useState<Dia>(diaInicial);
+  const [dia, setDia] = useState<Dia>(diaDeHoy);
   const [hora, setHora] = useState("");
   const [nombre, setNombre] = useState("");
   const [celular, setCelular] = useState("");
@@ -45,8 +39,8 @@ export function useReserva() {
     null,
   );
 
-  const hoy = hoyISO();
-  const diasDisponibles = DIAS.filter((d) => d.fechaFull >= hoy);
+  // No se reserva en días que ya pasaron
+  const primerDia = hoyISO();
 
   const horariosDisponibles =
     barbero && servicio && empresa
@@ -202,7 +196,7 @@ export function useReserva() {
     indicativo,
     aceptaHabeasData,
     confirmacion,
-    diasDisponibles,
+    primerDia,
     horariosDisponibles,
     elegirBarbero,
     elegirServicio,

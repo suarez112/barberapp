@@ -2,9 +2,9 @@ import { View } from "react-native";
 import SelectorDias from "@/components/ui/SelectorDias";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
-import { DIAS } from "@/data/datos";
 import { Barbero, Dia } from "@/types";
 import { horaAMinutos } from "@/utils/disponibilidad";
+import { mesCorto } from "@/utils/fechas";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useSesion } from "../sesion/SesionProvider";
 import { useAgenda } from "./AgendaProvider";
@@ -36,11 +36,11 @@ export default function AgendaTab({ profesional, dia, onCambiarDia }: Props) {
   return (
     <View>
       <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
-      <SelectorDias dias={DIAS} seleccionado={dia} onSeleccionar={onCambiarDia} />
+      <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
 
       <TituloSeccion>
         CITAS DE {profesional.nombre.toUpperCase()} PARA EL {dia.diaNom}{" "}
-        {dia.num} OCT ({citasDelDia.length})
+        {dia.num} {mesCorto(dia.fechaFull)} ({citasDelDia.length})
       </TituloSeccion>
 
       {citasDelDia.length === 0 ? (
