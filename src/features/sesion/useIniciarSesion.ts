@@ -3,7 +3,7 @@ import { Cita } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import { listarAgenda } from "../agenda/api";
 import { useAgenda } from "../agenda/AgendaProvider";
-import { validarCodigoEmpresa } from "../negocio/api";
+import { obtenerNegocioActual } from "../negocio/api";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { loginBarbero } from "./api";
 import { useSesion } from "./SesionProvider";
@@ -36,10 +36,10 @@ export function useIniciarSesion() {
         throw error;
       }
 
-      // 2. Con el código del negocio, traemos sus colores, equipo y servicios
+      // 2. Con la sesión, traemos colores, equipo (con usuarios) y servicios
       let negocio;
       try {
-        negocio = await validarCodigoEmpresa(login.barbero.empresaCodigo);
+        negocio = await obtenerNegocioActual(login.token);
       } catch (error) {
         if (error instanceof ApiError) {
           avisar(
