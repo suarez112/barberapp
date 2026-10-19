@@ -19,9 +19,9 @@ Branch: feature/registro-empresa. Delivery: single branch, commit + push (user r
 
 | ID | Specs | Route | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | S1, S2, S3 | inline | pending | |
-| T2 | S8, S9 (legal modal + checkbox) | inline | pending | |
-| T3 | S4, S5, S6, S7, S9 | inline | pending | |
+| T1 | S1, S2, S3 | inline | done (tsc, lint, export); API check pending | 442b11f |
+| T2 | S8, S9 (legal modal + checkbox) | inline | done (tsc, lint, export); API check pending | 442b11f |
+| T3 | S4, S5, S6, S7, S9 | inline | done (tsc, lint, export); API check pending | 442b11f |
 
 Route evidence: one parent session, no Writer trigger (units depend on each other: T3 reuses T2's checkbox), so everything runs inline.
 
@@ -29,3 +29,4 @@ Route evidence: one parent session, no Writer trigger (units depend on each othe
 
 - L1 (2026-10-19) User request: "1. Suscripción (usa GET /api/v1/admin/empresa/suscripcion) … 2. Clientes registrados (opcional, usa /api/v1/mi-cuenta/...) … 3. Autorización de datos (usa /api/v1/legal/politica-datos y /api/v1/legal/terminos) … Haz commit y push. Dame un resumen sencillo y una lista corta de qué debo probar yo en el celular, incluyendo cómo usar los comandos npm run dev:simular-vencimiento y npm run dev:activar-plan del backend." (full text in the thread; specs above quote it verbatim).
 - L2 Decisions: the unified login now answers `tipo: "cliente"` (backend no longer returns 403), so the client fallback through /cuentas/login is removed. A new legal version is detected from `debeAceptarDocumentos` at login and from the POST /citas 400 "Publicamos una nueva versión…" message.
+- L3 (2026-10-19) Checks: `npx expo lint` clean; `npx expo export --platform android` builds; `npx tsc --noEmit` clean once the 3 new routes are in the generated `.expo/types/router.d.ts` (Metro was not reachable to regenerate it; temporary patch restored). Contracts compared with backend AGENTS.md and code (micuenta routes, registro/cliente, legal, suscripcion). The backend on :4000 stopped answering mid-session (rule: never start it), so the curl checks with PRUEBA data are pending. No PRUEBA data was created.
