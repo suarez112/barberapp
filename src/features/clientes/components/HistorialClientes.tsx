@@ -49,14 +49,12 @@ export default function HistorialClientes({ token, estado }: Props) {
       const ok = await confirmar({
         titulo: "Desbloquear Cliente",
         mensaje: `¿Deseas quitar a "${cli.nombre}" de la lista negra y permitirle agendar nuevamente?`,
-        textoConfirmar: "Sí, Desbloquear",
       });
       if (ok) await desbloquear(cli.listaNegraId, cli.nombre);
     } else {
       const ok = await confirmar({
         titulo: "Bloquear Cliente",
         mensaje: `¿Deseas enviar a "${cli.nombre}" a la Lista Negra? No podrá volver a agendar.`,
-        textoConfirmar: "Bloquear Cliente",
         destructivo: true,
       });
       if (ok) await bloquear(cli);

@@ -25,6 +25,7 @@ export const COLORES = {
   peligroOscuro: "#7F1D1D",
   peligroSuave: "#FECACA",
   exito: "#166534",
+  exitoClaro: "#22C55E",
   info: "#1E3A8A",
   cancelado: "#991B1B",
   advertencia: "#F59E0B",

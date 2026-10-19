@@ -31,6 +31,6 @@ export const abrirWhatsApp = async (telefono?: string, indicativo?: string) => {
     await Linking.openURL(`https://wa.me/${numero}`);
   } catch (error) {
     console.error("Error al abrir WhatsApp:", error);
-    avisar("No se pudo abrir WhatsApp", "Verifica que esté instalado.");
+    avisar("No se pudo abrir WhatsApp", "Verifica que esté instalado.", "error");
   }
 };

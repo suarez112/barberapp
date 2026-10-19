@@ -50,7 +50,7 @@ export function useClientes(token: string) {
   const bloquear = async (cliente: Cliente) => {
     try {
       await agregarAListaNegra(token, cliente.id);
-      avisar("Cliente bloqueado", `${cliente.nombre} ya no podrá agendar.`);
+      avisar("Cliente bloqueado", `${cliente.nombre} ya no podrá agendar.`, "exito");
       await recargar();
       return true;
     } catch (e) {
@@ -63,7 +63,7 @@ export function useClientes(token: string) {
   const desbloquear = async (id: string, nombre: string) => {
     try {
       await quitarDeListaNegra(token, id);
-      avisar("Desbloqueado", `${nombre} ya puede agendar citas.`);
+      avisar("Desbloqueado", `${nombre} ya puede agendar citas.`, "exito");
       await recargar();
     } catch (e) {
       avisarError(e, { titulo: "No se pudo desbloquear" });

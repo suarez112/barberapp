@@ -52,7 +52,6 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
     const ok = await confirmar({
       titulo: "Cerrar sesión",
       mensaje: "¿Deseas salir? Tendrás que volver a iniciar sesión.",
-      textoConfirmar: "Cerrar sesión",
       destructivo: true,
     });
     if (ok) cerrarSesion();

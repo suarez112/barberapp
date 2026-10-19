@@ -30,7 +30,7 @@ export function useCargarPanel(token: string) {
             porDefecto: "No se pudieron cargar los datos del negocio.",
           });
           if (esEstado(e, 401)) {
-            avisar(aviso.titulo, aviso.mensaje);
+            avisar(aviso.titulo, aviso.mensaje, "error");
             cerrarSesion();
             return;
           }

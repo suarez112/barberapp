@@ -61,7 +61,6 @@ export default function ListaNegra({ estado }: { estado: EstadoClientes }) {
     const ok = await confirmar({
       titulo: "Quitar de la lista negra",
       mensaje: `¿Permitir que ${nombre} vuelva a agendar?`,
-      textoConfirmar: "Sí, quitar",
     });
     if (ok) await desbloquear(id, nombre);
   };

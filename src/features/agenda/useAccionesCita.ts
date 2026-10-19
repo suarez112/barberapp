@@ -31,8 +31,6 @@ export function useAccionesCita(personal: Personal) {
     const confirmado = await confirmar({
       titulo: "Completar servicio",
       mensaje: `¿Confirmas que el servicio de ${c.cliente} ya se realizó? Se registrará la hora exacta.`,
-      textoCancelar: "No",
-      textoConfirmar: "Sí, completado",
     });
     if (!confirmado) return;
 
@@ -48,8 +46,6 @@ export function useAccionesCita(personal: Personal) {
     const confirmado = await confirmar({
       titulo: "Cancelar cita",
       mensaje: `¿Cancelar la cita de ${c.cliente}?`,
-      textoCancelar: "No",
-      textoConfirmar: "Sí, cancelar",
       destructivo: true,
     });
     if (!confirmado) return;

@@ -4,6 +4,7 @@ import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
+import CampoClave from "@/components/ui/CampoClave";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -84,13 +85,14 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
     try {
       if (enEdicion) {
         reemplazar(await actualizarProfesional(token, enEdicion.id, datos));
-        avisar("¡Actualizado!", `Los datos de "${datos.nombre}" han sido guardados.`);
+        avisar("¡Actualizado!", `Los datos de "${datos.nombre}" han sido guardados.`, "exito");
       } else {
         const nuevo = await crearProfesional(token, datos);
         setBarberos((prev) => [...prev, nuevo]);
         avisar(
           "¡Éxito!",
           `${nuevo.nombre} registrado con ${nuevo.porcentajeGanancia}% de ganancia. Entra con el usuario "${nuevo.usuario}".`,
+          "exito",
         );
       }
       reiniciar();
@@ -103,7 +105,6 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
     const ok = await confirmar({
       titulo: "Confirmar",
       mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.`,
-      textoConfirmar: "Eliminar",
       destructivo: true,
     });
     if (!ok) return;
@@ -111,7 +112,7 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
       await eliminarProfesional(token, b.id);
       setBarberos((prev) => prev.filter((x) => x.id !== b.id));
       if (enEdicion?.id === b.id) reiniciar();
-      avisar("Eliminado", `${b.nombre} retirado.`);
+      avisar("Eliminado", `${b.nombre} retirado.`, "exito");
     } catch (e) {
       // 409: tiene citas pendientes
       avisarError(e, { titulo: "No se pudo eliminar", tituloConflicto: "Tiene citas pendientes" });
@@ -146,9 +147,8 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
           value={campos.usuario}
           onChangeText={cambiar("usuario")}
         />
-        <CampoTexto
+        <CampoClave
           placeholder={enEdicion ? "Nueva contraseña (vacía = no cambiar)" : "Contraseña (mínimo 8)"}
-          secureTextEntry
           value={campos.clave}
           onChangeText={cambiar("clave")}
         />

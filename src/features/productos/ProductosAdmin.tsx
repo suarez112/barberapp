@@ -120,6 +120,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
       avisar(
         enEdicion ? "¡Actualizado!" : "¡Producto creado!",
         `${producto.nombre} quedó guardado en el catálogo.`,
+        "exito",
       );
       reiniciar();
     } catch (e) {
@@ -135,7 +136,6 @@ export default function ProductosAdmin({ token }: { token: string }) {
     const ok = await confirmar({
       titulo: "Confirmar",
       mensaje: `¿Eliminar producto "${p.nombre}"?`,
-      textoConfirmar: "Eliminar",
       destructivo: true,
     });
     if (!ok) return;

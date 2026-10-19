@@ -1,45 +1,68 @@
-import { Alert, Platform } from "react-native";
+// Avisos y confirmaciones con el modal propio de la app (components/ui/DialogoHost).
+// Cualquier parte del código llama a avisar() o confirmar(); DialogoHost, montado
+// una sola vez en AppProviders, los muestra en orden, uno a la vez.
 
-// En web, Alert.alert no muestra botones ni ejecuta callbacks: usamos los
-// diálogos del navegador para que el flujo funcione igual en todas las plataformas.
+export type TipoDialogo = "exito" | "error" | "aviso" | "confirmacion";
 
-export const avisar = (titulo: string, mensaje?: string) => {
-  if (Platform.OS === "web") {
-    window.alert(mensaje ? `${titulo}\n\n${mensaje}` : titulo);
-    return;
-  }
-  Alert.alert(titulo, mensaje);
+export type Dialogo = {
+  id: number;
+  tipo: TipoDialogo;
+  titulo: string;
+  mensaje?: string;
+  // Solo confirmación: el botón Aceptar se pinta de rojo
+  destructivo?: boolean;
+  responder: (aceptado: boolean) => void;
+};
+
+let cola: Dialogo[] = [];
+let siguienteId = 1;
+const oyentes = new Set<() => void>();
+
+const notificar = () => oyentes.forEach((oyente) => oyente());
+
+export const suscribirDialogos = (oyente: () => void) => {
+  oyentes.add(oyente);
+  return () => {
+    oyentes.delete(oyente);
+  };
+};
+
+// El diálogo visible (el primero de la cola)
+export const dialogoActual = (): Dialogo | undefined => cola[0];
+
+const mostrar = (datos: Omit<Dialogo, "id" | "responder">) =>
+  new Promise<boolean>((resolve) => {
+    const id = siguienteId++;
+    cola = [
+      ...cola,
+      {
+        ...datos,
+        id,
+        responder: (aceptado) => {
+          cola = cola.filter((d) => d.id !== id);
+          notificar();
+          resolve(aceptado);
+        },
+      },
+    ];
+    notificar();
+  });
+
+// Aviso con un solo botón "Aceptar". tipo: "exito", "error" o "aviso" (por defecto)
+export const avisar = (
+  titulo: string,
+  mensaje?: string,
+  tipo: Exclude<TipoDialogo, "confirmacion"> = "aviso",
+) => {
+  void mostrar({ tipo, titulo, mensaje });
 };
 
 type OpcionesConfirmar = {
   titulo: string;
   mensaje: string;
-  textoConfirmar: string;
-  textoCancelar?: string;
   destructivo?: boolean;
-  // Texto alterno para el diálogo del navegador
-  mensajeWeb?: string;
 };
 
-export const confirmar = ({
-  titulo,
-  mensaje,
-  textoConfirmar,
-  textoCancelar = "Cancelar",
-  destructivo = false,
-  mensajeWeb,
-}: OpcionesConfirmar): Promise<boolean> => {
-  if (Platform.OS === "web") {
-    return Promise.resolve(window.confirm(mensajeWeb ?? `${titulo}\n\n${mensaje}`));
-  }
-  return new Promise((resolve) => {
-    Alert.alert(titulo, mensaje, [
-      { text: textoCancelar, style: "cancel", onPress: () => resolve(false) },
-      {
-        text: textoConfirmar,
-        style: destructivo ? "destructive" : "default",
-        onPress: () => resolve(true),
-      },
-    ]);
-  });
-};
+// Pregunta con "Aceptar" y "Cancelar". true si la persona acepta.
+export const confirmar = ({ titulo, mensaje, destructivo = false }: OpcionesConfirmar) =>
+  mostrar({ tipo: "confirmacion", titulo, mensaje, destructivo });

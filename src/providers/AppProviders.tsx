@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import DialogoHost from "@/components/ui/DialogoHost";
 import { AgendaProvider } from "@/features/agenda/AgendaProvider";
 import { CuentaProvider } from "@/features/cuenta/CuentaProvider";
 import { NegocioProvider } from "@/features/negocio/NegocioProvider";
@@ -15,7 +16,11 @@ export default function AppProviders({ children }: { children: ReactNode }) {
         <SesionProvider>
           <CuentaProvider>
             <RestaurarSesionProvider>
-              <AgendaProvider>{children}</AgendaProvider>
+              <AgendaProvider>
+                {children}
+                {/* Avisos y confirmaciones de toda la app */}
+                <DialogoHost />
+              </AgendaProvider>
             </RestaurarSesionProvider>
           </CuentaProvider>
         </SesionProvider>

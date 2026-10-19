@@ -1,5 +1,5 @@
-import { describirError } from "@/services/api/errores";
-import { ApiError, ErrorDeConexion } from "@/services/api/http";
+import { describirError, registrarCausa } from "@/services/api/errores";
+import { ApiError } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import { useCerrarSesion } from "./useCerrarSesion";
 
@@ -22,9 +22,9 @@ export function useAvisarError() {
       tituloConflicto,
     }: Opciones = {},
   ) => {
-    if (error instanceof ErrorDeConexion) console.error(titulo, error.causa);
+    registrarCausa(titulo, error);
     const aviso = describirError(error, { titulo, porDefecto, tituloConflicto });
-    avisar(aviso.titulo, aviso.mensaje);
+    avisar(aviso.titulo, aviso.mensaje, "error");
     if (error instanceof ApiError && error.status === 401) cerrarSesion();
   };
 }

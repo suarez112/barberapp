@@ -147,7 +147,6 @@ export default function BloqueoSemanal({ token, esAdmin, profesional, apertura, 
     const ok = await confirmar({
       titulo: "Liberar horario",
       mensaje: `¿Liberar el bloqueo de ${minutosAHora(horario24AMinutos(b.horaInicio))} a ${minutosAHora(horario24AMinutos(b.horaFin))} de todos los ${DIAS_LARGOS[b.diaSemana]}?`,
-      textoConfirmar: "Sí, liberar",
     });
     if (ok) ejecutar(() => eliminarBloqueo(token, b.id), "No se pudo liberar");
   };
@@ -182,7 +181,6 @@ export default function BloqueoSemanal({ token, esAdmin, profesional, apertura, 
     const ok = await confirmar({
       titulo: "Bloquear día completo",
       mensaje: `¿Bloquear todos los ${DIAS_LARGOS[dia.diaSemana]}? Los clientes no podrán reservar ese día con ${profesional.nombre}.`,
-      textoConfirmar: "Sí, bloquear",
     });
     if (ok) crear(dia.diaSemana, inicioNegocio, finNegocio);
   };

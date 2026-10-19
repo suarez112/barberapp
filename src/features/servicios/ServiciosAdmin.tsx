@@ -48,11 +48,11 @@ export default function ServiciosAdmin({ token }: { token: string }) {
       if (enEdicion) {
         const actualizado = await actualizarServicio(token, enEdicion.id, datos);
         setServicios((prev) => prev.map((s) => (s.id === actualizado.id ? actualizado : s)));
-        avisar("¡Actualizado!", `Servicio "${actualizado.nombre}" modificado con éxito.`);
+        avisar("¡Actualizado!", `Servicio "${actualizado.nombre}" modificado con éxito.`, "exito");
       } else {
         const nuevo = await crearServicio(token, datos);
         setServicios((prev) => [...prev, nuevo]);
-        avisar("¡Servicio Creado!", `${nuevo.nombre} agregado al catálogo.`);
+        avisar("¡Servicio Creado!", `${nuevo.nombre} agregado al catálogo.`, "exito");
       }
       reiniciar();
     } catch (e) {
@@ -64,7 +64,6 @@ export default function ServiciosAdmin({ token }: { token: string }) {
     const ok = await confirmar({
       titulo: "Confirmar",
       mensaje: `¿Eliminar servicio "${s.nombre}"? Las citas ya agendadas no cambian.`,
-      textoConfirmar: "Eliminar",
       destructivo: true,
     });
     if (!ok) return;
