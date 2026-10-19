@@ -8,6 +8,19 @@ export const fechaISO = (d: Date) =>
 
 export const hoyISO = () => fechaISO(new Date());
 
+// Hoy en Colombia (UTC-5, sin horario de verano), como lo calcula el backend
+export const hoyColombiaISO = () =>
+  new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+// "2026-10-19" + 14 -> "2026-11-02"
+export const sumarDias = (fecha: string, dias: number) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return fechaISO(new Date(y, m - 1, d + dias));
+};
+
+// Las reservas van de hoy a 14 días después (15 días contando hoy)
+export const DIAS_MAXIMOS_RESERVA = 14;
+
 // "2026-10-15" + "09:40 AM" -> Date local
 export const fechaHoraCita = (fecha: string, hora: string) => {
   const [h12, resto] = hora.split(":");

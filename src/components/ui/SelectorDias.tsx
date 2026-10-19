@@ -18,6 +18,8 @@ type Props = {
   onSeleccionar: (dia: Dia) => void;
   // Primer día que se puede elegir ("2026-10-18"); los anteriores no se muestran
   desde?: string;
+  // Último día que se puede elegir; los siguientes no se muestran ni se navega a ellos
+  hasta?: string;
 };
 
 // Días del mes visible, con flechas para cambiar de mes
@@ -25,15 +27,19 @@ export default function SelectorDias({
   seleccionado,
   onSeleccionar,
   desde,
+  hasta,
 }: Props) {
   const { colors } = useAppTheme();
   const [mes, setMes] = useState(() => mesDeFecha(seleccionado.fechaFull));
 
-  const dias = diasDelMes(mes).filter((d) => !desde || d.fechaFull >= desde);
-  // No se retrocede a meses que quedan completos antes del primer día permitido
+  const permitido = (fecha: string) =>
+    (!desde || fecha >= desde) && (!hasta || fecha <= hasta);
+  const dias = diasDelMes(mes).filter((d) => permitido(d.fechaFull));
+  // No se navega a meses sin ningún día permitido
   const anterior = sumarMeses(mes, -1);
-  const puedeRetroceder =
-    !desde || diasDelMes(anterior).some((d) => d.fechaFull >= desde);
+  const siguiente = sumarMeses(mes, 1);
+  const puedeRetroceder = diasDelMes(anterior).some((d) => permitido(d.fechaFull));
+  const puedeAvanzar = diasDelMes(siguiente).some((d) => permitido(d.fechaFull));
 
   const flecha = (
     icono: "chevron-back" | "chevron-forward",
@@ -62,8 +68,8 @@ export default function SelectorDias({
         <Text style={[styles.tituloMes, { color: colors.textPrimary }]}>
           {MESES_LARGOS[mes.mes]} {mes.anio}
         </Text>
-        {flecha("chevron-forward", "Mes siguiente", true, () =>
-          setMes(sumarMeses(mes, 1)),
+        {flecha("chevron-forward", "Mes siguiente", puedeAvanzar, () =>
+          setMes(siguiente),
         )}
       </View>
 

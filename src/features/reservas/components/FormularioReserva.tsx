@@ -8,6 +8,8 @@ import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { horarioDelDia } from "@/utils/disponibilidad";
+import { crearDia, mesCorto } from "@/utils/fechas";
 import { EstadoReserva } from "../hooks/useReserva";
 import CampoTelefono from "./CampoTelefono";
 import SelectorHoras from "./SelectorHoras";
@@ -22,7 +24,7 @@ type Props = {
 
 export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
   const { colors } = useAppTheme();
-  const { barberos, servicios } = useNegocio();
+  const { empresa, barberos, servicios } = useNegocio();
   const {
     barbero,
     servicio,
@@ -33,6 +35,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     indicativo,
     aceptaHabeasData,
     primerDia,
+    ultimoDia,
     horariosDisponibles,
     elegirBarbero,
     elegirServicio,
@@ -75,15 +78,22 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
       <TituloSeccion>PASO 2 · DÍA</TituloSeccion>
       <SelectorDias
         desde={primerDia}
+        hasta={ultimoDia}
         seleccionado={dia}
         onSeleccionar={elegirDia}
       />
+      <Text style={[styles.limite, { color: colors.textSecondary }]}>
+        Puedes reservar desde hoy hasta el {crearDia(ultimoDia).num} de{" "}
+        {mesCorto(ultimoDia).toLowerCase()}.
+      </Text>
 
       <TituloSeccion>
         HORA DISPONIBLE ({horariosDisponibles.length} DISPONIBLES)
       </TituloSeccion>
       {!barbero || !servicio ? (
         <TextoInfo>⚠️ Selecciona primero un profesional y un servicio.</TextoInfo>
+      ) : empresa && !horarioDelDia(empresa, dia.fechaFull) ? (
+        <TextoInfo>El negocio no atiende este día. Elige otra fecha.</TextoInfo>
       ) : (
         <SelectorHoras
           horarios={horariosDisponibles}
@@ -129,6 +139,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
 }
 
 const styles = StyleSheet.create({
+  limite: { fontSize: 12, marginTop: -8, marginBottom: 12 },
   encabezado: {
     flexDirection: "row",
     justifyContent: "space-between",

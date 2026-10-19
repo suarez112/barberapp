@@ -15,7 +15,12 @@ import {
   duracionEnMinutos,
   obtenerHorariosDisponibles,
 } from "@/utils/disponibilidad";
-import { diaDeHoy, hoyISO } from "@/utils/fechas";
+import {
+  crearDia,
+  DIAS_MAXIMOS_RESERVA,
+  hoyColombiaISO,
+  sumarDias,
+} from "@/utils/fechas";
 import { DatosConfirmacion } from "../components/ConfirmacionCita";
 
 // Estado y reglas del formulario de reserva del cliente
@@ -26,7 +31,7 @@ export function useReserva() {
 
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [servicio, setServicio] = useState<Servicio | null>(null);
-  const [dia, setDia] = useState<Dia>(diaDeHoy);
+  const [dia, setDia] = useState<Dia>(() => crearDia(hoyColombiaISO()));
   const [hora, setHora] = useState("");
   const [nombre, setNombre] = useState("");
   const [celular, setCelular] = useState("");
@@ -38,8 +43,9 @@ export function useReserva() {
     null,
   );
 
-  // No se reserva en días que ya pasaron
-  const primerDia = hoyISO();
+  // Solo de hoy a 14 días después (hora de Colombia, como el backend)
+  const primerDia = hoyColombiaISO();
+  const ultimoDia = sumarDias(primerDia, DIAS_MAXIMOS_RESERVA);
 
   const horariosDisponibles =
     barbero && servicio && empresa
@@ -191,6 +197,7 @@ export function useReserva() {
     aceptaHabeasData,
     confirmacion,
     primerDia,
+    ultimoDia,
     horariosDisponibles,
     elegirBarbero,
     elegirServicio,

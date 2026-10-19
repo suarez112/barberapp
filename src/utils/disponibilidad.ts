@@ -47,8 +47,21 @@ export const diaSemanaDe = (fecha: string) => {
 export const bloqueoAplicaEseDia = (b: BloqueoHorario, fecha: string) =>
   b.fecha ? b.fecha === fecha : b.diaSemana === diaSemanaDe(fecha);
 
+// Apertura y cierre de esa fecha según el horario de cada día; null si cierra.
+// Sin horario por día (datos antiguos) se usa el horario general.
+export const horarioDelDia = (
+  empresa: Pick<Empresa, "horarioApertura" | "horarioCierre" | "horario">,
+  fecha: string,
+): { apertura: string; cierre: string } | null => {
+  if (!empresa.horario?.length)
+    return { apertura: empresa.horarioApertura, cierre: empresa.horarioCierre };
+  const dia = empresa.horario.find((h) => h.dia === diaSemanaDe(fecha));
+  if (!dia?.abierto || !dia.apertura || !dia.cierre) return null;
+  return { apertura: dia.apertura, cierre: dia.cierre };
+};
+
 type Parametros = {
-  empresa: Pick<Empresa, "horarioApertura" | "horarioCierre">;
+  empresa: Pick<Empresa, "horarioApertura" | "horarioCierre" | "horario">;
   barberoId: string;
   servicio: Servicio;
   fecha: string; // "2026-10-15"
@@ -125,8 +138,10 @@ export const obtenerHorariosDisponibles = ({
   bloqueos,
   duracionMinimaServicios,
 }: Parametros): string[] => {
-  const apertura = horario24AMinutos(empresa.horarioApertura);
-  const cierre = horario24AMinutos(empresa.horarioCierre);
+  const delDia = horarioDelDia(empresa, fecha);
+  if (!delDia) return []; // el negocio no abre ese día
+  const apertura = horario24AMinutos(delDia.apertura);
+  const cierre = horario24AMinutos(delDia.cierre);
   const duracion = duracionEnMinutos(servicio.duracion);
 
   // 1. Juntamos todo el tiempo ocupado de ese profesional ese día

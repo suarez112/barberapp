@@ -23,8 +23,18 @@ export interface Empresa {
   nombre: string;
   colorPrimario: string;
   colorSecundario: string;
-  horarioApertura: string; // formato 24 horas, ej: "09:00"
-  horarioCierre: string; // formato 24 horas, ej: "20:00"
+  horarioApertura: string; // apertura más temprana de la semana, ej: "09:00"
+  horarioCierre: string; // cierre más tardío de la semana, ej: "20:00"
+  // Horario real de cada día (0 = domingo … 6 = sábado)
+  horario?: DiaHorario[];
+}
+
+// Horario de un día del negocio. Cerrado: apertura y cierre null.
+export interface DiaHorario {
+  dia: number;
+  abierto: boolean;
+  apertura: string | null; // "08:00"
+  cierre: string | null; // "19:00"
 }
 
 export interface Producto {
@@ -71,12 +81,14 @@ export interface Dia {
 }
 
 // Horario en que un profesional no atiende (vista pública, sin motivo).
-// Se repite cada semana (diaSemana: 0 = domingo … 6 = sábado); los bloqueos
-// antiguos de un solo día traen fecha y diaSemana null.
+// "semanal": se repite cada semana (diaSemana: 0 = domingo … 6 = sábado).
+// "fecha": solo ese día (fecha "2026-10-21"). todoElDia llega como "00:00"–"24:00".
 export interface BloqueoHorario {
   barberoId: string;
+  tipo?: "semanal" | "fecha";
   diaSemana: number | null;
   fecha: string | null;
+  todoElDia?: boolean;
   horaInicio: string; // "12:00"
   horaFin: string; // "13:00"
 }
