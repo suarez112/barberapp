@@ -45,7 +45,13 @@
           "hidden": "false"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "La app usa tu ubicación para guardar dónde está tu negocio en el mapa."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

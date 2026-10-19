@@ -64,6 +64,11 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   fotoUrl: string | null;
   colorPrimario: string | null;
   colorSecundario: string | null;
+  // Ubicación en el mapa (opcional; siempre juntas)
+  latitud: number | null;
+  longitud: number | null;
+  // Enlace de Google Maps (coordenadas o dirección); null si no hay datos
+  googleMapsUrl: string | null;
   estadoSuscripcion: string;
   trialEndsAt: string | null;
   creadaEn: string;
@@ -134,9 +139,12 @@ export const obtenerSuscripcion = (token: string, signal?: AbortSignal) =>
 export const obtenerMiEmpresa = (token: string, signal?: AbortSignal) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", { token, signal });
 
+// Coordenadas del negocio: van siempre juntas (null en las dos las quita)
+export type Coordenadas = { latitud: number | null; longitud: number | null };
+
 export const actualizarMiEmpresa = (
   token: string,
-  cambios: Partial<DatosEmpresa>,
+  cambios: Partial<DatosEmpresa> | Coordenadas,
 ) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", {
     method: "PATCH",

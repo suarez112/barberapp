@@ -9,6 +9,7 @@ import { useCerrarSesion } from "../sesion/useCerrarSesion";
 import { Personal } from "../sesion/usePersonal";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
+import UbicacionNegocio from "./components/UbicacionNegocio";
 import FotoNegocio from "./components/FotoNegocio";
 import MiSuscripcion from "./components/MiSuscripcion";
 import PanelVencido from "./PanelVencido";
@@ -29,6 +30,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
     actualizarSuscripcion,
     guardarDatos,
     guardarFoto,
+    guardarUbicacion,
   } = useMiEmpresa(personal.token);
 
   // Los días restantes cambian a medianoche; también puede haber cambiado
@@ -89,6 +91,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
           <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
+          <UbicacionNegocio perfil={perfil} onGuardar={guardarUbicacion} />
         </>
       ) : null}
 

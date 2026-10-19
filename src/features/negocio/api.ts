@@ -32,6 +32,8 @@ export type PerfilPublico = {
   horarioCierre: string | null;
   logoUrl: string | null;
   fotoUrl: string | null;
+  // Enlace de Google Maps (coordenadas o dirección); null si no hay datos
+  googleMapsUrl: string | null;
 };
 
 export const obtenerPerfilPublico = (codigo: string) =>
