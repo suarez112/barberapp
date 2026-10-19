@@ -127,6 +127,7 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
             profesional={profesional}
             apertura={empresa.horarioApertura}
             cierre={empresa.horarioCierre}
+            horario={empresa.horario}
           />
         ) : (
           sinProfesionales
