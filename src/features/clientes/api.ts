@@ -32,8 +32,8 @@ export type Bloqueado = {
   agregadoEn: string;
 };
 
-export const listarClientes = (token: string) =>
-  request<Cliente[]>("/api/v1/clientes", { token });
+export const listarClientes = (token: string, signal?: AbortSignal) =>
+  request<Cliente[]>("/api/v1/clientes", { token, signal });
 
 export const obtenerHistorial = (token: string, clienteId: string) =>
   request<{ cliente: Cliente; citas: CitaHistorial[] }>(
@@ -41,8 +41,8 @@ export const obtenerHistorial = (token: string, clienteId: string) =>
     { token },
   );
 
-export const listarListaNegra = (token: string) =>
-  request<Bloqueado[]>("/api/v1/clientes/lista-negra", { token });
+export const listarListaNegra = (token: string, signal?: AbortSignal) =>
+  request<Bloqueado[]>("/api/v1/clientes/lista-negra", { token, signal });
 
 export const agregarAListaNegra = (token: string, clienteId: string) =>
   request<Bloqueado & { mensaje: string }>("/api/v1/clientes/lista-negra", {

@@ -1,4 +1,4 @@
-import { ApiError, ErrorDeConexion, ErrorDeEnvio, MotivoConexion } from "./http";
+import { ApiError, ErrorDeConexion, ErrorDeEnvio, MotivoConexion, esCancelada } from "./http";
 
 export type Aviso = { titulo: string; mensaje: string };
 
@@ -14,11 +14,13 @@ type Opciones = {
 const AVISOS_DE_CONEXION: Record<MotivoConexion, Aviso> = {
   "sin-conexion": {
     titulo: "Sin conexión",
-    mensaje: "No se pudo conectar con el servidor. Revisa tu internet e intenta de nuevo.",
+    mensaje:
+      "No se pudo conectar con el servidor. Revisa tu internet; si el problema sigue, puede que el servidor esté apagado. Intenta de nuevo en un momento.",
   },
   "tiempo-agotado": {
     titulo: "El servidor no responde",
-    mensaje: "El servidor tardó demasiado en responder. Intenta de nuevo en un momento.",
+    mensaje:
+      "El servidor tardó demasiado en responder. Revisa tu conexión a internet e intenta de nuevo en un momento.",
   },
   "respuesta-invalida": {
     titulo: "Respuesta inesperada",
@@ -81,8 +83,12 @@ export function describirError(
 export const esEstado = (error: unknown, status: number) =>
   error instanceof ApiError && error.status === status;
 
-// Registra en consola lo que no viene del servidor, para poder diagnosticarlo
+// Registra en la terminal lo que no viene del servidor, para poder diagnosticarlo.
+// console.log y no console.error: en desarrollo console.error abre la pantalla
+// roja de Expo con el texto técnico ("fetch failed: ..."), y la persona ya ve el
+// aviso claro. Una petición cancelada a propósito no se registra.
 export const registrarCausa = (contexto: string, error: unknown) => {
-  if (error instanceof ErrorDeConexion || error instanceof ErrorDeEnvio)
-    console.error(contexto, error.causa);
+  if (esCancelada(error)) return;
+  if (error instanceof ErrorDeConexion) console.log(contexto, error.motivo, String(error.causa));
+  else if (error instanceof ErrorDeEnvio) console.error(contexto, error.causa);
 };

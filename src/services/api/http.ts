@@ -36,10 +36,23 @@ export class ErrorDeEnvio extends Error {
   }
 }
 
+// La pantalla que la pidió ya no la necesita (ej. se salió de ella).
+// No es un error: nunca se muestra a la persona.
+export class PeticionCancelada extends Error {
+  constructor() {
+    super("Petición cancelada");
+    this.name = "PeticionCancelada";
+  }
+}
+
+export const esCancelada = (error: unknown) => error instanceof PeticionCancelada;
+
 type Opciones = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   token?: string;
+  // Cancela la petición (ej. al salir de la pantalla); lanza PeticionCancelada
+  signal?: AbortSignal;
 };
 
 const TIEMPO_LIMITE_MS = 15_000;
@@ -55,8 +68,9 @@ const esFalloDeRed = (error: unknown) =>
 
 export async function request<T>(
   ruta: string,
-  { method = "GET", body, token }: Opciones = {},
+  { method = "GET", body, token, signal }: Opciones = {},
 ): Promise<T> {
+  if (signal?.aborted) throw new PeticionCancelada();
   // Un FormData (ej. una foto) se envía tal cual: fetch arma su Content-Type
   const esFormulario = body instanceof FormData;
   const headers: Record<string, string> = {};
@@ -65,11 +79,19 @@ export async function request<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
 
   // Un servidor que no responde se corta en lugar de dejar la pantalla esperando
+  // expo/fetch avisa las dos cancelaciones igual ("Fetch request has been
+  // canceled"), así que aquí se recuerda cuál fue.
   const controlador = new AbortController();
+  let agotado = false;
   const temporizador = setTimeout(
-    () => controlador.abort(),
+    () => {
+      agotado = true;
+      controlador.abort();
+    },
     esFormulario ? TIEMPO_LIMITE_ARCHIVOS_MS : TIEMPO_LIMITE_MS,
   );
+  const cancelar = () => controlador.abort();
+  signal?.addEventListener("abort", cancelar);
 
   let response: Response;
   let texto: string;
@@ -86,11 +108,13 @@ export async function request<T>(
     });
     texto = await response.text();
   } catch (error) {
-    if (controlador.signal.aborted) throw new ErrorDeConexion(error, "tiempo-agotado");
+    if (agotado) throw new ErrorDeConexion(error, "tiempo-agotado");
+    if (signal?.aborted) throw new PeticionCancelada();
     if (esFalloDeRed(error)) throw new ErrorDeConexion(error, "sin-conexion");
     throw new ErrorDeEnvio(error);
   } finally {
     clearTimeout(temporizador);
+    signal?.removeEventListener("abort", cancelar);
   }
 
   const data = leerJSON(texto);

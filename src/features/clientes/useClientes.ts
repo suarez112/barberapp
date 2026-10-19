@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
+import { esCancelada } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import { useAvisarError } from "../sesion/useAvisarError";
 import {
@@ -13,6 +15,7 @@ import {
 // Clientes y lista negra del negocio, leídos del servidor
 export function useClientes(token: string) {
   const avisarError = useAvisarError();
+  const senal = useSenalDeSalida();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [listaNegra, setListaNegra] = useState<Bloqueado[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -21,20 +24,22 @@ export function useClientes(token: string) {
   // El estado cambia solo cuando responde el servidor
   const cargar = useCallback(
     () =>
-      Promise.all([listarClientes(token), listarListaNegra(token)])
+      Promise.all([listarClientes(token, senal()), listarListaNegra(token, senal())])
         .then(([c, l]) => {
           setClientes(c);
           setListaNegra(l);
           setError(null);
         })
         .catch((e) => {
+          // Se salió de la pestaña antes de que respondiera: nada que mostrar
+          if (esCancelada(e)) return;
           setError("No se pudieron cargar los clientes.");
           avisarError(e, { titulo: "No se pudieron cargar los clientes" });
         })
         .finally(() => setCargando(false)),
     // avisarError cambia en cada render; basta el token
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [token],
+    [token, senal],
   );
 
   useEffect(() => {

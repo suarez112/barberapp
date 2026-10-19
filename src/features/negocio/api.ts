@@ -14,8 +14,8 @@ export const validarCodigoEmpresa = (codigo: string) =>
   );
 
 // Negocio de la sesión iniciada, con los usuarios del equipo
-export const obtenerNegocioActual = (token: string) =>
-  request<DatosNegocio>("/api/v1/empresas/actual", { token });
+export const obtenerNegocioActual = (token: string, signal?: AbortSignal) =>
+  request<DatosNegocio>("/api/v1/empresas/actual", { token, signal });
 
 // Información pública del negocio con su foto (sin datos de suscripción)
 export type PerfilPublico = {

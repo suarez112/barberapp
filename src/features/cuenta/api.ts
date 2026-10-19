@@ -101,11 +101,11 @@ export const loginCuenta = (correo: string, clave: string) =>
   });
 
 // Responde aunque la prueba haya vencido
-export const obtenerEstadoPrueba = (token: string) =>
-  request<EstadoPrueba>("/api/v1/admin/empresa/prueba", { token });
+export const obtenerEstadoPrueba = (token: string, signal?: AbortSignal) =>
+  request<EstadoPrueba>("/api/v1/admin/empresa/prueba", { token, signal });
 
-export const obtenerMiEmpresa = (token: string) =>
-  request<PerfilEmpresa>("/api/v1/admin/empresa", { token });
+export const obtenerMiEmpresa = (token: string, signal?: AbortSignal) =>
+  request<PerfilEmpresa>("/api/v1/admin/empresa", { token, signal });
 
 export const actualizarMiEmpresa = (
   token: string,

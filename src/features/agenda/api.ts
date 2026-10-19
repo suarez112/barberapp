@@ -28,8 +28,8 @@ export const crearCita = (cita: NuevaCita) =>
   request<{ cita: Cita }>("/api/v1/citas", { method: "POST", body: cita });
 
 // Citas reales del negocio. Requiere el token del inicio de sesión
-export const listarAgenda = (token: string) =>
-  request<Cita[]>("/api/v1/citas/agenda", { token });
+export const listarAgenda = (token: string, signal?: AbortSignal) =>
+  request<Cita[]>("/api/v1/citas/agenda", { token, signal });
 
 export const completarCita = (id: string, token: string) =>
   request<{ completadaEn: string; completadaPor: string }>(

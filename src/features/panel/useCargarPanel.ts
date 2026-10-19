@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
 import { describirError, esEstado } from "@/services/api/errores";
+import { esCancelada } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import { listarAgenda } from "../agenda/api";
 import { useAgenda } from "../agenda/AgendaProvider";
@@ -13,18 +15,20 @@ export function useCargarPanel(token: string) {
   const { abrirNegocio } = useNegocio();
   const { setCitas } = useAgenda();
   const cerrarSesion = useCerrarSesion();
+  const senal = useSenalDeSalida();
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // El estado cambia solo cuando responde el servidor
   const cargar = useCallback(
     () =>
-      Promise.all([obtenerNegocioActual(token), listarAgenda(token)])
+      Promise.all([obtenerNegocioActual(token, senal()), listarAgenda(token, senal())])
         .then(([negocio, agenda]) => {
           abrirNegocio(negocio);
           setCitas(agenda);
         })
         .catch((e) => {
+          if (esCancelada(e)) return;
           const aviso = describirError(e, {
             titulo: "Error",
             porDefecto: "No se pudieron cargar los datos del negocio.",
@@ -39,7 +43,7 @@ export function useCargarPanel(token: string) {
         .finally(() => setCargando(false)),
     // abrirNegocio, setCitas y cerrarSesion cambian en cada render; basta el token
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [token],
+    [token, senal],
   );
 
   useEffect(() => {
