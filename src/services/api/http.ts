@@ -11,11 +11,28 @@ export class ApiError extends Error {
   }
 }
 
-// No se pudo hablar con el servidor (apagado, sin red, IP incorrecta)
+// Por qué no hubo una respuesta válida del servidor
+export type MotivoConexion =
+  | "sin-conexion" // apagado, sin red, IP incorrecta
+  | "tiempo-agotado" // el servidor no respondió a tiempo
+  | "respuesta-invalida"; // respondió algo que no es la API (ej. portal cautivo)
+
 export class ErrorDeConexion extends Error {
-  constructor(readonly causa: unknown) {
+  constructor(
+    readonly causa: unknown,
+    readonly motivo: MotivoConexion = "sin-conexion",
+  ) {
     super("No se pudo conectar con el servidor.");
     this.name = "ErrorDeConexion";
+  }
+}
+
+// La app no pudo armar la solicitud (ej. un archivo que no se pudo leer).
+// No es un problema de red: no se debe decir "sin conexión".
+export class ErrorDeEnvio extends Error {
+  constructor(readonly causa: unknown) {
+    super("No se pudo preparar el envío.");
+    this.name = "ErrorDeEnvio";
   }
 }
 
@@ -26,6 +43,15 @@ type Opciones = {
 };
 
 const TIEMPO_LIMITE_MS = 15_000;
+// Una foto en una red lenta tarda más que un JSON
+const TIEMPO_LIMITE_ARCHIVOS_MS = 60_000;
+
+// Los fallos de red llegan como TypeError (web: "Failed to fetch") o como
+// FetchError de expo/fetch ("fetch failed: ..."). Cualquier otro error ocurrió
+// antes de enviar, al preparar el cuerpo.
+const esFalloDeRed = (error: unknown) =>
+  error instanceof TypeError ||
+  (error instanceof Error && /fetch failed|network/i.test(error.message));
 
 export async function request<T>(
   ruta: string,
@@ -40,7 +66,10 @@ export async function request<T>(
 
   // Un servidor que no responde se corta en lugar de dejar la pantalla esperando
   const controlador = new AbortController();
-  const temporizador = setTimeout(() => controlador.abort(), TIEMPO_LIMITE_MS);
+  const temporizador = setTimeout(
+    () => controlador.abort(),
+    esFormulario ? TIEMPO_LIMITE_ARCHIVOS_MS : TIEMPO_LIMITE_MS,
+  );
 
   let response: Response;
   let texto: string;
@@ -57,7 +86,9 @@ export async function request<T>(
     });
     texto = await response.text();
   } catch (error) {
-    throw new ErrorDeConexion(error);
+    if (controlador.signal.aborted) throw new ErrorDeConexion(error, "tiempo-agotado");
+    if (esFalloDeRed(error)) throw new ErrorDeConexion(error, "sin-conexion");
+    throw new ErrorDeEnvio(error);
   } finally {
     clearTimeout(temporizador);
   }
@@ -69,7 +100,7 @@ export async function request<T>(
     throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status);
   }
   // Una respuesta exitosa que no es JSON (ej. portal cautivo) no viene del backend
-  if (data === NO_ES_JSON) throw new ErrorDeConexion(texto);
+  if (data === NO_ES_JSON) throw new ErrorDeConexion(texto, "respuesta-invalida");
   return data as T;
 }
 

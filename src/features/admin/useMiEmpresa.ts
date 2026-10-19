@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, ErrorDeConexion, mensajeDeError } from "@/services/api/http";
+import { describirError, registrarCausa } from "@/services/api/errores";
+import { ApiError, mensajeDeError } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import {
   DatosEmpresa,
@@ -41,6 +42,7 @@ export function useMiEmpresa() {
         avisar(
           "Sesión finalizada",
           mensajeDeError(error, "Vuelve a iniciar sesión."),
+          "error",
         );
         cerrarSesion();
         return true;
@@ -66,10 +68,12 @@ export function useMiEmpresa() {
         })
         .catch((error) => {
           if (manejarErrorDeAcceso(error)) return;
+          registrarCausa("Mi negocio", error);
           setErrorCarga(
-            error instanceof ErrorDeConexion
-              ? "No se pudo conectar con el servidor."
-              : mensajeDeError(error, "No se pudieron cargar los datos del negocio."),
+            describirError(error, {
+              titulo: "",
+              porDefecto: "No se pudieron cargar los datos del negocio.",
+            }).mensaje,
           );
         })
         .finally(() => setCargando(false)),
@@ -93,11 +97,9 @@ export function useMiEmpresa() {
       return true;
     } catch (error) {
       if (manejarErrorDeAcceso(error)) return false;
-      if (error instanceof ErrorDeConexion) {
-        avisar("Error de conexión", "No se pudo conectar con el servidor.");
-      } else {
-        avisar("No se pudo guardar", mensajeDeError(error, porDefecto));
-      }
+      registrarCausa(porDefecto, error);
+      const aviso = describirError(error, { titulo: "No se pudo guardar", porDefecto });
+      avisar(aviso.titulo, aviso.mensaje, "error");
       return false;
     }
   };
@@ -105,14 +107,14 @@ export function useMiEmpresa() {
   const guardarDatos = (cambios: Partial<DatosEmpresa>) =>
     ejecutar(async () => {
       setPerfil(await actualizarMiEmpresa(token, cambios));
-      avisar("Datos guardados", "La información del negocio se actualizó.");
+      avisar("Datos guardados", "La información del negocio se actualizó.", "exito");
     }, "No se pudieron guardar los datos.");
 
   const guardarFoto = (foto: FotoElegida) =>
     ejecutar(async () => {
       const { fotoUrl, mensaje } = await subirFotoEmpresa(token, foto);
       setPerfil((p) => (p ? { ...p, fotoUrl } : p));
-      avisar(mensaje);
+      avisar(mensaje, undefined, "exito");
     }, "No se pudo subir la foto.");
 
   return {

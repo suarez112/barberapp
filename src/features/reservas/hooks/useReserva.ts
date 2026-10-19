@@ -7,8 +7,8 @@ import {
 import { crearCita } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
-import { describirError, esEstado } from "@/services/api/errores";
-import { ErrorDeConexion, mensajeDeError } from "@/services/api/http";
+import { describirError, esEstado, registrarCausa } from "@/services/api/errores";
+import { mensajeDeError } from "@/services/api/http";
 import { Barbero, Dia, Servicio } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import {
@@ -142,7 +142,7 @@ export function useReserva() {
       });
       agregarCita(cita);
     } catch (error) {
-      if (error instanceof ErrorDeConexion) console.error("Error al agendar:", error.causa);
+      registrarCausa("Error al agendar:", error);
       // 403: el teléfono está en la lista negra del negocio.
       // 409: la hora se ocupó o el profesional no atiende en ese horario.
       const aviso = esEstado(error, 403)
@@ -158,7 +158,7 @@ export function useReserva() {
             porDefecto: "Intenta de nuevo.",
             tituloConflicto: "Horario no disponible",
           });
-      avisar(aviso.titulo, aviso.mensaje);
+      avisar(aviso.titulo, aviso.mensaje, "error");
       if (esEstado(error, 409)) {
         setHora("");
         cargarOcupacion(empresa.id);

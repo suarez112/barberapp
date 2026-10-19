@@ -1,4 +1,4 @@
-import { ErrorDeConexion, mensajeDeError } from "@/services/api/http";
+import { describirError, registrarCausa } from "@/services/api/errores";
 import { avisar } from "@/utils/dialogos";
 import { useAgenda } from "../agenda/AgendaProvider";
 import { validarCodigoEmpresa } from "./api";
@@ -22,18 +22,12 @@ export function useAbrirNegocio() {
       cargarOcupacion(datos.empresa.id);
       return true;
     } catch (error) {
-      if (error instanceof ErrorDeConexion) {
-        console.error("Error al conectar con la API:", error.causa);
-        avisar(
-          "Error de conexión",
-          "No fue posible conectar con el servidor backend. Verifica que el servidor esté activo.",
-        );
-      } else {
-        avisar(
-          "Código Inválido",
-          mensajeDeError(error, "Establecimiento no encontrado."),
-        );
-      }
+      registrarCausa("Abrir negocio", error);
+      const aviso = describirError(error, {
+        titulo: "Código inválido",
+        porDefecto: "Establecimiento no encontrado.",
+      });
+      avisar(aviso.titulo, aviso.mensaje, "error");
       return false;
     }
   };
