@@ -1,5 +1,5 @@
 import { request } from "../../services/api/http";
-import { Barbero, Empresa, Servicio } from "../../types";
+import { Barbero, Empresa, Servicio, DiaHorario } from "../../types";
 
 export type DatosNegocio = {
   empresa: Empresa;
@@ -17,16 +17,16 @@ export const validarCodigoEmpresa = (codigo: string) =>
 export const obtenerNegocioActual = (token: string) =>
   request<DatosNegocio>("/api/v1/empresas/actual", { token });
 
-// Información pública del negocio con su foto (sin NIT ni datos de suscripción)
+// Información pública del negocio con su foto (sin datos de suscripción)
 export type PerfilPublico = {
   id: string;
   nombre: string;
   codigoAcceso: string;
   categoria: string | null;
-  telefono: string | null;
-  correo: string | null;
   direccion: string | null;
+  departamento: string | null;
   ciudad: string | null;
+  horario: DiaHorario[] | null;
   diasAtencion: number[] | null;
   horarioApertura: string | null;
   horarioCierre: string | null;

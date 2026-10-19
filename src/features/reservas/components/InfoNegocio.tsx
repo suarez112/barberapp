@@ -4,7 +4,7 @@ import { ComponentProps, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { obtenerPerfilPublico, PerfilPublico } from "@/features/negocio/api";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { textoDiasAtencion } from "@/utils/formato";
+import { resumenHorario, textoDiasAtencion } from "@/utils/formato";
 
 // Tarjeta con la foto y los datos del negocio que ve el cliente
 export default function InfoNegocio({ codigo }: { codigo: string }) {
@@ -24,9 +24,12 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
 
   if (!perfil) return null;
 
-  const ubicacion = [perfil.direccion, perfil.ciudad].filter(Boolean).join(", ");
-  const horario =
-    perfil.horarioApertura && perfil.horarioCierre
+  const ubicacion = [perfil.direccion, perfil.ciudad, perfil.departamento]
+    .filter(Boolean)
+    .join(", ");
+  const horario = perfil.horario?.length
+    ? resumenHorario(perfil.horario) || null
+    : perfil.horarioApertura && perfil.horarioCierre
       ? `${perfil.diasAtencion?.length ? `${textoDiasAtencion(perfil.diasAtencion)} · ` : ""}${perfil.horarioApertura} a ${perfil.horarioCierre}`
       : null;
 
@@ -64,8 +67,6 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
         ) : null}
         {dato("location-outline", ubicacion || null)}
         {dato("time-outline", horario)}
-        {dato("call-outline", perfil.telefono)}
-        {dato("mail-outline", perfil.correo)}
       </View>
     </View>
   );

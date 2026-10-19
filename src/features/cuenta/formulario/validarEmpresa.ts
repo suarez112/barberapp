@@ -1,148 +1,176 @@
-import { DatosEmpresa, PerfilEmpresa } from "../api";
+import { DatosEmpresa, DiaHorarioEnvio, PerfilEmpresa } from "../api";
 
-// Lo que se escribe en el formulario (todo texto, salvo los días)
+// Horario de un día en el formulario
+export type DiaFormulario = { dia: number; abierto: boolean; apertura: string; cierre: string };
+
+// Lo que se escribe en el formulario del negocio (registro y "Mi negocio")
 export type ValoresEmpresa = {
   nombre: string;
   categoria: string;
-  nit: string;
-  telefono: string;
-  correo: string;
-  direccion: string;
-  ciudad: string;
-  diasAtencion: number[];
-  horarioApertura: string;
-  horarioCierre: string;
+  codigoAcceso: string;
   nombreAdministradora: string;
-  numeroEmpleados: string;
-  logoUrl: string;
+  numeroEmpleados: number | null;
+  departamento: string | null;
+  ciudad: string | null;
+  direccion: string;
+  // true: los días abiertos comparten un solo horario (diasAbiertos, apertura, cierre).
+  // false: cada día tiene el suyo (dias).
+  mismoHorario: boolean;
+  diasAbiertos: number[];
+  apertura: string;
+  cierre: string;
+  dias: DiaFormulario[]; // los 7, 0 = domingo … 6 = sábado
 };
+
+const APERTURA = "08:00";
+const CIERRE = "19:00";
+const DE_LUNES_A_SABADO = [1, 2, 3, 4, 5, 6];
+
+const diasIguales = (abiertos: number[], apertura: string, cierre: string): DiaFormulario[] =>
+  Array.from({ length: 7 }, (_, dia) => ({ dia, abierto: abiertos.includes(dia), apertura, cierre }));
 
 export const VALORES_VACIOS: ValoresEmpresa = {
   nombre: "",
   categoria: "",
-  nit: "",
-  telefono: "",
-  correo: "",
-  direccion: "",
-  ciudad: "",
-  diasAtencion: [1, 2, 3, 4, 5, 6],
-  horarioApertura: "08:00",
-  horarioCierre: "19:00",
+  codigoAcceso: "",
   nombreAdministradora: "",
-  numeroEmpleados: "",
-  logoUrl: "",
+  numeroEmpleados: null,
+  departamento: null,
+  ciudad: null,
+  direccion: "",
+  mismoHorario: true,
+  diasAbiertos: DE_LUNES_A_SABADO,
+  apertura: APERTURA,
+  cierre: CIERRE,
+  dias: diasIguales(DE_LUNES_A_SABADO, APERTURA, CIERRE),
 };
 
-export const valoresDesdePerfil = (p: PerfilEmpresa): ValoresEmpresa => ({
-  nombre: p.nombre,
-  categoria: p.categoria,
-  nit: p.nit ?? "",
-  telefono: p.telefono,
-  correo: p.correo,
-  direccion: p.direccion,
-  ciudad: p.ciudad,
-  diasAtencion: p.diasAtencion,
-  horarioApertura: p.horarioApertura,
-  horarioCierre: p.horarioCierre,
-  nombreAdministradora: p.nombreAdministradora,
-  numeroEmpleados: String(p.numeroEmpleados),
-  logoUrl: p.logoUrl ?? "",
-});
+export const valoresDesdePerfil = (p: PerfilEmpresa): ValoresEmpresa => {
+  const dias = Array.from({ length: 7 }, (_, dia) => {
+    const h = p.horario.find((x) => x.dia === dia);
+    return {
+      dia,
+      abierto: !!h?.abierto,
+      apertura: h?.apertura ?? APERTURA,
+      cierre: h?.cierre ?? CIERRE,
+    };
+  });
+  const abiertos = dias.filter((d) => d.abierto);
+  // Si todos los días abiertos tienen el mismo horario, se muestra la casilla marcada
+  const mismoHorario = abiertos.every(
+    (d) => d.apertura === abiertos[0]?.apertura && d.cierre === abiertos[0]?.cierre,
+  );
+  return {
+    nombre: p.nombre,
+    categoria: p.categoria,
+    codigoAcceso: p.codigoAcceso,
+    nombreAdministradora: p.nombreAdministradora,
+    numeroEmpleados: p.numeroEmpleados,
+    departamento: p.departamento,
+    ciudad: p.departamento ? p.ciudad : null,
+    direccion: p.direccion,
+    mismoHorario,
+    diasAbiertos: abiertos.map((d) => d.dia),
+    apertura: abiertos[0]?.apertura ?? APERTURA,
+    cierre: abiertos[0]?.cierre ?? CIERRE,
+    dias,
+  };
+};
+
+// Horario de los 7 días según el modo elegido
+export const horarioDeValores = (v: ValoresEmpresa): DiaFormulario[] =>
+  v.mismoHorario ? diasIguales(v.diasAbiertos, v.apertura, v.cierre) : v.dias;
+
+// Código del negocio: solo letras sin tildes y números, máximo 10, en mayúsculas.
+// "central 10" -> "CENTRAL10", "Peña" -> "PEA"
+export const limpiarCodigo = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
+
+const DIAS_NOMBRE = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 // Mismas reglas y mensajes que el backend (empresas.esquemas.ts), para avisar
 // antes de enviar. El backend vuelve a validar y su mensaje se muestra igual.
-const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMPLEADOS = "El número de empleados debe ser un número entero mayor que cero";
+const USUARIO = /^[A-Za-z0-9._]{4,20}$/;
+const CODIGO = /^[A-Z0-9]{1,10}$/;
 
 const obligatorio = (campo: string) => `El campo "${campo}" es obligatorio`;
 
 const revisarTexto = (valor: string, campo: string, max: number) => {
   if (!valor.trim()) return obligatorio(campo);
-  if (valor.trim().length > max)
-    return `El campo "${campo}" admite máximo ${max} caracteres`;
+  if (valor.trim().length > max) return `El campo "${campo}" admite máximo ${max} caracteres`;
   return null;
 };
 
-export type Resultado =
-  | { ok: true; datos: DatosEmpresa }
-  | { ok: false; error: string };
+const revisarHorario = (dias: DiaFormulario[]) => {
+  const abiertos = dias.filter((d) => d.abierto);
+  if (abiertos.length === 0) return "El negocio debe abrir al menos un día";
+  // "HH:MM" se compara bien como texto
+  const mal = abiertos.find((d) => d.cierre <= d.apertura);
+  return mal
+    ? `El ${DIAS_NOMBRE[mal.dia]}, la hora de cierre debe ser posterior a la de apertura`
+    : null;
+};
+
+export type Resultado = { ok: true; datos: DatosEmpresa } | { ok: false; error: string };
 
 export function validarEmpresa(v: ValoresEmpresa): Resultado {
-  const telefono = v.telefono.trim();
-  const nit = v.nit.trim();
-  const logoUrl = v.logoUrl.trim();
-  const correo = v.correo.trim().toLowerCase();
-  const empleados = Number(v.numeroEmpleados.trim());
-
+  const dias = horarioDeValores(v);
   const error =
     revisarTexto(v.nombre, "nombre", 100) ??
     revisarTexto(v.categoria, "categoría", 60) ??
-    (nit.length > 20 ? "El NIT admite máximo 20 caracteres" : null) ??
-    (!/^[0-9\s-]*$/.test(nit)
-      ? "El NIT solo puede tener números, espacios y guiones"
-      : null) ??
-    revisarTexto(telefono, "teléfono", 20) ??
-    (telefono.length < 7
-      ? "El teléfono debe tener entre 7 y 20 caracteres"
-      : null) ??
-    (!/^\+?[0-9\s()-]+$/.test(telefono)
-      ? "El teléfono solo puede tener números, espacios, paréntesis, guiones y +"
-      : null) ??
-    (!correo ? obligatorio("correo") : null) ??
-    (!CORREO.test(correo) || correo.length > 254
-      ? "El correo no es válido"
-      : null) ??
-    revisarTexto(v.direccion, "dirección", 200) ??
-    revisarTexto(v.ciudad, "ciudad", 100) ??
-    (v.diasAtencion.length === 0 ? "Elige al menos un día de atención" : null) ??
-    (!HORA.test(v.horarioApertura)
-      ? "La hora de apertura debe tener el formato HH:MM (24 horas)"
-      : null) ??
-    (!HORA.test(v.horarioCierre)
-      ? "La hora de cierre debe tener el formato HH:MM (24 horas)"
-      : null) ??
-    // "HH:MM" se compara bien como texto
-    (v.horarioCierre <= v.horarioApertura
-      ? "La hora de cierre debe ser posterior a la hora de apertura"
-      : null) ??
     revisarTexto(v.nombreAdministradora, "nombre de la administradora", 120) ??
-    (!v.numeroEmpleados.trim() || !Number.isInteger(empleados) || empleados < 1
-      ? EMPLEADOS
+    (!v.numeroEmpleados ? "Elige el número de empleados" : null) ??
+    (!CODIGO.test(v.codigoAcceso)
+      ? "El código del negocio solo puede tener letras (sin tildes ni ñ) y números, sin espacios, máximo 10 caracteres"
       : null) ??
-    (empleados > 10_000
-      ? "El número de empleados no puede ser mayor que 10000"
-      : null) ??
-    (logoUrl && !/^https?:\/\/\S+$/.test(logoUrl)
-      ? "El logo debe ser una dirección web que empiece por http:// o https://"
-      : null);
+    (!v.departamento ? "Elige el departamento" : null) ??
+    (!v.ciudad ? "Elige el municipio" : null) ??
+    revisarTexto(v.direccion, "dirección", 200) ??
+    revisarHorario(dias);
 
   if (error) return { ok: false, error };
+
+  const horario: DiaHorarioEnvio[] = dias.map((d) =>
+    d.abierto
+      ? { dia: d.dia, abierto: true, apertura: d.apertura, cierre: d.cierre }
+      : { dia: d.dia, abierto: false },
+  );
 
   return {
     ok: true,
     datos: {
       nombre: v.nombre.trim(),
       categoria: v.categoria.trim(),
-      nit: nit || null,
-      telefono,
-      correo,
+      codigoAcceso: v.codigoAcceso,
       direccion: v.direccion.trim(),
-      ciudad: v.ciudad.trim(),
-      diasAtencion: [...v.diasAtencion].sort((a, b) => a - b),
-      horarioApertura: v.horarioApertura,
-      horarioCierre: v.horarioCierre,
+      departamento: v.departamento ?? "",
+      ciudad: v.ciudad ?? "",
+      horario,
       nombreAdministradora: v.nombreAdministradora.trim(),
-      numeroEmpleados: empleados,
-      logoUrl: logoUrl || null,
+      numeroEmpleados: v.numeroEmpleados ?? 1,
     },
   };
 }
 
-export const MENSAJE_CLAVE = "La contraseña debe tener entre 8 y 64 caracteres";
+// Acceso de la administradora (solo en el registro)
+export type ValoresAcceso = { correo: string; usuario: string; clave: string; confirmacion: string };
 
-export const validarClave = (clave: string, confirmacion: string) => {
-  if (clave.length < 8 || clave.length > 64) return MENSAJE_CLAVE;
-  if (clave !== confirmacion) return "Las contraseñas no coinciden";
+export const ACCESO_VACIO: ValoresAcceso = { correo: "", usuario: "", clave: "", confirmacion: "" };
+
+export const validarAcceso = (a: ValoresAcceso) => {
+  const correo = a.correo.trim().toLowerCase();
+  if (!correo) return obligatorio("correo");
+  if (!CORREO.test(correo) || correo.length > 254) return "El correo no es válido";
+  if (!USUARIO.test(a.usuario.trim()))
+    return "El usuario debe tener entre 4 y 20 caracteres: solo letras, números, punto y guion bajo";
+  if (a.clave.length < 8 || a.clave.length > 64)
+    return "La contraseña debe tener entre 8 y 64 caracteres";
+  if (a.clave !== a.confirmacion) return "Las contraseñas no coinciden";
   return null;
 };

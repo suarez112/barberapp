@@ -1,4 +1,5 @@
 import { request } from "../../services/api/http";
+import { DiaHorario } from "../../types";
 import { FotoElegida, formularioFoto } from "../../utils/imagenes";
 
 export type { FotoElegida };
@@ -17,26 +18,41 @@ export type UsuarioCuenta = {
   empresaId: string | null;
 };
 
+// Horario de un día como lo recibe el backend: cerrado sin horas
+export type DiaHorarioEnvio =
+  | { dia: number; abierto: false }
+  | { dia: number; abierto: true; apertura: string; cierre: string };
+
 // Campos que se escriben en el registro y en "Mi negocio"
 export type DatosEmpresa = {
   nombre: string;
   categoria: string;
-  nit: string | null;
-  telefono: string;
-  correo: string;
+  // Código que usan los clientes: letras y números, máximo 10 (se guarda en mayúsculas)
+  codigoAcceso: string;
   direccion: string;
-  ciudad: string;
-  diasAtencion: number[]; // 0 = domingo … 6 = sábado
-  horarioApertura: string; // "08:00"
-  horarioCierre: string; // "19:00"
+  departamento: string; // nombre oficial DIVIPOLA, ej. "SANTANDER"
+  ciudad: string; // municipio de ese departamento, ej. "BUCARAMANGA"
+  horario: DiaHorarioEnvio[]; // los 7 días, 0 = domingo … 6 = sábado
   nombreAdministradora: string;
-  numeroEmpleados: number;
-  logoUrl: string | null;
+  numeroEmpleados: number; // 1 a 10
 };
 
-export type PerfilEmpresa = DatosEmpresa & {
+// Acceso de la administradora: solo en el registro
+export type AccesoAdministradora = {
+  correo: string;
+  usuario: string;
+  clave: string;
+};
+
+export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   id: string;
-  codigoAcceso: string;
+  // null en negocios registrados antes de la versión con departamento
+  departamento: string | null;
+  horario: DiaHorario[];
+  diasAtencion: number[];
+  horarioApertura: string;
+  horarioCierre: string;
+  logoUrl: string | null;
   fotoUrl: string | null;
   colorPrimario: string | null;
   colorSecundario: string | null;
@@ -72,7 +88,7 @@ export type RespuestaLoginCuenta = {
   usuario: UsuarioCuenta;
 };
 
-export const registrarEmpresa = (datos: DatosEmpresa & { clave: string }) =>
+export const registrarEmpresa = (datos: DatosEmpresa & AccesoAdministradora) =>
   request<RespuestaRegistroEmpresa>("/api/v1/cuentas/registro/empresa", {
     method: "POST",
     body: datos,
@@ -108,3 +124,18 @@ export const subirFotoEmpresa = (token: string, foto: FotoElegida) =>
     body: formularioFoto(foto),
     token,
   });
+
+// ¿Algún negocio usa ya ese código? (también responde false con el código propio)
+export const consultarCodigoDisponible = (codigo: string) =>
+  request<{ codigo: string; disponible: boolean }>(
+    `/api/v1/empresas/codigo-disponible/${encodeURIComponent(codigo)}`,
+  );
+
+export type Departamento = {
+  codigo: string;
+  nombre: string;
+  municipios: { codigo: string; nombre: string }[];
+};
+
+// Departamentos de Colombia con sus municipios (lista oficial DIVIPOLA)
+export const listarUbicaciones = () => request<Departamento[]>("/api/v1/ubicaciones");
