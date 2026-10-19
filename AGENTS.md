@@ -50,7 +50,16 @@ Barbershop booking app (Expo SDK 57, React Native 0.86, Expo Router, TypeScript)
 
 - Lives in `C:\Users\eduar_9\agendamiento-backend` (Express + PostgreSQL, port `4000`, routes under `/api/v1`).
 - Its endpoints, request/response contracts and error messages are documented in `C:\Users\eduar_9\agendamiento-backend\AGENTS.md`. Read it before wiring a new call.
-- **Never modify the backend from this repository.** Frontend changes only.
+- **Never modify the backend from this repository.** Frontend changes only. You may read its `AGENTS.md` and code; when the backend changed, read its recent commits first.
+
+## Working rules (every thread)
+
+- The backend is already running on port 4000 (`npm run dev`) and Expo is already running (`npx expo start`). Use them; **never start or stop them**.
+- **Do not use the Android emulator.** The user tests the visual part on their phone.
+- To verify a change: make sure the app compiles (`npx tsc --noEmit`, `npx expo lint`; if Metro is not reachable, `npx expo export --platform android --output-dir <temp dir outside the repo>`, then delete that dir), and call the backend endpoints used by the changed screens (e.g. with `curl`) to confirm that what the app sends matches what the backend expects.
+- Test data you create must start with "PRUEBA" (names, codes, users) and must be deleted when you finish.
+- Do not write automated tests and do not request reviews unless the user asks.
+- Explain what you did in plain, simple language. Commit and push only when the user asks.
 
 ## Folder structure
 
@@ -63,9 +72,10 @@ src/
     registro.tsx   -> features/cuenta/RegistroEmpresaScreen (company registration; form in cuenta/formulario/)
     login.tsx      -> single login: "Correo o usuario" + password (POST /api/v1/login)
     cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile)
-    panel.tsx      -> features/panel/PanelScreen (staff panel, staff token)
-    admin.tsx      -> features/admin/AdminPanelScreen (company admin panel, account token: same
-                   sections as the staff admin plus "Mi negocio")
+    panel.tsx      -> features/panel/PanelScreen (staff panel, staff token; a member with role
+                   admin gets features/admin/PanelAdministrador, an employee PanelNegocio)
+    admin.tsx      -> features/admin/AdminPanelScreen (company account, account token) ->
+                   features/admin/PanelAdministrador (PanelNegocio + trial notice + "Mi negocio")
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
                    department/municipality from GET /api/v1/ubicaciones, same-schedule checkbox or 7 days), validarEmpresa
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
@@ -79,7 +89,7 @@ src/
   theme/, constants/, hooks/, types/, utils/
 ```
 
-Navigation is a single Stack. Both panels render `features/panel/PanelNegocio.tsx`, which switches tabs internally (`components/PanelTabBar.tsx`), not with Expo Router tabs: Agenda, Bloqueos and Cartera for everyone; Clientes and Equipo (team/services/products) for admins; "Mi negocio" only for the account admin.
+Navigation is a single Stack. Both panels render `features/panel/PanelNegocio.tsx`, which switches tabs internally (`components/PanelTabBar.tsx`), not with Expo Router tabs: every admin (company account or team member with role `admin`) sees the same tabs: Agenda, Bloqueos, Clientes, Cartera, Equipo (team/services/products) and Mi negocio; an employee (role `empleado`) only sees Agenda and Cartera (their own).
 
 ## Running the app
 
@@ -99,12 +109,13 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
   2. web: `http://localhost:4000`;
   3. the IP of the Expo dev server (`Constants.expoConfig.hostUri`) on port 4000, so a physical phone reaches the PC;
   4. fallback: `http://10.0.2.2:4000` on the Android emulator, `http://localhost:4000` elsewhere.
-- `src/services/api/http.ts` exports `request<T>(ruta, { method, body, token })`: JSON body, `Authorization: Bearer <token>` when a token is passed, 15 s timeout.
+- `src/services/api/http.ts` exports `request<T>(ruta, { method, body, token, signal })`: JSON body, `Authorization: Bearer <token>` when a token is passed, 15 s timeout.
+  - `signal` cancels the request on purpose (e.g. leaving a screen): it throws `PeticionCancelada` (`esCancelada(e)`), which is **never shown** to the user. Screen loads get it from `hooks/useSenalDeSalida.ts` (aborts on unmount). expo/fetch reports both a timeout and a cancel as "fetch failed: Fetch request has been canceled"; `request()` tells them apart itself.
   - Server error (4xx/5xx) -> `ApiError` with the backend `{ error }` message and `status`.
   - Network failure, timeout or non-JSON response -> `ErrorDeConexion`.
   - `mensajeDeError(error, porDefecto)` returns the text to show the user.
 - Each feature declares its calls in its own `api.ts` (sesion, cuenta, negocio, agenda, clientes, equipo, servicios, productos, bloqueos, cartera). Add new endpoints the same way; do not call `fetch` from screens.
-- Errors: `request()` throws `ApiError` (server answered), `ErrorDeConexion` with `motivo` `sin-conexion` | `tiempo-agotado` | `respuesta-invalida`, or `ErrorDeEnvio` (the app could not build the request, e.g. an unreadable file; never reported as "no connection"). `services/api/errores.ts` `describirError()` turns any of them into `{ titulo, mensaje }` (no connection, timeout, 401 session expired, 402 trial ended, 403 no permission, 409 conflict with a custom title, 413 file too large, 429, 5xx server error); `registrarCausa()` logs the non-server cause. Panel actions use `features/sesion/useAvisarError.ts`, which also logs out on 401. Booking shows 403 (blacklisted phone) and 409 (busy or blocked slot) with the backend message.
+- Errors: `request()` throws `ApiError` (server answered), `ErrorDeConexion` with `motivo` `sin-conexion` | `tiempo-agotado` | `respuesta-invalida`, or `ErrorDeEnvio` (the app could not build the request, e.g. an unreadable file; never reported as "no connection"). `services/api/errores.ts` `describirError()` turns any of them into `{ titulo, mensaje }` (no connection, timeout, 401 session expired, 402 trial ended, 403 no permission, 409 conflict with a custom title, 413 file too large, 429, 5xx server error); `registrarCausa()` logs the non-server cause with `console.log` (never `console.error` for connection failures: in development it opens Expo's red screen with the technical text) and skips cancelled requests. Panel actions use `features/sesion/useAvisarError.ts`, which also logs out on 401. Booking shows 403 (blacklisted phone) and 409 (busy or blocked slot) with the backend message.
 - Photos: `utils/imagenes.ts` `elegirFoto()` (checks JPG/PNG/WEBP and 5 MB like the backend) and `formularioFoto()` (multipart field `foto`). On Android/iOS the part is `new File(uri)` from `expo-file-system`: the SDK 57 global `fetch` is `expo/fetch`, which rejects the old React Native `{ uri, name, type }` part with "Unsupported FormDataPart implementation". Uploads get a 60 s timeout.
 
 ## UI building blocks
@@ -125,12 +136,14 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - `features/sesion/usePersonal.ts` gives one view of whoever uses the business panel (`token`, `esAdmin`, `barbero` or null for the account admin, `esCuentaAdmin`). The account admin token works on every staff endpoint as the business admin.
 - `features/sesion/useCerrarSesion.ts` closes both sessions, deletes the saved one and clears business and agenda data. The header button "Cerrar sesión" and Android back in a panel use it.
 - The panel (`features/panel/useCargarPanel.ts`) loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with that token; login only stores the session.
-- Account admin: `/admin` shows trial days (`AvisoPrueba`), the expired-trial screen on 402 (`PruebaVencida`) and "Mi negocio" (profile, photo, client code).
+- Admins (`features/admin/PanelAdministrador.tsx`, account or team admin, `useMiEmpresa(token)`): trial days (`AvisoPrueba`), the expired-trial screen on 402 (`PruebaVencida`) and "Mi negocio" (profile, photo, client code).
+- Equipo (`features/equipo/EquipoAdmin.tsx`): role dropdown "Administrador / Empleado" (`rol`) and switch "Atiende clientes" (`atiendeClientes`). A 409 "Tu equipo ya tiene…" (team limit) shows the backend message with a button to the Mi negocio tab.
+- Cartera (`features/cartera/CarteraPanel.tsx`, `useCartera`): admins see the business total plus a "Ver cartera de" dropdown per member (including themselves) using `?barberoId=`; employees only their own.
 - Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/panel` redirects to `/login` without a staff session and to `/admin` for the account admin.
 - `request()` sends a `FormData` body as multipart (no JSON `Content-Type`).
 
 ## Calendar
 
-- Days come from `utils/fechas.ts` (`diasDelMes`, `crearDia`, `diaDeHoy`) for the real current date; `components/ui/SelectorDias.tsx` owns month navigation (`desde`/`hasta` hide days outside the range and disable the arrows). Booking allows today through 14 days later in Colombia time (`hoyColombiaISO`, `DIAS_MAXIMOS_RESERVA`), like the backend.
+- Days come from `utils/fechas.ts` (`diasDelMes`, `crearDia`, `diaDeHoy`) for the real current date; `components/ui/SelectorDias.tsx` owns month navigation (`desde`/`hasta` hide days outside the range and disable the arrows) and, when it opens or the month changes, scrolls so today (or the selected day) is visible. Booking allows today through 14 days later in Colombia time (`hoyColombiaISO`, `DIAS_MAXIMOS_RESERVA`), like the backend.
 - Each day has its own schedule (`Empresa.horario`, 0 = Sunday … 6 = Saturday); `utils/disponibilidad.ts` `horarioDelDia()` offers no hours on closed days.
 - `features/bloqueos/BloqueoSemanal.tsx` shows real weeks (from the current one). Only the admin blocks: mode "Solo ese día" (`fecha`) or "Cada semana" (`diaSemana`); tapping an hour blocks/frees it, tapping a day header blocks the whole day (`todoElDia`). Colors: free gray, one day red X, weekly orange ↻, appointment green ✓, with a legend. Staff only see their blocks. Booking reads the public blocks (`GET /api/v1/citas/bloqueos`) through `AgendaProvider.cargarOcupacion` and `utils/disponibilidad.ts` never offers those times.
