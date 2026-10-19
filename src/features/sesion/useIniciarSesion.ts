@@ -41,10 +41,12 @@ export function useIniciarSesion() {
       return "/mis-negocios";
     } catch (error) {
       registrarCausa("Error en login:", error);
+      // 401: datos incorrectos (no es una sesión vencida).
       // 402 a un empleado: "Este negocio está inactivo por ahora…"
       const aviso = describirError(error, {
-        titulo: "Error de acceso",
-        porDefecto: "Correo, usuario o contraseña incorrectos",
+        titulo: "No se pudo iniciar sesión",
+        porDefecto: "Revisa tus datos e intenta de nuevo.",
+        tituloNoAutorizado: "Datos incorrectos",
       });
       avisar(aviso.titulo, aviso.mensaje, "error");
       return null;

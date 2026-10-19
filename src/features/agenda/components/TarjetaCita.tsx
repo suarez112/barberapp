@@ -8,7 +8,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Cita, EstadoCita } from "@/types";
 import { fechaHoraCita, formatearHora } from "@/utils/fechas";
-import { formatearPesos } from "@/utils/formato";
+import { formatearPesos, telefonoVisible } from "@/utils/formato";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
 
 const COLOR_ESTADO: Record<EstadoCita, string> = {
@@ -63,8 +63,7 @@ export default function TarjetaCita({
       </Text>
       <View style={styles.filaEntre}>
         <Text style={subtitulo}>
-          📞 {c.indicativo ? `+${c.indicativo} ` : ""}
-          {c.telefono}
+          📞 {telefonoVisible(c.telefono, c.indicativo)}
         </Text>
         <Tocable
           onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}

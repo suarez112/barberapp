@@ -3,12 +3,14 @@ import { ApiError, ErrorDeConexion, ErrorDeEnvio, MotivoConexion, esCancelada } 
 export type Aviso = { titulo: string; mensaje: string };
 
 type Opciones = {
-  // Título si el error no es uno de los conocidos
+  // Título para los errores de datos (400) y los que no se reconocen
   titulo: string;
   // Mensaje si el servidor no envió uno
   porDefecto: string;
-  // Título para 409 (ej. "Horario no disponible")
+  // Título para 409 (ej. "Horario no disponible"); por defecto "No disponible"
   tituloConflicto?: string;
+  // Título para 401: en un login son datos incorrectos, no una sesión vencida
+  tituloNoAutorizado?: string;
 };
 
 const AVISOS_DE_CONEXION: Record<MotivoConexion, Aviso> = {
@@ -29,10 +31,12 @@ const AVISOS_DE_CONEXION: Record<MotivoConexion, Aviso> = {
   },
 };
 
-// Convierte un error de la API en un aviso claro para la persona
+// Convierte un error de la API en un aviso claro para la persona. El título
+// siempre sale del tipo de error (sin red, 401, 402, 403, 409, 5xx…), y el
+// mensaje del servidor o de la pantalla, para que los dos digan lo mismo.
 export function describirError(
   error: unknown,
-  { titulo, porDefecto, tituloConflicto }: Opciones,
+  { titulo, porDefecto, tituloConflicto, tituloNoAutorizado }: Opciones,
 ): Aviso {
   if (error instanceof ErrorDeConexion) return AVISOS_DE_CONEXION[error.motivo];
   if (error instanceof ErrorDeEnvio) {
@@ -41,7 +45,10 @@ export function describirError(
       mensaje: "La app no pudo leer el archivo para enviarlo. Elige la foto de nuevo e intenta otra vez.",
     };
   }
-  if (!(error instanceof ApiError)) return { titulo, mensaje: porDefecto };
+  // Un fallo de la app (no del servidor): nunca se adivina la causa
+  if (!(error instanceof ApiError)) {
+    return { titulo: "Algo salió mal", mensaje: "No se pudo completar la acción. Intenta de nuevo." };
+  }
 
   const mensaje = error.message || porDefecto;
   if (error.status >= 500) {
@@ -55,7 +62,10 @@ export function describirError(
       // Ej. "La foto debe ser una imagen JPG, PNG o WEBP"
       return { titulo, mensaje };
     case 401:
-      return { titulo: "Sesión vencida", mensaje: error.message || "Inicia sesión de nuevo." };
+      return {
+        titulo: tituloNoAutorizado ?? "Sesión vencida",
+        mensaje: error.message || "Inicia sesión de nuevo.",
+      };
     case 402:
       // A un empleado el backend siempre le dice que el negocio está inactivo
       return {
@@ -69,8 +79,10 @@ export function describirError(
         titulo: "Sin permiso",
         mensaje: error.message || "No tienes permiso para hacer esto.",
       };
+    case 404:
+      return { titulo: "No encontrado", mensaje };
     case 409:
-      return { titulo: tituloConflicto ?? titulo, mensaje };
+      return { titulo: tituloConflicto ?? "No disponible", mensaje };
     case 413:
       return {
         titulo: "Archivo muy grande",

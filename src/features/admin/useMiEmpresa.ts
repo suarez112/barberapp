@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
 import { describirError, registrarCausa } from "@/services/api/errores";
-import { ApiError, esCancelada, mensajeDeError } from "@/services/api/http";
+import { ApiError, esCancelada } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import {
   DatosEmpresa,
@@ -33,11 +33,8 @@ export function useMiEmpresa(token: string) {
       if (esCancelada(error)) return true;
       // 403 (ej. le quitaron el rol de administrador) se muestra como error de carga
       if (error instanceof ApiError && error.status === 401) {
-        avisar(
-          "Sesión finalizada",
-          mensajeDeError(error, "Vuelve a iniciar sesión."),
-          "error",
-        );
+        const aviso = describirError(error, { titulo: "", porDefecto: "Vuelve a iniciar sesión." });
+        avisar(aviso.titulo, aviso.mensaje, "error");
         cerrarSesion();
         return true;
       }
@@ -111,6 +108,16 @@ export function useMiEmpresa(token: string) {
       avisar("Datos guardados", "La información del negocio se actualizó.", "exito");
     }, "No se pudieron guardar los datos.");
 
+  const guardarUbicacion = (latitud: number, longitud: number) =>
+    ejecutar(async () => {
+      setPerfil(await actualizarMiEmpresa(token, { latitud, longitud }));
+      avisar(
+        "Ubicación guardada",
+        "Tus clientes verán el botón \"Cómo llegar\" con esta ubicación.",
+        "exito",
+      );
+    }, "No se pudo guardar la ubicación.");
+
   const guardarFoto = (foto: FotoElegida) =>
     ejecutar(async () => {
       const { fotoUrl, mensaje } = await subirFotoEmpresa(token, foto);
@@ -127,5 +134,6 @@ export function useMiEmpresa(token: string) {
     actualizarSuscripcion,
     guardarDatos,
     guardarFoto,
+    guardarUbicacion,
   };
 }

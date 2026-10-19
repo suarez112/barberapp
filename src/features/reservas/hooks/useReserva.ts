@@ -173,19 +173,11 @@ export function useReserva() {
       }
       // 403: el teléfono está en la lista negra o el negocio no está recibiendo reservas.
       // 409: la hora se ocupó o el profesional no atiende en ese horario.
-      const aviso = esEstado(error, 403)
-        ? {
-            titulo: "No es posible agendar",
-            mensaje: mensajeDeError(
-              error,
-              "No es posible agendar con este número. Comunícate con el negocio.",
-            ),
-          }
-        : describirError(error, {
-            titulo: "No se pudo agendar",
-            porDefecto: "Intenta de nuevo.",
-            tituloConflicto: "Horario no disponible",
-          });
+      const aviso = describirError(error, {
+        titulo: "No se pudo agendar",
+        porDefecto: "Intenta de nuevo.",
+        tituloConflicto: "Horario no disponible",
+      });
       avisar(aviso.titulo, aviso.mensaje, "error");
       if (esEstado(error, 409)) {
         setHora("");

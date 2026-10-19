@@ -11,6 +11,7 @@ import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
 import { crearDia, mesCorto } from "@/utils/fechas";
+import { telefonoVisible } from "@/utils/formato";
 import { EstadoReserva } from "../hooks/useReserva";
 import CampoTelefono from "./CampoTelefono";
 import SelectorHoras from "./SelectorHoras";
@@ -118,7 +119,8 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
               {datosCuenta.nombre}
             </Text>
             <Text style={[styles.detalleCuenta, { color: colors.textSecondary }]}>
-              +{datosCuenta.indicativo} {datosCuenta.telefono} · Reservas con tu cuenta
+              {telefonoVisible(datosCuenta.telefono, datosCuenta.indicativo)} · Reservas con tu
+              cuenta
             </Text>
           </View>
         </View>

@@ -7,6 +7,14 @@ export const formatearPesos = (valor: number) =>
     ? String(valor).replace(/\B(?=(\d{3})+(?!\d))/g, ".")
     : FORMATO_PESOS.format(valor);
 
+// Teléfono para mostrar. En E.164 ("+573001234567") ya trae el indicativo; los
+// antiguos (solo dígitos) se muestran con su indicativo delante ("+57 3001234567").
+export const telefonoVisible = (telefono?: string | null, indicativo?: string | null) => {
+  const tel = (telefono ?? "").trim();
+  if (!tel || tel.startsWith("+") || !indicativo) return tel;
+  return `+${indicativo} ${tel}`;
+};
+
 // "Ana" -> "ana" sin espacios extremos, para comparar textos que escriben personas
 export const normalizar = (texto: string) => texto.trim().toLowerCase();
 
