@@ -1,16 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { avisar } from "@/utils/dialogos";
-import { FotoElegida } from "../../cuenta/api";
-
-const TIPOS_PERMITIDOS = ["image/jpeg", "image/png", "image/webp"];
-const PESO_MAXIMO = 5 * 1024 * 1024;
+import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 
 type Props = {
   fotoUrl: string | null;
@@ -24,32 +19,8 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
   const [guardando, setGuardando] = useState(false);
 
   const elegir = async () => {
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-    if (r.canceled || !r.assets?.length) return;
-    const foto = r.assets[0];
-    const tipo = foto.mimeType ?? "image/jpeg";
-
-    // El backend vuelve a revisar el contenido; aquí se avisa antes de subir
-    if (!TIPOS_PERMITIDOS.includes(tipo)) {
-      avisar("Formato no válido", "La foto debe ser una imagen JPG, PNG o WEBP");
-      return;
-    }
-    if (foto.fileSize && foto.fileSize > PESO_MAXIMO) {
-      avisar("Foto muy pesada", "La foto no puede pesar más de 5 MB");
-      return;
-    }
-
-    setPendiente({
-      uri: foto.uri,
-      nombre: foto.fileName ?? `foto.${tipo.split("/")[1]}`,
-      tipo,
-      archivo: foto.file ?? undefined,
-    });
+    const foto = await elegirFoto({ aspecto: [4, 3], calidad: 0.8 });
+    if (foto) setPendiente(foto);
   };
 
   const guardar = async () => {

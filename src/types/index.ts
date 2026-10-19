@@ -2,10 +2,9 @@ export interface Barbero {
   id: string;
   nombre: string;
   usuario: string;
-  clave: string;
   esAdmin: boolean;
   especialidad: string;
-  equipo: string;
+  equipo?: string;
   porcentajeGanancia: number;
   foto?: string;
 }
@@ -14,6 +13,7 @@ export interface Servicio {
   id: string;
   nombre: string;
   duracion: string; // ej: "40 min"
+  duracionMin?: number;
   precio: number;
 }
 
@@ -27,18 +27,12 @@ export interface Empresa {
   horarioCierre: string; // formato 24 horas, ej: "20:00"
 }
 
-// Datos completos de un negocio (los datos de prueba locales usan esta forma)
-export interface EmpresaConfig extends Empresa {
-  barberos: Barbero[];
-  servicios: Servicio[];
-}
-
 export interface Producto {
   id: string;
-  empresaId: string;
   nombre: string;
+  descripcion: string | null;
   precio: number;
-  foto?: string;
+  fotoUrl: string | null;
 }
 
 export type EstadoCita = "CONFIRMADA" | "COMPLETADA" | "CANCELADA";
@@ -76,36 +70,13 @@ export interface Dia {
   diaNumero: number;
 }
 
-export interface ClienteRegistrado {
-  telefono: string;
-  indicativo?: string; // ej: "57"; si falta se asume Colombia
-  nombre: string;
-  fechaUltimaCita?: string;
-  totalCitas?: number;
-}
-
-export interface ElementoListaNegra {
-  id: string;
-  nombre: string;
-  telefono: string;
-}
-
-// Un bloqueo ahora es un RANGO de tiempo, medido en minutos desde la medianoche.
-// Ejemplo: de 12:00 a 13:00 -> desdeMin: 720, hastaMin: 780
-// Un día completo -> desdeMin: 0, hastaMin: 1440
+// Horario en que un profesional no atiende (vista pública, sin motivo).
+// Se repite cada semana (diaSemana: 0 = domingo … 6 = sábado); los bloqueos
+// antiguos de un solo día traen fecha y diaSemana null.
 export interface BloqueoHorario {
-  id: string;
   barberoId: string;
-  fechaBase: string;
-  diasSemana: string[];
-  desdeMin: number;
-  hastaMin: number;
-  frecuencia: "PUNTUAL" | "SEMANAL_RECURRENTE";
-}
-
-export interface NotificacionCliente {
-  id: string;
-  titulo: string;
-  mensaje: string;
-  fecha: string;
+  diaSemana: number | null;
+  fecha: string | null;
+  horaInicio: string; // "12:00"
+  horaFin: string; // "13:00"
 }

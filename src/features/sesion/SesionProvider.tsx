@@ -1,56 +1,53 @@
 import { ReactNode, useState } from "react";
 import { Barbero } from "../../types";
 import { crearContexto } from "../../utils/crearContexto";
+import { borrarSesion, guardarSesion } from "./sesionGuardada";
 
 type ValorSesion = {
   barbero: Barbero | null;
   token: string;
-  empleadoSupervisado: Barbero | null;
-  // El admin puede mirar la agenda de otro integrante; si no, es el propio
-  profesionalActivo: Barbero | null;
-  iniciarSesion: (barbero: Barbero, token: string) => void;
-  cerrarSesion: () => void;
-  supervisar: (empleado: Barbero | null) => void;
+  // Abre la sesión y la guarda en el celular
+  iniciarSesion: (barbero: Barbero, token: string) => Promise<void>;
+  // Cierra la sesión y la borra del celular
+  cerrarSesion: () => Promise<void>;
   actualizarBarberoLogueado: (cambios: Partial<Barbero>) => void;
 };
 
 const [SesionContext, useSesion] = crearContexto<ValorSesion>("Sesion");
 export { useSesion };
 
+// Sesión del personal (/api/v1/auth/login)
 export function SesionProvider({ children }: { children: ReactNode }) {
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [token, setToken] = useState("");
-  const [empleadoSupervisado, setEmpleadoSupervisado] =
-    useState<Barbero | null>(null);
-
-  const profesionalActivo =
-    barbero?.esAdmin && empleadoSupervisado ? empleadoSupervisado : barbero;
 
   const iniciarSesion = (nuevo: Barbero, nuevoToken: string) => {
     setBarbero(nuevo);
     setToken(nuevoToken);
-    setEmpleadoSupervisado(null);
+    return guardarSesion({ tipo: "personal", token: nuevoToken, barbero: nuevo });
   };
 
   const cerrarSesion = () => {
     setBarbero(null);
-    setEmpleadoSupervisado(null);
     setToken("");
+    return borrarSesion();
   };
 
   const actualizarBarberoLogueado = (cambios: Partial<Barbero>) =>
-    setBarbero((actual) => (actual ? { ...actual, ...cambios } : actual));
+    setBarbero((actual) => {
+      if (!actual) return actual;
+      const nuevo = { ...actual, ...cambios };
+      guardarSesion({ tipo: "personal", token, barbero: nuevo });
+      return nuevo;
+    });
 
   return (
     <SesionContext
       value={{
         barbero,
         token,
-        empleadoSupervisado,
-        profesionalActivo,
         iniciarSesion,
         cerrarSesion,
-        supervisar: setEmpleadoSupervisado,
         actualizarBarberoLogueado,
       }}
     >

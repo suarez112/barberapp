@@ -1,5 +1,5 @@
-import { ReactNode, useState } from "react";
-import { Barbero, Empresa, Producto, Servicio } from "../../types";
+import { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import { Barbero, Empresa, Servicio } from "../../types";
 import { crearContexto } from "../../utils/crearContexto";
 import { DatosNegocio } from "./api";
 
@@ -7,12 +7,10 @@ type ValorNegocio = {
   empresa: Empresa | null;
   barberos: Barbero[];
   servicios: Servicio[];
-  productos: Producto[];
   abrirNegocio: (datos: DatosNegocio) => void;
   salirDelNegocio: () => void;
-  setBarberos: (barberos: Barbero[]) => void;
-  setServicios: (servicios: Servicio[]) => void;
-  setProductos: (productos: Producto[]) => void;
+  setBarberos: Dispatch<SetStateAction<Barbero[]>>;
+  setServicios: Dispatch<SetStateAction<Servicio[]>>;
 };
 
 const [NegocioContext, useNegocio] = crearContexto<ValorNegocio>("Negocio");
@@ -23,7 +21,6 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [barberos, setBarberos] = useState<Barbero[]>([]);
   const [servicios, setServicios] = useState<Servicio[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
 
   const abrirNegocio = (datos: DatosNegocio) => {
     setEmpresa(datos.empresa);
@@ -31,7 +28,11 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
     setServicios(datos.servicios);
   };
 
-  const salirDelNegocio = () => setEmpresa(null);
+  const salirDelNegocio = () => {
+    setEmpresa(null);
+    setBarberos([]);
+    setServicios([]);
+  };
 
   return (
     <NegocioContext
@@ -39,12 +40,10 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
         empresa,
         barberos,
         servicios,
-        productos,
         abrirNegocio,
         salirDelNegocio,
         setBarberos,
         setServicios,
-        setProductos,
       }}
     >
       {children}

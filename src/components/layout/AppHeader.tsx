@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
-import BotonNotificaciones from "@/features/notificaciones/BotonNotificaciones";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
@@ -9,13 +8,11 @@ import BotonCabecera from "./BotonCabecera";
 
 export type OpcionesCabecera = {
   onVolver?: () => void;
-  mostrarNotificaciones?: boolean;
   onSalir?: () => void;
 };
 
 export default function AppHeader({
   onVolver,
-  mostrarNotificaciones = false,
   onSalir,
 }: OpcionesCabecera) {
   const { colors, esOscuro, alternarTema } = useAppTheme();
@@ -44,8 +41,6 @@ export default function AppHeader({
       </Text>
 
       <View style={styles.acciones}>
-        {mostrarNotificaciones && empresa ? <BotonNotificaciones /> : null}
-
         <BotonCabecera
           icono={esOscuro ? "sunny-outline" : "moon-outline"}
           etiqueta={esOscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
@@ -55,11 +50,12 @@ export default function AppHeader({
         {onSalir ? (
           <Tocable
             accessibilityRole="button"
+            accessibilityLabel="Cerrar sesión"
             style={styles.salir}
             onPress={onSalir}
           >
             <Ionicons name="log-out-outline" size={14} color={COLORES.peligroSuave} />
-            <Text style={styles.salirTexto}>Salir</Text>
+            <Text style={styles.salirTexto}>Cerrar sesión</Text>
           </Tocable>
         ) : null}
       </View>

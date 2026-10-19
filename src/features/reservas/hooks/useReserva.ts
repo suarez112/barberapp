@@ -6,9 +6,9 @@ import {
 } from "@/data/paises";
 import { crearCita } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
-import { useClientes } from "@/features/clientes/ClientesProvider";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
-import { ApiError, ErrorDeConexion, mensajeDeError } from "@/services/api/http";
+import { describirError, esEstado } from "@/services/api/errores";
+import { ErrorDeConexion, mensajeDeError } from "@/services/api/http";
 import { Barbero, Dia, Servicio } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import {
@@ -21,9 +21,8 @@ import { DatosConfirmacion } from "../components/ConfirmacionCita";
 // Estado y reglas del formulario de reserva del cliente
 export function useReserva() {
   const { empresa, servicios } = useNegocio();
-  const { citas, citasOcupadas, bloqueos, agregarCita, cargarHorasOcupadas } =
+  const { citas, citasOcupadas, bloqueos, agregarCita, cargarOcupacion } =
     useAgenda();
-  const { telefonoEnListaNegra, registrarReserva } = useClientes();
 
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [servicio, setServicio] = useState<Servicio | null>(null);
@@ -49,7 +48,6 @@ export function useReserva() {
           barberoId: barbero.id,
           servicio,
           fecha: dia.fechaFull,
-          diaNom: dia.diaNom,
           citas: [...citas, ...citasOcupadas],
           bloqueos,
           duracionMinimaServicios: servicios.length
@@ -105,14 +103,6 @@ export function useReserva() {
   const agendar = async () => {
     const telefono = celular.trim();
 
-    if (telefonoEnListaNegra(telefono)) {
-      avisar(
-        "No se puede procesar",
-        "No fue posible completar la reserva. Por favor contacte directamente al establecimiento.",
-      );
-      return;
-    }
-
     const faltantes: string[] = [];
     if (!barbero) faltantes.push("Seleccionar Profesional");
     if (!servicio) faltantes.push("Seleccionar un Servicio");
@@ -152,25 +142,29 @@ export function useReserva() {
       });
       agregarCita(cita);
     } catch (error) {
-      if (error instanceof ErrorDeConexion) {
-        console.error("Error al agendar:", error.causa);
-        avisar("Error de conexión", "No se pudo conectar con el servidor.");
-        return;
-      }
-      avisar("No se pudo agendar", mensajeDeError(error, "Intenta de nuevo."));
-      if (error instanceof ApiError && error.status === 409) {
+      if (error instanceof ErrorDeConexion) console.error("Error al agendar:", error.causa);
+      // 403: el teléfono está en la lista negra del negocio.
+      // 409: la hora se ocupó o el profesional no atiende en ese horario.
+      const aviso = esEstado(error, 403)
+        ? {
+            titulo: "No es posible agendar",
+            mensaje: mensajeDeError(
+              error,
+              "No es posible agendar con este número. Comunícate con el negocio.",
+            ),
+          }
+        : describirError(error, {
+            titulo: "No se pudo agendar",
+            porDefecto: "Intenta de nuevo.",
+            tituloConflicto: "Horario no disponible",
+          });
+      avisar(aviso.titulo, aviso.mensaje);
+      if (esEstado(error, 409)) {
         setHora("");
-        cargarHorasOcupadas(empresa.id);
+        cargarOcupacion(empresa.id);
       }
       return;
     }
-
-    registrarReserva({
-      telefono,
-      indicativo,
-      nombre: nombre.trim(),
-      fecha: dia.fechaFull,
-    });
 
     setConfirmacion({
       negocio: empresa.nombre,

@@ -6,23 +6,23 @@ import { Barbero, Dia } from "@/types";
 import { horaAMinutos } from "@/utils/disponibilidad";
 import { mesCorto } from "@/utils/fechas";
 import { useNegocio } from "../negocio/NegocioProvider";
-import { useSesion } from "../sesion/SesionProvider";
+import { Personal } from "../sesion/usePersonal";
 import { useAgenda } from "./AgendaProvider";
 import TarjetaCita from "./components/TarjetaCita";
 import { useAccionesCita } from "./useAccionesCita";
 
 type Props = {
   profesional: Barbero;
+  personal: Personal;
   dia: Dia;
   onCambiarDia: (d: Dia) => void;
 };
 
 // Citas del profesional para el día elegido, en orden de hora
-export default function AgendaTab({ profesional, dia, onCambiarDia }: Props) {
+export default function AgendaTab({ profesional, personal, dia, onCambiarDia }: Props) {
   const { citas } = useAgenda();
   const { empresa } = useNegocio();
-  const { barbero } = useSesion();
-  const { completar, cancelar } = useAccionesCita();
+  const { completar, cancelar, puedeCompletar } = useAccionesCita(personal);
 
   const citasDelDia = citas
     .filter(
@@ -50,8 +50,8 @@ export default function AgendaTab({ profesional, dia, onCambiarDia }: Props) {
           <TarjetaCita
             key={c.id}
             cita={c}
-            puedeCompletar={c.barberoId === barbero?.id}
-            esAdmin={barbero?.esAdmin ?? false}
+            puedeCompletar={puedeCompletar(c)}
+            esAdmin={personal.esAdmin}
             onCompletar={completar}
             onCancelar={cancelar}
           />

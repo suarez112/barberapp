@@ -10,6 +10,7 @@ import { ErrorDeConexion, mensajeDeError } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar } from "@/utils/dialogos";
 import { registrarEmpresa } from "./api";
+import { useSesion } from "../sesion/SesionProvider";
 import { useCuenta } from "./CuentaProvider";
 import CamposEmpresa from "./formulario/CamposEmpresa";
 import {
@@ -24,6 +25,7 @@ export default function RegistroEmpresaScreen() {
   const { colors } = useAppTheme();
   const { back, canGoBack, replace } = useRouter();
   const { iniciarCuenta } = useCuenta();
+  const { cerrarSesion } = useSesion();
   const [valores, setValores] = useState<ValoresEmpresa>(VALORES_VACIOS);
   const [clave, setClave] = useState("");
   const [confirmacion, setConfirmacion] = useState("");
@@ -50,7 +52,8 @@ export default function RegistroEmpresaScreen() {
     setEnviando(true);
     try {
       const respuesta = await registrarEmpresa({ ...resultado.datos, clave });
-      iniciarCuenta(respuesta.usuario, respuesta.token);
+      await cerrarSesion();
+      await iniciarCuenta(respuesta.usuario, respuesta.token);
       avisar(
         "¡Empresa registrada!",
         `${respuesta.mensaje}\n\nCódigo para tus clientes: ${respuesta.empresa.codigoAcceso}\n\nPara volver a entrar usa el correo ${respuesta.usuario.correo} y tu contraseña.`,

@@ -1,50 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Cita } from "@/types";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { describirError } from "@/services/api/errores";
+import { useAppTheme } from "@/theme/ThemeProvider";
+import { fechaISO } from "@/utils/fechas";
+import { useAgenda } from "../agenda/AgendaProvider";
+import { Cartera, obtenerCartera } from "./api";
 
 type Periodo = "DIARIO" | "SEMANAL" | "MENSUAL";
 
 type Props = {
-  colors: {
-    primary: string;
-    cardBg: string;
-    cardBorder: string;
-    textPrimary: string;
-    textSecondary: string;
-  };
-  nombre: string;
-  porcentaje: number;
-  citas: Cita[]; // citas del profesional que se está viendo
+  token: string;
+  esAdmin: boolean;
 };
 
-const MESES = [
-  "ene",
-  "feb",
-  "mar",
-  "abr",
-  "may",
-  "jun",
-  "jul",
-  "ago",
-  "sep",
-  "oct",
-  "nov",
-  "dic",
-];
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MESES_LARGOS = [
-  "enero",
-  "febrero",
-  "marzo",
-  "abril",
-  "mayo",
-  "junio",
-  "julio",
-  "agosto",
-  "septiembre",
-  "octubre",
-  "noviembre",
-  "diciembre",
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
 
 // Convierte "2026-10-11" en una fecha
@@ -62,11 +35,7 @@ const calcularRango = (periodo: Periodo, atras: number) => {
   const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
 
   if (periodo === "DIARIO") {
-    const d = new Date(
-      hoy.getFullYear(),
-      hoy.getMonth(),
-      hoy.getDate() - atras,
-    );
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - atras);
     return {
       inicio: d,
       fin: d,
@@ -82,11 +51,7 @@ const calcularRango = (periodo: Periodo, atras: number) => {
       hoy.getMonth(),
       hoy.getDate() - desdeLunes - 7 * atras,
     );
-    const fin = new Date(
-      inicio.getFullYear(),
-      inicio.getMonth(),
-      inicio.getDate() + 6,
-    );
+    const fin = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + 6);
     const etiqueta =
       inicio.getMonth() === fin.getMonth()
         ? `${inicio.getDate()}–${fin.getDate()} ${MESES[fin.getMonth()]} ${fin.getFullYear()}`
@@ -104,14 +69,25 @@ const calcularRango = (periodo: Periodo, atras: number) => {
   };
 };
 
-export default function CarteraPanel({
-  colors,
-  nombre,
-  porcentaje,
-  citas,
-}: Props) {
+const PERIODOS: { valor: Periodo; texto: string }[] = [
+  { valor: "DIARIO", texto: "Diario" },
+  { valor: "SEMANAL", texto: "Semanal" },
+  { valor: "MENSUAL", texto: "Mensual" },
+];
+
+// Ventas y ganancias de las citas completadas (calculadas por el servidor).
+// Admin: todo el negocio y cada profesional; integrante: lo suyo.
+export default function CarteraPanel({ token, esAdmin }: Props) {
+  const { colors } = useAppTheme();
+  const { citas } = useAgenda();
   const [periodo, setPeriodo] = useState<Periodo>("DIARIO");
   const [atras, setAtras] = useState(0);
+  // Respuesta del servidor junto al rango que se pidió
+  const [resultado, setResultado] = useState<{
+    clave: string;
+    cartera: Cartera | null;
+    error: string | null;
+  } | null>(null);
 
   const cambiarPeriodo = (p: Periodo) => {
     setPeriodo(p);
@@ -120,59 +96,88 @@ export default function CarteraPanel({
 
   const rango = calcularRango(periodo, atras); // lo que se está mirando
   const rangoActual = calcularRango(periodo, 0); // hoy / esta semana / este mes
+  const desde = fechaISO(rango.inicio);
+  const hasta = fechaISO(rango.fin);
+  const clave = `${desde}|${hasta}`;
+  // Mientras llega la respuesta del rango actual, se muestra "cargando"
+  const vigenteResultado = resultado?.clave === clave ? resultado : null;
+  const cartera = vigenteResultado?.cartera ?? null;
+  const error = vigenteResultado?.error ?? null;
 
-  const dentroDe = (c: any, r: { inicio: Date; fin: Date }) => {
-    const f = aFecha(c.fecha);
-    return f >= r.inicio && f <= r.fin;
-  };
-
-  // LO GANADO: citas completadas dentro del periodo que se está mirando
-  const completadas = citas
-    .filter((c) => c.estado === "COMPLETADA" && dentroDe(c, rango))
-    .sort((a, b) => a.fecha.localeCompare(b.fecha));
-  const bruto = completadas.reduce((sum, c) => sum + c.precio, 0);
-  const ganancia = (bruto * porcentaje) / 100;
+  // La ganancia de cada cita usa el porcentaje que tenía al completarse
+  useEffect(() => {
+    let vigente = true;
+    obtenerCartera(token, desde, hasta)
+      .then((c) => vigente && setResultado({ clave: `${desde}|${hasta}`, cartera: c, error: null }))
+      .catch(
+        (e) =>
+          vigente &&
+          setResultado({
+            clave: `${desde}|${hasta}`,
+            cartera: null,
+            error: describirError(e, {
+              titulo: "",
+              porDefecto: "No se pudo cargar la cartera.",
+            }).mensaje,
+          }),
+      );
+    return () => {
+      vigente = false;
+    };
+  }, [token, desde, hasta]);
 
   // LA PROYECCIÓN: citas confirmadas por realizar en el periodo ACTUAL
-  const porRealizar = citas.filter(
-    (c) => c.estado === "CONFIRMADA" && dentroDe(c, rangoActual),
-  );
+  const porRealizar = citas.filter((c) => {
+    const f = aFecha(c.fecha);
+    return c.estado === "CONFIRMADA" && f >= rangoActual.inicio && f <= rangoActual.fin;
+  });
   const proyBruto = porRealizar.reduce((sum, c) => sum + c.precio, 0);
-  const proyGanancia = (proyBruto * porcentaje) / 100;
 
   const etiquetaActual =
-    periodo === "DIARIO"
-      ? "HOY"
-      : periodo === "SEMANAL"
-        ? "ESTA SEMANA"
-        : "ESTE MES";
+    periodo === "DIARIO" ? "HOY" : periodo === "SEMANAL" ? "ESTA SEMANA" : "ESTE MES";
+
+  // Un integrante solo recibe su propia fila
+  const propia = !esAdmin ? cartera?.porProfesional[0] : undefined;
+
+  const tarjeta = (valor: string, texto: string, destacada = false) => (
+    <View
+      style={[
+        s.tarjeta,
+        {
+          backgroundColor: colors.cardBg,
+          borderColor: destacada ? colors.primary : colors.cardBorder,
+        },
+      ]}
+    >
+      <Text style={[s.numero, { color: destacada ? colors.primary : colors.textPrimary }]}>
+        {valor}
+      </Text>
+      <Text
+        style={[
+          s.textoTarjeta,
+          { color: destacada ? colors.primary : colors.textSecondary },
+          destacada && s.negrita,
+        ]}
+      >
+        {texto}
+      </Text>
+    </View>
+  );
 
   return (
     <View>
       <Text style={[s.titulo, { color: colors.primary }]}>
-        💰 CARTERA Y GANANCIAS DE {nombre.toUpperCase()}
+        💰 {esAdmin ? "CARTERA DEL NEGOCIO" : "MI CARTERA Y GANANCIAS"}
       </Text>
 
       {/* Selector Diario / Semanal / Mensual */}
       <View
-        style={[
-          s.segmento,
-          { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-        ]}
+        style={[s.segmento, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
       >
-        {(
-          [
-            { valor: "DIARIO", texto: "Diario" },
-            { valor: "SEMANAL", texto: "Semanal" },
-            { valor: "MENSUAL", texto: "Mensual" },
-          ] as { valor: Periodo; texto: string }[]
-        ).map((op) => (
+        {PERIODOS.map((op) => (
           <TouchableOpacity
             key={op.valor}
-            style={[
-              s.btnSegmento,
-              periodo === op.valor && { backgroundColor: colors.primary },
-            ]}
+            style={[s.btnSegmento, periodo === op.valor && { backgroundColor: colors.primary }]}
             onPress={() => cambiarPeriodo(op.valor)}
           >
             <Text
@@ -189,151 +194,103 @@ export default function CarteraPanel({
 
       {/* Navegador: flecha izquierda = periodo anterior, derecha = volver hacia hoy */}
       <View
-        style={[
-          s.navegador,
-          { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-        ]}
+        style={[s.navegador, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
       >
-        <TouchableOpacity onPress={() => setAtras(atras + 1)} style={s.flecha}>
+        <TouchableOpacity
+          accessibilityLabel="Periodo anterior"
+          onPress={() => setAtras(atras + 1)}
+          style={s.flecha}
+        >
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
 
-        <Text style={[s.etiquetaRango, { color: colors.textPrimary }]}>
-          {rango.etiqueta}
-        </Text>
+        <Text style={[s.etiquetaRango, { color: colors.textPrimary }]}>{rango.etiqueta}</Text>
 
         <TouchableOpacity
+          accessibilityLabel="Periodo siguiente"
           disabled={atras === 0}
           onPress={() => setAtras(atras - 1)}
           style={[s.flecha, { opacity: atras === 0 ? 0.25 : 1 }]}
         >
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={colors.textPrimary}
-          />
+          <Ionicons name="chevron-forward" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
-      {/* Tarjetas de lo ganado */}
-      <View style={s.filaTarjetas}>
-        <View
-          style={[
-            s.tarjeta,
-            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-          ]}
-        >
-          <Text style={[s.numero, { color: colors.textPrimary }]}>
-            {dinero(bruto)}
-          </Text>
-          <Text style={[s.textoTarjeta, { color: colors.textSecondary }]}>
-            Recaudo Bruto
-          </Text>
-        </View>
+      {error ? <Text style={s.infoText}>{error}</Text> : null}
+      {!cartera && !error ? (
+        <ActivityIndicator color={colors.primary} style={s.cargando} />
+      ) : null}
 
-        <View
-          style={[
-            s.tarjeta,
-            { backgroundColor: colors.cardBg, borderColor: colors.primary },
-          ]}
-        >
-          <Text style={[s.numero, { color: colors.primary }]}>
-            {dinero(ganancia)}
-          </Text>
-          <Text
-            style={[
-              s.textoTarjeta,
-              { color: colors.primary, fontWeight: "bold" },
-            ]}
-          >
-            Tu Comisión ({porcentaje}%)
-          </Text>
-        </View>
-      </View>
-
-      {/* Desglose de lo ganado */}
-      <Text style={[s.titulo, { color: colors.primary, marginTop: 20 }]}>
-        DESGLOSE DE CITAS COMPLETADAS ({completadas.length})
-      </Text>
-
-      {completadas.length === 0 ? (
-        <Text style={s.infoText}>
-          No hay servicios completados en este periodo.
-        </Text>
-      ) : (
-        completadas.map((c) => (
-          <View
-            key={c.id}
-            style={[
-              s.filaCita,
-              {
-                backgroundColor: colors.cardBg,
-                borderColor: colors.cardBorder,
-              },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[s.tituloCita, { color: colors.textPrimary }]}>
-                {c.servicio}
-              </Text>
-              <Text style={[s.subCita, { color: colors.textSecondary }]}>
-                Cliente: {c.cliente} · {c.hora} ({c.fecha})
-              </Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={[s.precioCita, { color: colors.primary }]}>
-                +{dinero((c.precio * porcentaje) / 100)}
-              </Text>
-              <Text style={{ fontSize: 9, color: colors.textSecondary }}>
-                Ganancia ({porcentaje}%)
-              </Text>
-            </View>
+      {cartera ? (
+        <>
+          <View style={s.filaTarjetas}>
+            {tarjeta(dinero(cartera.totalVentas), `Ventas (${cartera.totalCitas} citas)`)}
+            {esAdmin
+              ? tarjeta(dinero(cartera.gananciaNegocio), "Para el negocio", true)
+              : tarjeta(
+                  dinero(propia?.ganancia ?? 0),
+                  `Tu comisión${propia ? ` (${propia.porcentajeGanancia}%)` : ""}`,
+                  true,
+                )}
           </View>
-        ))
-      )}
+
+          {esAdmin ? (
+            <>
+              <View style={[s.filaTarjetas, s.separado]}>
+                {tarjeta(dinero(cartera.gananciaEquipo), "Comisiones del equipo")}
+              </View>
+
+              <Text style={[s.titulo, s.tituloSeparado, { color: colors.primary }]}>
+                POR PROFESIONAL ({cartera.porProfesional.length})
+              </Text>
+              {cartera.porProfesional.length === 0 ? (
+                <Text style={s.infoText}>No hay servicios completados en este periodo.</Text>
+              ) : (
+                cartera.porProfesional.map((p) => (
+                  <View
+                    key={p.barberoId}
+                    style={[
+                      s.filaCita,
+                      { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                    ]}
+                  >
+                    <View style={s.flex}>
+                      <Text style={[s.tituloCita, { color: colors.textPrimary }]}>
+                        {p.nombre}
+                        {p.activo ? "" : " (retirado)"}
+                      </Text>
+                      <Text style={[s.subCita, { color: colors.textSecondary }]}>
+                        {p.citas} citas · Ventas {dinero(p.ventas)} · Comisión actual{" "}
+                        {p.porcentajeGanancia}%
+                      </Text>
+                    </View>
+                    <View style={s.derecha}>
+                      <Text style={[s.precioCita, { color: colors.primary }]}>
+                        +{dinero(p.ganancia)}
+                      </Text>
+                      <Text style={[s.mini, { color: colors.textSecondary }]}>Ganancia</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </>
+          ) : null}
+        </>
+      ) : null}
 
       {/* Proyección: siempre del periodo actual */}
-      <Text style={[s.titulo, { color: colors.primary, marginTop: 25 }]}>
+      <Text style={[s.titulo, s.tituloProyeccion, { color: colors.primary }]}>
         📈 PROYECCIÓN · {etiquetaActual}
       </Text>
 
       <View style={s.filaTarjetas}>
-        <View
-          style={[
-            s.tarjeta,
-            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-          ]}
-        >
-          <Text style={[s.numero, { color: colors.textPrimary }]}>
-            {porRealizar.length}
-          </Text>
-          <Text style={[s.textoTarjeta, { color: colors.textSecondary }]}>
-            Citas por realizar
-          </Text>
-        </View>
-
-        <View
-          style={[
-            s.tarjeta,
-            { backgroundColor: colors.cardBg, borderColor: colors.primary },
-          ]}
-        >
-          <Text style={[s.numero, { color: colors.primary }]}>
-            {dinero(proyGanancia)}
-          </Text>
-          <Text
-            style={[
-              s.textoTarjeta,
-              { color: colors.primary, fontWeight: "bold" },
-            ]}
-          >
-            Podrías ganar ({porcentaje}%)
-          </Text>
-        </View>
+        {tarjeta(String(porRealizar.length), "Citas por realizar")}
+        {tarjeta(dinero(proyBruto), "Ventas esperadas", true)}
       </View>
 
       <Text style={[s.nota, { color: colors.textSecondary }]}>
-        Para ver el detalle de cada cita, revisa la pestaña Citas.
+        La ganancia de cada cita usa el porcentaje que tenía el profesional cuando se
+        completó. Para ver el detalle de cada cita, revisa la pestaña Agenda.
       </Text>
     </View>
   );
@@ -347,6 +304,8 @@ const s = StyleSheet.create({
     marginTop: 15,
     marginBottom: 10,
   },
+  tituloSeparado: { marginTop: 20 },
+  tituloProyeccion: { marginTop: 25 },
   segmento: {
     flexDirection: "row",
     borderRadius: 8,
@@ -373,7 +332,9 @@ const s = StyleSheet.create({
   },
   flecha: { paddingHorizontal: 12, paddingVertical: 4 },
   etiquetaRango: { fontSize: 16, fontWeight: "bold" },
+  cargando: { marginVertical: 20 },
   filaTarjetas: { flexDirection: "row", gap: 10, marginTop: 4 },
+  separado: { marginTop: 10 },
   tarjeta: {
     flex: 1,
     padding: 16,
@@ -383,6 +344,7 @@ const s = StyleSheet.create({
   },
   numero: { fontSize: 20, fontWeight: "bold" },
   textoTarjeta: { fontSize: 11, marginTop: 4, textAlign: "center" },
+  negrita: { fontWeight: "bold" },
   filaCita: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -392,9 +354,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
+  flex: { flex: 1 },
+  derecha: { alignItems: "flex-end" },
   tituloCita: { fontSize: 14, fontWeight: "bold" },
   subCita: { fontSize: 12, marginTop: 4 },
   precioCita: { fontSize: 12, fontWeight: "bold" },
+  mini: { fontSize: 9 },
   infoText: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
   nota: { fontSize: 11, marginTop: 8 },
 });

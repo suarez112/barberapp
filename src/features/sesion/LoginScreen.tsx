@@ -62,8 +62,8 @@ export default function LoginScreen() {
         <Selector opciones={MODOS} valor={modo} onCambiar={cambiarModo} />
         <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
           {modo === "PERSONAL"
-            ? "Integrantes del equipo con usuario. Infinity Barbería: `jhon` / `1234` | Salón Glamour: `carlos` / `5678`"
-            : "Administradores de empresa: el correo con el que registraste el negocio."}
+            ? "Integrantes del equipo: el usuario y la contraseña que te dio el administrador."
+            : "Administradores de empresa: el correo con el que registraste el negocio. Desde allí manejas agenda, equipo y todo el negocio."}
         </Text>
 
         <View style={styles.formulario}>

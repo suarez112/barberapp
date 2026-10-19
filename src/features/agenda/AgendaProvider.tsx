@@ -1,18 +1,19 @@
-import { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import { ReactNode, useState } from "react";
 import { BloqueoHorario, Cita, HorarioOcupado } from "../../types";
 import { crearContexto } from "../../utils/crearContexto";
-import { listarHorasOcupadas } from "./api";
+import { listarBloqueosPublicos, listarHorasOcupadas } from "./api";
 
 type ValorAgenda = {
+  // Citas del panel (vienen de /citas/agenda con el token)
   citas: Cita[];
   setCitas: (citas: Cita[]) => void;
   agregarCita: (cita: Cita) => void;
   actualizarCita: (id: string, cambios: Partial<Cita>) => void;
-  // Horas tomadas por otros clientes (vienen del servidor, sin datos personales)
+  // Para reservar: horas tomadas y horarios bloqueados del equipo
+  // (vienen del servidor, sin datos personales)
   citasOcupadas: HorarioOcupado[];
-  cargarHorasOcupadas: (empresaId: string) => Promise<void>;
   bloqueos: BloqueoHorario[];
-  setBloqueos: Dispatch<SetStateAction<BloqueoHorario[]>>;
+  cargarOcupacion: (empresaId: string) => Promise<void>;
 };
 
 const [AgendaContext, useAgenda] = crearContexto<ValorAgenda>("Agenda");
@@ -28,12 +29,15 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
   const actualizarCita = (id: string, cambios: Partial<Cita>) =>
     setCitas((prev) => prev.map((c) => (c.id === id ? { ...c, ...cambios } : c)));
 
-  const cargarHorasOcupadas = async (empresaId: string) => {
-    try {
-      setCitasOcupadas(await listarHorasOcupadas(empresaId));
-    } catch (error) {
-      console.error("Error al cargar horas ocupadas:", error);
-    }
+  const cargarOcupacion = async (empresaId: string) => {
+    const [ocupadas, bloqueados] = await Promise.allSettled([
+      listarHorasOcupadas(empresaId),
+      listarBloqueosPublicos(empresaId),
+    ]);
+    if (ocupadas.status === "fulfilled") setCitasOcupadas(ocupadas.value);
+    else console.error("Error al cargar horas ocupadas:", ocupadas.reason);
+    if (bloqueados.status === "fulfilled") setBloqueos(bloqueados.value);
+    else console.error("Error al cargar horarios bloqueados:", bloqueados.reason);
   };
 
   return (
@@ -44,9 +48,8 @@ export function AgendaProvider({ children }: { children: ReactNode }) {
         agregarCita,
         actualizarCita,
         citasOcupadas,
-        cargarHorasOcupadas,
         bloqueos,
-        setBloqueos,
+        cargarOcupacion,
       }}
     >
       {children}

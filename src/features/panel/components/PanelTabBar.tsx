@@ -9,31 +9,22 @@ export type PestanaPanel =
   | "BLOQUEOS"
   | "CLIENTES"
   | "CARTERA"
-  | "NEGOCIO";
+  | "NEGOCIO"
+  | "MI_NEGOCIO";
 
-type Pestana = {
+export type Pestana = {
   id: PestanaPanel;
   icono: ComponentProps<typeof Ionicons>["name"];
   label: string;
-  soloAdmin: boolean;
 };
 
-// Para agregar una sección nueva al panel, se agrega aquí y en PanelScreen
-export const PESTANAS: Pestana[] = [
-  { id: "AGENDAMIENTOS", icono: "list", label: "Agenda", soloAdmin: false },
-  { id: "BLOQUEOS", icono: "calendar-outline", label: "Bloqueos", soloAdmin: true },
-  { id: "CLIENTES", icono: "person-add-outline", label: "Clientes", soloAdmin: false },
-  { id: "CARTERA", icono: "wallet-outline", label: "Cartera", soloAdmin: false },
-  { id: "NEGOCIO", icono: "storefront-outline", label: "Negocio", soloAdmin: true },
-];
-
 type Props = {
+  pestanas: Pestana[];
   activa: PestanaPanel;
-  esAdmin: boolean;
   onCambiar: (p: PestanaPanel) => void;
 };
 
-export default function PanelTabBar({ activa, esAdmin, onCambiar }: Props) {
+export default function PanelTabBar({ pestanas, activa, onCambiar }: Props) {
   const { colors } = useAppTheme();
   return (
     <View
@@ -43,7 +34,7 @@ export default function PanelTabBar({ activa, esAdmin, onCambiar }: Props) {
         { backgroundColor: colors.bottomBarBg, borderTopColor: colors.cardBorder },
       ]}
     >
-      {PESTANAS.filter((t) => !t.soloAdmin || esAdmin).map((t) => {
+      {pestanas.map((t) => {
         const color = activa === t.id ? colors.primary : colors.textSecondary;
         return (
           <Tocable

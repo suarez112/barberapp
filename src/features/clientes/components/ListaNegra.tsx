@@ -9,18 +9,23 @@ import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
-import { avisar } from "@/utils/dialogos";
+import { avisar, confirmar } from "@/utils/dialogos";
 import { normalizar } from "@/utils/formato";
-import { useClientes } from "../ClientesProvider";
+import { EstadoClientes } from "../useClientes";
 
-export default function ListaNegra() {
+// Compara teléfonos por sus dígitos, como el backend
+const digitos = (t: string) => t.replace(/\D/g, "");
+
+export default function ListaNegra({ estado }: { estado: EstadoClientes }) {
   const { colors } = useAppTheme();
-  const { clientes, listaNegra, bloquear, quitarDeListaNegra } = useClientes();
+  const { clientes, listaNegra, bloquear, desbloquear } = estado;
   const [telefono, setTelefono] = useState("");
   const [busqueda, setBusqueda] = useState("");
 
-  const tel = telefono.trim();
-  const clienteEncontrado = clientes.find((c) => c.telefono.trim() === tel);
+  const tel = digitos(telefono);
+  const clienteEncontrado = tel
+    ? clientes.find((c) => digitos(c.telefono) === tel)
+    : undefined;
 
   // Búsqueda en tiempo real por nombre o teléfono
   const q = normalizar(busqueda);
@@ -30,7 +35,7 @@ export default function ListaNegra() {
       )
     : listaNegra;
 
-  const agregar = () => {
+  const agregar = async () => {
     if (!tel) {
       avisar("Falta el teléfono", "Escribe el teléfono del cliente.");
       return;
@@ -42,16 +47,23 @@ export default function ListaNegra() {
       );
       return;
     }
-    if (listaNegra.some((i) => i.telefono.trim() === tel)) {
+    if (clienteEncontrado.enListaNegra) {
       avisar(
         "Ya está bloqueado",
         `${clienteEncontrado.nombre} ya está en la lista negra.`,
       );
       return;
     }
-    bloquear(clienteEncontrado.nombre, tel);
-    avisar("Agregado", `"${clienteEncontrado.nombre}" añadido a la lista negra.`);
-    setTelefono("");
+    if (await bloquear(clienteEncontrado)) setTelefono("");
+  };
+
+  const quitar = async (id: string, nombre: string) => {
+    const ok = await confirmar({
+      titulo: "Quitar de la lista negra",
+      mensaje: `¿Permitir que ${nombre} vuelva a agendar?`,
+      textoConfirmar: "Sí, quitar",
+    });
+    if (ok) await desbloquear(id, nombre);
   };
 
   return (
@@ -104,7 +116,7 @@ export default function ListaNegra() {
               icono="trash-outline"
               color={COLORES.peligro}
               etiqueta={`Quitar a ${item.nombre} de la lista negra`}
-              onPress={() => quitarDeListaNegra(item.id)}
+              onPress={() => quitar(item.id, item.nombre)}
             />
           </TarjetaFila>
         ))

@@ -7,7 +7,7 @@ import { useNegocio } from "./NegocioProvider";
 // Entra a un negocio con su código (lo escribe el cliente o llega en el enlace)
 export function useAbrirNegocio() {
   const { abrirNegocio } = useNegocio();
-  const { cargarHorasOcupadas } = useAgenda();
+  const { cargarOcupacion } = useAgenda();
 
   return async (codigoEscrito: string): Promise<boolean> => {
     const codigo = codigoEscrito.trim().toUpperCase();
@@ -19,7 +19,7 @@ export function useAbrirNegocio() {
     try {
       const datos = await validarCodigoEmpresa(codigo);
       abrirNegocio(datos);
-      cargarHorasOcupadas(datos.empresa.id);
+      cargarOcupacion(datos.empresa.id);
       return true;
     } catch (error) {
       if (error instanceof ErrorDeConexion) {

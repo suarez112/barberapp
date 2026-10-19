@@ -14,89 +14,117 @@ import { Barbero } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useSesion } from "../sesion/SesionProvider";
+import { useAvisarError } from "../sesion/useAvisarError";
+import { Personal } from "../sesion/usePersonal";
+import {
+  actualizarProfesional,
+  crearProfesional,
+  eliminarProfesional,
+  subirFotoProfesional,
+} from "./api";
+import { FotoElegida } from "@/utils/imagenes";
 
 const VACIO = { nombre: "", usuario: "", clave: "", especialidad: "", porcentaje: "" };
-const ESPECIALIDAD_POR_DEFECTO = "Estilista · Especialista";
 const PORCENTAJE_POR_DEFECTO = 50;
 
 const aCampos = (b: Barbero) => ({
   nombre: b.nombre,
   usuario: b.usuario,
-  clave: b.clave,
+  clave: "",
   especialidad: b.especialidad,
   porcentaje: b.porcentajeGanancia.toString(),
 });
 
-export default function EquipoAdmin() {
+export default function EquipoAdmin({ personal }: { personal: Personal }) {
   const { colors } = useAppTheme();
-  const { empresa, barberos, setBarberos } = useNegocio();
-  const { barbero: logueado, actualizarBarberoLogueado } = useSesion();
+  const { barberos, setBarberos } = useNegocio();
+  const { actualizarBarberoLogueado } = useSesion();
+  const avisarError = useAvisarError();
   const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
+  const token = personal.token;
+  const soyYo = (id: string) => personal.barbero?.id === id;
 
-  const guardar = () => {
-    if (!campos.nombre.trim() || !campos.usuario.trim() || !campos.clave.trim()) {
+  // Reemplaza al integrante en la lista (y en la sesión si es quien está usando la app)
+  const reemplazar = (b: Barbero) => {
+    setBarberos((prev) => prev.map((x) => (x.id === b.id ? b : x)));
+    if (soyYo(b.id)) actualizarBarberoLogueado(b);
+  };
+
+  const guardar = async () => {
+    const clave = campos.clave.trim();
+    if (!campos.nombre.trim() || !campos.usuario.trim() || (!enEdicion && !clave)) {
       avisar(
         "Datos Incompletos",
-        "Completa Nombre, Usuario y Contraseña para el integrante.",
+        enEdicion
+          ? "Completa Nombre y Usuario del integrante."
+          : "Completa Nombre, Usuario y Contraseña para el integrante.",
       );
       return;
     }
+    if (clave && (clave.length < 8 || clave.length > 64)) {
+      avisar("Contraseña inválida", "La contraseña debe tener entre 8 y 64 caracteres.");
+      return;
+    }
+    const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      avisar("Comisión inválida", "La comisión debe ser un número de 0 a 100.");
+      return;
+    }
 
-    const pct = parseFloat(campos.porcentaje);
     const datos = {
       nombre: campos.nombre.trim(),
       usuario: campos.usuario.trim().toLowerCase(),
-      clave: campos.clave.trim(),
-      especialidad: campos.especialidad.trim() || ESPECIALIDAD_POR_DEFECTO,
-      porcentajeGanancia: isNaN(pct) ? PORCENTAJE_POR_DEFECTO : pct,
+      especialidad: campos.especialidad.trim() || null,
+      porcentajeGanancia: pct,
+      // Al editar, la contraseña vacía deja la actual
+      ...(clave ? { clave } : {}),
     };
 
-    if (enEdicion) {
-      setBarberos(
-        barberos.map((b) => (b.id === enEdicion.id ? { ...b, ...datos } : b)),
-      );
-      if (logueado?.id === enEdicion.id) actualizarBarberoLogueado(datos);
-      avisar("¡Actualizado!", `Los datos de "${campos.nombre}" han sido guardados.`);
-    } else {
-      const nuevo: Barbero = {
-        id: Date.now().toString(),
-        esAdmin: false,
-        equipo: `${empresa?.nombre} TEAM`,
-        ...datos,
-      };
-      setBarberos([...barberos, nuevo]);
-      avisar(
-        "¡Éxito!",
-        `${nuevo.nombre} registrado con ${nuevo.porcentajeGanancia}% de ganancia.`,
-      );
+    try {
+      if (enEdicion) {
+        reemplazar(await actualizarProfesional(token, enEdicion.id, datos));
+        avisar("¡Actualizado!", `Los datos de "${datos.nombre}" han sido guardados.`);
+      } else {
+        const nuevo = await crearProfesional(token, datos);
+        setBarberos((prev) => [...prev, nuevo]);
+        avisar(
+          "¡Éxito!",
+          `${nuevo.nombre} registrado con ${nuevo.porcentajeGanancia}% de ganancia. Entra con el usuario "${nuevo.usuario}".`,
+        );
+      }
+      reiniciar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Usuario en uso" });
     }
-    reiniciar();
   };
 
   const eliminar = async (b: Barbero) => {
-    if (b.esAdmin) {
-      avisar(
-        "Acción no permitida",
-        "No se puede eliminar la cuenta del Administrador principal.",
-      );
-      return;
-    }
     const ok = await confirmar({
       titulo: "Confirmar",
-      mensaje: `¿Deseas retirar a ${b.nombre} del equipo?`,
+      mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.`,
       textoConfirmar: "Eliminar",
       destructivo: true,
     });
     if (!ok) return;
-    setBarberos(barberos.filter((x) => x.id !== b.id));
-    if (enEdicion?.id === b.id) reiniciar();
-    avisar("Eliminado", `${b.nombre} retirado.`);
+    try {
+      await eliminarProfesional(token, b.id);
+      setBarberos((prev) => prev.filter((x) => x.id !== b.id));
+      if (enEdicion?.id === b.id) reiniciar();
+      avisar("Eliminado", `${b.nombre} retirado.`);
+    } catch (e) {
+      // 409: tiene citas pendientes
+      avisarError(e, { titulo: "No se pudo eliminar", tituloConflicto: "Tiene citas pendientes" });
+    }
   };
 
-  const cambiarFoto = (id: string, foto: string) => {
-    setBarberos(barberos.map((b) => (b.id === id ? { ...b, foto } : b)));
-    if (logueado?.id === id) actualizarBarberoLogueado({ foto });
+  const cambiarFoto = async (b: Barbero, foto: FotoElegida) => {
+    try {
+      const { foto: url } = await subirFotoProfesional(token, b.id, foto);
+      reemplazar({ ...b, foto: url });
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo subir la foto" });
+    }
   };
 
   return (
@@ -119,7 +147,7 @@ export default function EquipoAdmin() {
           onChangeText={cambiar("usuario")}
         />
         <CampoTexto
-          placeholder="Contraseña"
+          placeholder={enEdicion ? "Nueva contraseña (vacía = no cambiar)" : "Contraseña (mínimo 8)"}
           secureTextEntry
           value={campos.clave}
           onChangeText={cambiar("clave")}
@@ -153,13 +181,13 @@ export default function EquipoAdmin() {
               foto={b.foto}
               color={colors.primary}
               editable
-              onCambiar={(uri) => cambiarFoto(b.id, uri)}
+              onCambiar={(foto) => cambiarFoto(b, foto)}
             />
             <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
               {b.nombre} {b.esAdmin ? "👑 (Admin)" : null}
             </Text>
             <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-              {b.especialidad} · Comisión: {b.porcentajeGanancia}%
+              {b.especialidad || "Sin especialidad"} · Comisión: {b.porcentajeGanancia}%
             </Text>
             <Text style={[styles.usuario, { color: colors.textSecondary }]}>
               Usuario: {b.usuario}
@@ -173,7 +201,7 @@ export default function EquipoAdmin() {
               etiqueta={`Editar a ${b.nombre}`}
               onPress={() => editar(b)}
             />
-            {!b.esAdmin ? (
+            {!soyYo(b.id) ? (
               <BotonIcono
                 icono="trash-outline"
                 color={COLORES.peligro}

@@ -12,13 +12,15 @@ import {
   subirFotoEmpresa,
 } from "../cuenta/api";
 import { useCuenta } from "../cuenta/CuentaProvider";
+import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
 const MENSAJE_PRUEBA_VENCIDA =
   "Tu prueba gratuita de 15 días terminó. Activa tu suscripción para seguir usando las funciones de administrador.";
 
 // Estado del panel de la empresa: prueba gratuita, perfil y sus acciones
 export function useMiEmpresa() {
-  const { token, cerrarCuenta } = useCuenta();
+  const { token } = useCuenta();
+  const cerrarSesion = useCerrarSesion();
   const [prueba, setPrueba] = useState<EstadoPrueba | null>(null);
   const [perfil, setPerfil] = useState<PerfilEmpresa | null>(null);
   // Mensaje del backend cuando la suscripción no está vigente (402)
@@ -40,12 +42,14 @@ export function useMiEmpresa() {
           "Sesión finalizada",
           mensajeDeError(error, "Vuelve a iniciar sesión."),
         );
-        cerrarCuenta();
+        cerrarSesion();
         return true;
       }
       return false;
     },
-    [cerrarCuenta],
+    // cerrarSesion cambia en cada render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   // Pide prueba y perfil; el estado cambia cuando responde el servidor

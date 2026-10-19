@@ -7,13 +7,13 @@ import Insignia from "@/components/ui/Insignia";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
-import { useAgenda } from "@/features/agenda/AgendaProvider";
-import { useSesion } from "@/features/sesion/SesionProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
-import { confirmar, avisar } from "@/utils/dialogos";
-import { useClientes } from "../ClientesProvider";
+import { confirmar } from "@/utils/dialogos";
+import { EstadoClientes } from "../useClientes";
+import HistorialCitas from "./HistorialCitas";
 import {
+  ClienteProcesado,
   FiltroEstadoCliente,
   OrdenCliente,
   procesarClientes,
@@ -26,23 +26,17 @@ const ORDENES: { id: OrdenCliente; label: string; icono: "arrow-down-outline" | 
   { id: "CITAS_ASC", label: "Menor nº de citas", icono: "arrow-up-outline" },
 ];
 
-export default function HistorialClientes() {
+type Props = { token: string; estado: EstadoClientes };
+
+export default function HistorialClientes({ token, estado }: Props) {
   const { colors } = useAppTheme();
-  const { citas } = useAgenda();
-  const { barbero, empleadoSupervisado } = useSesion();
-  const { clientes, estaBloqueado, bloquear, desbloquear } = useClientes();
+  const { clientes, bloquear, desbloquear } = estado;
   const [filtro, setFiltro] = useState<FiltroEstadoCliente>("TODOS");
   const [orden, setOrden] = useState<OrdenCliente>("DIAS_DESC");
+  // Cliente del que se están viendo las citas
+  const [abiertoId, setAbiertoId] = useState<string | null>(null);
 
-  // El admin ve todo (o al supervisado); un integrante solo sus citas
-  const citasVisibles = citas.filter((c) =>
-    barbero?.esAdmin
-      ? empleadoSupervisado
-        ? c.barberoId === empleadoSupervisado.id
-        : true
-      : c.barberoId === barbero?.id,
-  );
-  const lista = procesarClientes({ clientes, citasVisibles, filtro, orden });
+  const lista = procesarClientes({ clientes, filtro, orden });
 
   const filtros: { id: FiltroEstadoCliente; label: string }[] = [
     { id: "TODOS", label: `Todos (${lista.length})` },
@@ -50,26 +44,22 @@ export default function HistorialClientes() {
     { id: "INACTIVOS", label: "Inactivos" },
   ];
 
-  const alternarBloqueo = async (nombre: string, telefono: string) => {
-    if (estaBloqueado(nombre, telefono)) {
+  const alternarBloqueo = async (cli: ClienteProcesado) => {
+    if (cli.enListaNegra && cli.listaNegraId) {
       const ok = await confirmar({
         titulo: "Desbloquear Cliente",
-        mensaje: `¿Deseas quitar a "${nombre}" de la lista negra y permitirle agendar nuevamente?`,
+        mensaje: `¿Deseas quitar a "${cli.nombre}" de la lista negra y permitirle agendar nuevamente?`,
         textoConfirmar: "Sí, Desbloquear",
       });
-      if (!ok) return;
-      desbloquear(nombre, telefono);
-      avisar("Desbloqueado", `${nombre} ya puede agendar citas.`);
+      if (ok) await desbloquear(cli.listaNegraId, cli.nombre);
     } else {
       const ok = await confirmar({
         titulo: "Bloquear Cliente",
-        mensaje: `¿Deseas enviar a "${nombre}" a la Lista Negra? No podrá volver a agendar.`,
+        mensaje: `¿Deseas enviar a "${cli.nombre}" a la Lista Negra? No podrá volver a agendar.`,
         textoConfirmar: "Bloquear Cliente",
         destructivo: true,
       });
-      if (!ok) return;
-      bloquear(nombre, telefono);
-      avisar("Cliente Bloqueado", `${nombre} ha sido agregado a la lista negra.`);
+      if (ok) await bloquear(cli);
     }
   };
 
@@ -147,13 +137,14 @@ export default function HistorialClientes() {
         <TextoInfo>No hay clientes registrados en este grupo.</TextoInfo>
       ) : (
         lista.map((cli) => {
-          const bloqueado = estaBloqueado(cli.nombre, cli.telefono);
+          const bloqueado = cli.enListaNegra;
           const subtitulo = [
             estilosTexto.subtitulo,
             { color: colors.textSecondary },
           ];
           return (
-            <TarjetaFila key={cli.telefono}>
+            <View key={cli.id}>
+            <TarjetaFila>
               <View style={styles.flex}>
                 <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
                   👤 {cli.nombre}
@@ -184,10 +175,9 @@ export default function HistorialClientes() {
                 />
                 <View style={styles.filaAcciones}>
                   <Text style={[styles.totalCitas, { color: colors.primary }]}>
-                    {cli.totalCitasCalculado} Citas
+                    {cli.totalCitas} Citas
                   </Text>
-                  {barbero?.esAdmin ? (
-                    <Tocable
+                  <Tocable
                       accessibilityRole="button"
                       style={[
                         styles.botonBloqueo,
@@ -197,16 +187,27 @@ export default function HistorialClientes() {
                             : COLORES.peligroOscuro,
                         },
                       ]}
-                      onPress={() => alternarBloqueo(cli.nombre, cli.telefono)}
+                      onPress={() => alternarBloqueo(cli)}
                     >
                       <Text style={styles.botonBloqueoTexto}>
                         {bloqueado ? "✅ Desbloquear" : "🚫 Bloquear"}
                       </Text>
                     </Tocable>
-                  ) : null}
                 </View>
+                <Tocable
+                  accessibilityRole="button"
+                  onPress={() => setAbiertoId(abiertoId === cli.id ? null : cli.id)}
+                >
+                  <Text style={[styles.verCitas, { color: colors.primary }]}>
+                    {abiertoId === cli.id ? "Ocultar citas ▲" : "Ver citas ▼"}
+                  </Text>
+                </Tocable>
               </View>
             </TarjetaFila>
+            {abiertoId === cli.id ? (
+              <HistorialCitas token={token} clienteId={cli.id} />
+            ) : null}
+            </View>
           );
         })
       )}
@@ -246,6 +247,7 @@ const styles = StyleSheet.create({
   columnaDerecha: { alignItems: "flex-end", gap: 6 },
   filaAcciones: { flexDirection: "row", alignItems: "center", gap: 8 },
   totalCitas: { fontSize: 10, fontWeight: "bold" },
+  verCitas: { fontSize: 11, fontWeight: "bold" },
   botonBloqueo: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
   botonBloqueoTexto: { color: COLORES.blanco, fontSize: 9, fontWeight: "bold" },
 });

@@ -37,21 +37,21 @@ export const duracionEnMinutos = (texto?: string) => {
   return isNaN(n) || n <= 0 ? 30 : n;
 };
 
-// ¿Este bloqueo aplica a ese día? (solo ese día, o todas las semanas ese día)
-export const bloqueoAplicaEseDia = (
-  b: BloqueoHorario,
-  fecha: string,
-  diaNom: string,
-) =>
-  (b.frecuencia === "PUNTUAL" && b.fechaBase === fecha) ||
-  (b.frecuencia === "SEMANAL_RECURRENTE" && b.diasSemana.includes(diaNom));
+// "2026-10-15" -> 4 (0 = domingo … 6 = sábado)
+export const diaSemanaDe = (fecha: string) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+};
+
+// ¿Este bloqueo aplica a ese día? Se repite cada semana; los antiguos son de un solo día.
+export const bloqueoAplicaEseDia = (b: BloqueoHorario, fecha: string) =>
+  b.fecha ? b.fecha === fecha : b.diaSemana === diaSemanaDe(fecha);
 
 type Parametros = {
   empresa: Pick<Empresa, "horarioApertura" | "horarioCierre">;
   barberoId: string;
   servicio: Servicio;
   fecha: string; // "2026-10-15"
-  diaNom: string; // "JUE"
   citas: HorarioOcupado[];
   bloqueos: BloqueoHorario[];
   // Duración del servicio más corto del negocio (para saber qué espacio ya no sirve)
@@ -121,7 +121,6 @@ export const obtenerHorariosDisponibles = ({
   barberoId,
   servicio,
   fecha,
-  diaNom,
   citas,
   bloqueos,
   duracionMinimaServicios,
@@ -148,8 +147,11 @@ export const obtenerHorariosDisponibles = ({
   });
 
   bloqueos.forEach((b) => {
-    if (b.barberoId === barberoId && bloqueoAplicaEseDia(b, fecha, diaNom)) {
-      ocupados.push({ ini: b.desdeMin, fin: b.hastaMin });
+    if (b.barberoId === barberoId && bloqueoAplicaEseDia(b, fecha)) {
+      ocupados.push({
+        ini: horario24AMinutos(b.horaInicio),
+        fin: horario24AMinutos(b.horaFin),
+      });
     }
   });
 

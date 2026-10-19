@@ -1,66 +1,134 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
-import Tocable from "@/components/ui/Tocable";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
+import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import Tocable from "@/components/ui/Tocable";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Producto } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import { formatearPesos } from "@/utils/formato";
-import { elegirImagenCuadrada } from "@/utils/imagenes";
-import { useNegocio } from "../negocio/NegocioProvider";
+import { elegirFoto, FotoElegida } from "@/utils/imagenes";
+import { useAvisarError } from "../sesion/useAvisarError";
+import {
+  actualizarProducto,
+  crearProducto,
+  eliminarProducto,
+  listarProductos,
+  quitarFotoProducto,
+  subirFotoProducto,
+} from "./api";
 
-type Campos = { nombre: string; precio: string; foto?: string };
+type Campos = {
+  nombre: string;
+  precio: string;
+  descripcion: string;
+  // Foto guardada en el servidor y foto nueva elegida (aún sin subir)
+  fotoUrl: string | null;
+  fotoNueva: FotoElegida | null;
+  quitarFoto: boolean;
+};
 
-const VACIO: Campos = { nombre: "", precio: "", foto: undefined };
+const VACIO: Campos = {
+  nombre: "",
+  precio: "",
+  descripcion: "",
+  fotoUrl: null,
+  fotoNueva: null,
+  quitarFoto: false,
+};
 
 const aCampos = (p: Producto): Campos => ({
   nombre: p.nombre,
-  precio: p.precio.toString(),
-  foto: p.foto,
+  precio: String(p.precio),
+  descripcion: p.descripcion ?? "",
+  fotoUrl: p.fotoUrl,
+  fotoNueva: null,
+  quitarFoto: false,
 });
 
-export default function ProductosAdmin() {
+export default function ProductosAdmin({ token }: { token: string }) {
   const { colors } = useAppTheme();
-  const { empresa, productos, setProductos } = useNegocio();
+  const avisarError = useAvisarError();
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
   const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
 
-  if (!empresa) return null;
-  const delNegocio = productos.filter((p) => p.empresaId === empresa.id);
+  const cargar = useCallback(
+    () =>
+      listarProductos(token)
+        .then(setProductos)
+        .catch((e) => avisarError(e, { titulo: "No se pudieron cargar los productos" }))
+        .finally(() => setCargando(false)),
+    // avisarError cambia en cada render; basta el token
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [token],
+  );
 
-  const elegirFoto = async () => {
-    const uri = await elegirImagenCuadrada();
-    if (uri) cambiar("foto")(uri);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  const elegir = async () => {
+    const foto = await elegirFoto({ aspecto: [1, 1] });
+    if (foto) {
+      cambiar("fotoNueva")(foto);
+      cambiar("quitarFoto")(false);
+    }
   };
 
-  const guardar = () => {
-    const precio = parseInt(campos.precio.replace(/\D/g, ""), 10);
-    if (!campos.nombre.trim() || !precio) {
+  const quitarFoto = () => {
+    cambiar("fotoNueva")(null);
+    cambiar("quitarFoto")(true);
+  };
+
+  const guardar = async () => {
+    const precio = Number(campos.precio.replace(/[^\d.]/g, ""));
+    if (!campos.nombre.trim() || !campos.precio.trim() || isNaN(precio)) {
       avisar("Faltan datos", "Escribe el nombre y el precio del producto.");
       return;
     }
-    const datos = { nombre: campos.nombre.trim(), precio, foto: campos.foto };
+    if (guardando) return;
+    const datos = {
+      nombre: campos.nombre.trim(),
+      precio,
+      descripcion: campos.descripcion.trim() || null,
+    };
 
-    if (enEdicion) {
-      setProductos(
-        productos.map((p) => (p.id === enEdicion.id ? { ...p, ...datos } : p)),
+    setGuardando(true);
+    try {
+      // Primero los datos; la foto se sube aparte cuando el producto ya existe
+      const producto = enEdicion
+        ? await actualizarProducto(token, enEdicion.id, datos)
+        : await crearProducto(token, datos);
+      if (campos.fotoNueva) {
+        await subirFotoProducto(token, producto.id, campos.fotoNueva);
+      } else if (campos.quitarFoto && enEdicion?.fotoUrl) {
+        await quitarFotoProducto(token, producto.id);
+      }
+      avisar(
+        enEdicion ? "¡Actualizado!" : "¡Producto creado!",
+        `${producto.nombre} quedó guardado en el catálogo.`,
       );
-    } else {
-      setProductos([
-        ...productos,
-        { id: Date.now().toString(), empresaId: empresa.id, ...datos },
-      ]);
+      reiniciar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo guardar el producto" });
+    } finally {
+      setGuardando(false);
+      // Recarga aunque falle la foto: los datos pudieron guardarse
+      cargar();
     }
-    reiniciar();
   };
 
   const eliminar = async (p: Producto) => {
@@ -71,9 +139,16 @@ export default function ProductosAdmin() {
       destructivo: true,
     });
     if (!ok) return;
-    setProductos(productos.filter((x) => x.id !== p.id));
-    if (enEdicion?.id === p.id) reiniciar();
+    try {
+      await eliminarProducto(token, p.id);
+      setProductos((prev) => prev.filter((x) => x.id !== p.id));
+      if (enEdicion?.id === p.id) reiniciar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo eliminar" });
+    }
   };
+
+  const fotoMostrada = campos.fotoNueva?.uri ?? (campos.quitarFoto ? null : campos.fotoUrl);
 
   return (
     <View>
@@ -86,20 +161,25 @@ export default function ProductosAdmin() {
         <Tocable
           accessibilityRole="button"
           accessibilityLabel="Elegir foto del producto"
-          onPress={elegirFoto}
+          onPress={elegir}
           style={[styles.foto, { borderColor: colors.cardBorder }]}
         >
-          {campos.foto ? (
-            <Image source={{ uri: campos.foto }} style={styles.llenar} contentFit="cover" />
+          {fotoMostrada ? (
+            <Image source={{ uri: fotoMostrada }} style={styles.llenar} contentFit="cover" />
           ) : (
             <>
               <Ionicons name="camera" size={28} color={colors.textSecondary} />
               <Text style={[styles.agregarFoto, { color: colors.textSecondary }]}>
-                Agregar foto
+                Agregar foto (opcional)
               </Text>
             </>
           )}
         </Tocable>
+        {fotoMostrada ? (
+          <Tocable accessibilityRole="button" onPress={quitarFoto}>
+            <Text style={[styles.quitarFoto, { color: COLORES.peligro }]}>Quitar foto</Text>
+          </Tocable>
+        ) : null}
         <CampoTexto
           placeholder="Nombre del Producto"
           value={campos.nombre}
@@ -111,20 +191,32 @@ export default function ProductosAdmin() {
           value={campos.precio}
           onChangeText={cambiar("precio")}
         />
+        <CampoTexto
+          placeholder="Descripción (opcional)"
+          value={campos.descripcion}
+          onChangeText={cambiar("descripcion")}
+          multiline
+        />
         <BotonesFormulario
-          tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR PRODUCTO"}
+          tituloGuardar={
+            guardando ? "GUARDANDO…" : enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR PRODUCTO"
+          }
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
       </Acordeon>
 
       <TituloSeccion style={styles.tituloLista}>
-        PRODUCTOS ACTIVOS ({delNegocio.length})
+        PRODUCTOS ACTIVOS ({productos.length})
       </TituloSeccion>
-      {delNegocio.map((p) => (
+      {cargando ? <ActivityIndicator color={colors.primary} /> : null}
+      {!cargando && productos.length === 0 ? (
+        <TextoInfo>Aún no has agregado productos.</TextoInfo>
+      ) : null}
+      {productos.map((p) => (
         <TarjetaFila key={p.id}>
-          {p.foto ? (
-            <Image source={{ uri: p.foto }} style={styles.miniatura} contentFit="cover" />
+          {p.fotoUrl ? (
+            <Image source={{ uri: p.fotoUrl }} style={styles.miniatura} contentFit="cover" />
           ) : (
             <View style={[styles.miniatura, { backgroundColor: colors.inputBg }]}>
               <Ionicons name="cube-outline" size={22} color={colors.textSecondary} />
@@ -136,6 +228,7 @@ export default function ProductosAdmin() {
             </Text>
             <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
               ${formatearPesos(p.precio)}
+              {p.descripcion ? ` · ${p.descripcion}` : ""}
             </Text>
           </View>
           <View style={styles.acciones}>
@@ -168,11 +261,12 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 6,
     overflow: "hidden",
   },
   llenar: { width: "100%", height: "100%" },
   agregarFoto: { marginTop: 4 },
+  quitarFoto: { fontSize: 12, fontWeight: "bold", marginBottom: 10, textAlign: "right" },
   miniatura: {
     width: 48,
     height: 48,

@@ -58,24 +58,26 @@ Barbershop booking app (Expo SDK 57, React Native 0.86, Expo Router, TypeScript)
 src/
   app/             Expo Router routes (each file is a screen). Keep them thin: they re-export a feature screen.
     _layout.tsx    root Stack (no header) wrapped in AppProviders
-    index.tsx      role selection: "Soy empresa", "Soy cliente", login link (redirects /?codigo=X to /cliente?codigo=X)
+    index.tsx      role selection: "Soy empresa", "Soy cliente", login link (redirects /?codigo=X to /cliente?codigo=X;
+                   with a saved session it goes straight to /panel or /admin)
     registro.tsx   -> features/cuenta/RegistroEmpresaScreen (company registration)
     login.tsx      -> login with two modes: staff (usuario) and company account (correo)
     cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile)
     panel.tsx      -> features/panel/PanelScreen (staff panel, staff token)
-    admin.tsx      -> features/admin/AdminPanelScreen (company admin panel, account token)
+    admin.tsx      -> features/admin/AdminPanelScreen (company admin panel, account token: same
+                   sections as the staff admin plus "Mi negocio")
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
                    context Provider for shared state and an api.ts with its backend calls
                    (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, negocio,
-                   notificaciones, panel, productos, reservas, servicios, sesion)
+                   panel, productos, reservas, servicios, sesion)
   components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader)
-  providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > Agenda > Clientes > Notificaciones)
-  services/api/    config.ts (backend URL) and http.ts (fetch wrapper)
-  data/            local demo data: mocks.ts (fake clients, blacklist), datos.ts (demo businesses)
+  providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > RestaurarSesion > Agenda)
+  services/api/    config.ts (backend URL), http.ts (fetch wrapper), errores.ts (error -> clear message)
+  data/            static data only (paises.ts: phone country codes). No demo businesses or fake clients.
   theme/, constants/, hooks/, types/, utils/
 ```
 
-Navigation is a single Stack. The staff panel switches between tabs internally (`features/panel/components/PanelTabBar.tsx`), not with Expo Router tabs.
+Navigation is a single Stack. Both panels render `features/panel/PanelNegocio.tsx`, which switches tabs internally (`components/PanelTabBar.tsx`), not with Expo Router tabs: Agenda, Bloqueos and Cartera for everyone; Clientes and Equipo (team/services/products) for admins; "Mi negocio" only for the account admin.
 
 ## Running the app
 
@@ -99,20 +101,23 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
   - Server error (4xx/5xx) -> `ApiError` with the backend `{ error }` message and `status`.
   - Network failure, timeout or non-JSON response -> `ErrorDeConexion`.
   - `mensajeDeError(error, porDefecto)` returns the text to show the user.
-- Each feature declares its calls in its own `api.ts` (`features/sesion/api.ts`, `features/negocio/api.ts`, `features/agenda/api.ts`). Add new endpoints the same way; do not call `fetch` from screens.
+- Each feature declares its calls in its own `api.ts` (sesion, cuenta, negocio, agenda, clientes, equipo, servicios, productos, bloqueos, cartera). Add new endpoints the same way; do not call `fetch` from screens.
+- Errors: `services/api/errores.ts` `describirError()` turns an error into `{ titulo, mensaje }` (connection, 401 session expired, 402 trial ended, 403 no permission, 409 conflict with a custom title). Panel actions use `features/sesion/useAvisarError.ts`, which also logs out on 401. Booking shows 403 (blacklisted phone) and 409 (busy or blocked slot) with the backend message.
+- Photos: `utils/imagenes.ts` `elegirFoto()` (checks JPG/PNG/WEBP and 5 MB like the backend) and `formularioFoto()` (multipart field `foto`).
 
 ## Session and token
 
-- Staff login: `features/sesion/useIniciarSesion.ts` calls `POST /api/v1/auth/login`, then loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with the token.
-- The token and logged-in staff member live in React state in `features/sesion/SesionProvider.tsx` (`useSesion()` -> `token`, `barbero`, `iniciarSesion`, `cerrarSesion`).
-- **The session is not persisted**: there is no AsyncStorage/SecureStore, so closing or reloading the app logs the user out.
-- The backend has two token types that do not mix: staff tokens (`/api/v1/auth/login`) and account tokens (`/api/v1/cuentas/...`, used by `/api/v1/admin/...`).
-- Account session: `features/cuenta/CuentaProvider.tsx` (`useCuenta()` -> `usuario` with `rol` `admin` | `cliente`, `token`, `iniciarCuenta`, `cerrarCuenta`), also in memory only. Calls live in `features/cuenta/api.ts`.
-- A company registered with `POST /api/v1/cuentas/registro/empresa` only gets an account admin, not a staff user, so it uses `/admin` (trial days, expired-trial screen on 402, "Mi negocio" with photo upload), not `/panel` (agenda needs a staff token).
-- Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/panel` redirects to `/login` without a staff session.
-- `request()` sends a `FormData` body as multipart (no JSON `Content-Type`); used by the business photo upload.
+- Two session types, one at a time: staff (`features/sesion/SesionProvider.tsx`, `useSesion()`, login `POST /api/v1/auth/login`) and account (`features/cuenta/CuentaProvider.tsx`, `useCuenta()`, login `POST /api/v1/cuentas/login`, `rol` `admin` | `cliente`). Logging into one closes the other.
+- **The session is persisted** with `expo-secure-store` (`features/sesion/sesionGuardada.ts`, key `sesion`): `iniciarSesion`/`iniciarCuenta` save it, `cerrarSesion`/`cerrarCuenta` delete it. On web there is no secure storage, so it stays in memory only.
+- `features/sesion/RestaurarSesionProvider.tsx` reads the saved session when the app opens; screens wait for `useSesionLista().lista` before redirecting. An expired token gets 401 on the first call and the session is closed.
+- `features/sesion/usePersonal.ts` gives one view of whoever uses the business panel (`token`, `esAdmin`, `barbero` or null for the account admin, `esCuentaAdmin`). The account admin token works on every staff endpoint as the business admin.
+- `features/sesion/useCerrarSesion.ts` closes both sessions, deletes the saved one and clears business and agenda data. The header button "Cerrar sesión" and Android back in a panel use it.
+- The panel (`features/panel/useCargarPanel.ts`) loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with that token; login only stores the session.
+- Account admin: `/admin` shows trial days (`AvisoPrueba`), the expired-trial screen on 402 (`PruebaVencida`) and "Mi negocio" (profile, photo, client code).
+- Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/panel` redirects to `/login` without a staff session and to `/admin` for the account admin.
+- `request()` sends a `FormData` body as multipart (no JSON `Content-Type`).
 
 ## Calendar
 
 - Days come from `utils/fechas.ts` (`diasDelMes`, `crearDia`, `diaDeHoy`) for the real current date; `components/ui/SelectorDias.tsx` owns month navigation (`desde` hides past days in booking).
-- `features/bloqueos/BloqueoSemanal.tsx` still uses a fixed October 2026 month.
+- `features/bloqueos/BloqueoSemanal.tsx` shows real weeks (from the current one) and manages weekly blocks with `/api/v1/bloqueos` (they repeat every week on that weekday). Booking reads the public blocks (`GET /api/v1/citas/bloqueos`) through `AgendaProvider.cargarOcupacion` and `utils/disponibilidad.ts` never offers those times.

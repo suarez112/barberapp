@@ -13,55 +13,68 @@ import { Servicio } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import { formatearPesos } from "@/utils/formato";
 import { useNegocio } from "../negocio/NegocioProvider";
+import { useAvisarError } from "../sesion/useAvisarError";
+import { actualizarServicio, crearServicio, eliminarServicio } from "./api";
 
 const VACIO = { nombre: "", precio: "", duracion: "" };
-const DURACION_POR_DEFECTO = "30 min";
 
 const aCampos = (s: Servicio) => ({
   nombre: s.nombre,
   precio: s.precio.toString(),
-  duracion: s.duracion,
+  duracion: String(s.duracionMin ?? parseInt(s.duracion, 10)),
 });
 
-export default function ServiciosAdmin() {
+export default function ServiciosAdmin({ token }: { token: string }) {
   const { colors } = useAppTheme();
   const { servicios, setServicios } = useNegocio();
+  const avisarError = useAvisarError();
   const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
 
-  const guardar = () => {
-    if (!campos.nombre.trim() || !campos.precio.trim()) {
+  const guardar = async () => {
+    const precio = Number(campos.precio.replace(/[^\d.]/g, ""));
+    const duracionMin = parseInt(campos.duracion, 10);
+    if (!campos.nombre.trim() || !campos.precio.trim() || isNaN(precio)) {
       avisar("Datos Incompletos", "Escribe el nombre y precio del servicio.");
       return;
     }
-    const datos = {
-      nombre: campos.nombre.trim(),
-      duracion: campos.duracion.trim() || DURACION_POR_DEFECTO,
-      precio: parseFloat(campos.precio) || 0,
-    };
-
-    if (enEdicion) {
-      setServicios(
-        servicios.map((s) => (s.id === enEdicion.id ? { ...s, ...datos } : s)),
-      );
-      avisar("¡Actualizado!", `Servicio "${campos.nombre}" modificado con éxito.`);
-    } else {
-      setServicios([...servicios, { id: Date.now().toString(), ...datos }]);
-      avisar("¡Servicio Creado!", `${datos.nombre} agregado al catálogo.`);
+    if (isNaN(duracionMin) || duracionMin < 1 || duracionMin > 1440) {
+      avisar("Duración inválida", "Escribe la duración en minutos (ej: 30).");
+      return;
     }
-    reiniciar();
+    const datos = { nombre: campos.nombre.trim(), duracionMin, precio };
+
+    try {
+      if (enEdicion) {
+        const actualizado = await actualizarServicio(token, enEdicion.id, datos);
+        setServicios((prev) => prev.map((s) => (s.id === actualizado.id ? actualizado : s)));
+        avisar("¡Actualizado!", `Servicio "${actualizado.nombre}" modificado con éxito.`);
+      } else {
+        const nuevo = await crearServicio(token, datos);
+        setServicios((prev) => [...prev, nuevo]);
+        avisar("¡Servicio Creado!", `${nuevo.nombre} agregado al catálogo.`);
+      }
+      reiniciar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo guardar el servicio" });
+    }
   };
 
   const eliminar = async (s: Servicio) => {
     const ok = await confirmar({
       titulo: "Confirmar",
-      mensaje: `¿Eliminar servicio "${s.nombre}"?`,
+      mensaje: `¿Eliminar servicio "${s.nombre}"? Las citas ya agendadas no cambian.`,
       textoConfirmar: "Eliminar",
       destructivo: true,
     });
     if (!ok) return;
-    setServicios(servicios.filter((x) => x.id !== s.id));
-    if (enEdicion?.id === s.id) reiniciar();
+    try {
+      await eliminarServicio(token, s.id);
+      setServicios((prev) => prev.filter((x) => x.id !== s.id));
+      if (enEdicion?.id === s.id) reiniciar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo eliminar" });
+    }
   };
 
   return (
@@ -84,7 +97,8 @@ export default function ServiciosAdmin() {
           onChangeText={cambiar("precio")}
         />
         <CampoTexto
-          placeholder="Duración estimada (Ej: 45 min)"
+          placeholder="Duración en minutos (Ej: 45)"
+          keyboardType="numeric"
           value={campos.duracion}
           onChangeText={cambiar("duracion")}
         />

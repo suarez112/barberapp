@@ -1,11 +1,28 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Barbero, Empresa } from "@/types";
+import { Empresa } from "@/types";
 
-type Props = { barbero: Barbero; empresa: Empresa };
+type Props = {
+  nombre: string;
+  esAdmin: boolean;
+  esCuentaAdmin: boolean;
+  porcentaje?: number;
+  empresa: Empresa;
+};
 
-export default function PerfilBadge({ barbero, empresa }: Props) {
+export default function PerfilBadge({
+  nombre,
+  esAdmin,
+  esCuentaAdmin,
+  porcentaje,
+  empresa,
+}: Props) {
   const { colors } = useAppTheme();
+  const rol = esCuentaAdmin
+    ? `👑 Administración de ${empresa.nombre}`
+    : esAdmin
+      ? `👑 Administrador (${empresa.nombre})`
+      : `💈 Integrante del Equipo (${empresa.nombre}) · ${porcentaje ?? 0}% Comisión`;
   return (
     <View
       style={[
@@ -13,14 +30,8 @@ export default function PerfilBadge({ barbero, empresa }: Props) {
         { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
       ]}
     >
-      <Text style={[styles.nombre, { color: colors.textPrimary }]}>
-        👤 {barbero.nombre}
-      </Text>
-      <Text style={[styles.rol, { color: colors.primary }]}>
-        {barbero.esAdmin
-          ? `👑 Administrador Principal (${empresa.nombre})`
-          : `💈 Integrante del Equipo (${empresa.nombre}) · ${barbero.porcentajeGanancia}% Comisión`}
-      </Text>
+      <Text style={[styles.nombre, { color: colors.textPrimary }]}>👤 {nombre}</Text>
+      <Text style={[styles.rol, { color: colors.primary }]}>{rol}</Text>
     </View>
   );
 }

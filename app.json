@@ -44,7 +44,8 @@
           "Style": "light",
           "hidden": "false"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

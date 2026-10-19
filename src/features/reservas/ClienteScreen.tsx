@@ -45,10 +45,7 @@ export default function ClienteScreen() {
 
   return (
     <Pantalla
-      cabecera={{
-        onVolver: modoEnlace ? undefined : volver,
-        mostrarNotificaciones: true,
-      }}
+      cabecera={{ onVolver: modoEnlace ? undefined : volver }}
     >
       {empresa ? (
         // key: al cambiar de negocio, el formulario empieza de cero
@@ -65,7 +62,7 @@ export default function ClienteScreen() {
 
 function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
   const { colors } = useAppTheme();
-  const { empresa, productos } = useNegocio();
+  const { empresa } = useNegocio();
   const [vista, setVista] = useState<Vista>("RESERVAR");
   // Vive aquí (y no en el formulario) para no perder lo escrito al ver productos
   const reserva = useReserva();
@@ -86,12 +83,7 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
 
       {vista === "PRODUCTOS" ? (
         <View style={styles.productos}>
-          <CatalogoProductos
-            colors={colors}
-            modo="cliente"
-            empresaId={empresa.id}
-            productos={productos}
-          />
+          <CatalogoProductos codigo={empresa.codigoAcceso} />
         </View>
       ) : (
         <FormularioReserva reserva={reserva} onCambiarCodigo={onCambiarCodigo} />

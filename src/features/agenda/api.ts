@@ -1,5 +1,5 @@
 import { request } from "../../services/api/http";
-import { Cita, HorarioOcupado } from "../../types";
+import { BloqueoHorario, Cita, HorarioOcupado } from "../../types";
 
 export type NuevaCita = {
   empresaId: string;
@@ -16,6 +16,12 @@ export type NuevaCita = {
 export const listarHorasOcupadas = (empresaId: string) =>
   request<HorarioOcupado[]>(
     `/api/v1/citas/ocupadas?empresaId=${encodeURIComponent(empresaId)}`,
+  );
+
+// Horarios en que el equipo no atiende (sin el motivo)
+export const listarBloqueosPublicos = (empresaId: string) =>
+  request<BloqueoHorario[]>(
+    `/api/v1/citas/bloqueos?empresaId=${encodeURIComponent(empresaId)}`,
   );
 
 export const crearCita = (cita: NuevaCita) =>

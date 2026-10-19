@@ -1,4 +1,7 @@
 import { request } from "../../services/api/http";
+import { FotoElegida, formularioFoto } from "../../utils/imagenes";
+
+export type { FotoElegida };
 
 // Cuentas de empresa (administradores) y de clientes: /api/v1/cuentas y /api/v1/admin.
 // Su token no sirve en los endpoints del personal (/auth, /citas) ni al revés.
@@ -96,27 +99,10 @@ export const actualizarMiEmpresa = (
     token,
   });
 
-// Foto elegida con expo-image-picker. En web llega además como File.
-export type FotoElegida = {
-  uri: string;
-  nombre: string;
-  tipo: string; // "image/jpeg"
-  archivo?: Blob;
-};
-
 // La foto viaja como multipart/form-data en el campo "foto"
-export const subirFotoEmpresa = (token: string, foto: FotoElegida) => {
-  const datos = new FormData();
-  if (foto.archivo) datos.append("foto", foto.archivo, foto.nombre);
-  else
-    // En Android/iOS, React Native lee el archivo desde la uri
-    datos.append("foto", {
-      uri: foto.uri,
-      name: foto.nombre,
-      type: foto.tipo,
-    } as unknown as Blob);
-  return request<{ mensaje: string; fotoUrl: string }>(
-    "/api/v1/admin/empresa/foto",
-    { method: "PUT", body: datos, token },
-  );
-};
+export const subirFotoEmpresa = (token: string, foto: FotoElegida) =>
+  request<{ mensaje: string; fotoUrl: string }>("/api/v1/admin/empresa/foto", {
+    method: "PUT",
+    body: formularioFoto(foto),
+    token,
+  });

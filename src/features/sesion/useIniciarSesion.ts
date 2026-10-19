@@ -1,18 +1,15 @@
-import { ApiError, ErrorDeConexion, mensajeDeError } from "@/services/api/http";
-import { Cita } from "@/types";
+import { describirError } from "@/services/api/errores";
+import { ErrorDeConexion } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
-import { listarAgenda } from "../agenda/api";
-import { useAgenda } from "../agenda/AgendaProvider";
-import { obtenerNegocioActual } from "../negocio/api";
-import { useNegocio } from "../negocio/NegocioProvider";
+import { useCuenta } from "../cuenta/CuentaProvider";
 import { loginBarbero } from "./api";
 import { useSesion } from "./SesionProvider";
 
-// Valida credenciales, carga el negocio y la agenda, y abre la sesión
+// Valida credenciales del personal y abre (y guarda) la sesión.
+// El panel carga después el negocio y la agenda.
 export function useIniciarSesion() {
-  const { abrirNegocio } = useNegocio();
-  const { setCitas } = useAgenda();
   const { iniciarSesion } = useSesion();
+  const { cerrarCuenta } = useCuenta();
 
   return async (usuario: string, clave: string): Promise<boolean> => {
     if (!usuario.trim() || !clave.trim()) {
@@ -21,55 +18,18 @@ export function useIniciarSesion() {
     }
 
     try {
-      // 1. ¿Usuario y clave correctos?
-      let login;
-      try {
-        login = await loginBarbero(usuario, clave);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          avisar(
-            "Error de acceso",
-            mensajeDeError(error, "Credenciales incorrectas."),
-          );
-          return false;
-        }
-        throw error;
-      }
-
-      // 2. Con la sesión, traemos colores, equipo (con usuarios) y servicios
-      let negocio;
-      try {
-        negocio = await obtenerNegocioActual(login.token);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          avisar(
-            "Error",
-            mensajeDeError(error, "No se pudieron cargar los datos del negocio."),
-          );
-          return false;
-        }
-        throw error;
-      }
-
-      // 3. Citas reales: el servidor solo las entrega con el token
-      let agenda: Cita[] = [];
-      try {
-        agenda = await listarAgenda(login.token);
-      } catch (error) {
-        if (!(error instanceof ApiError)) throw error;
-      }
-
-      setCitas(agenda);
-      abrirNegocio(negocio);
-      iniciarSesion(login.barbero, login.token);
-      avisar("¡Bienvenido!", `Hola, ${login.barbero.nombre}`);
+      const login = await loginBarbero(usuario.trim(), clave);
+      // Solo una sesión a la vez
+      await cerrarCuenta();
+      await iniciarSesion(login.barbero, login.token);
       return true;
     } catch (error) {
-      console.error(
-        "Error en login:",
-        error instanceof ErrorDeConexion ? error.causa : error,
-      );
-      avisar("Error de conexión", "No se pudo conectar con el servidor.");
+      if (error instanceof ErrorDeConexion) console.error("Error en login:", error.causa);
+      const aviso = describirError(error, {
+        titulo: "Error de acceso",
+        porDefecto: "Credenciales incorrectas.",
+      });
+      avisar(aviso.titulo, aviso.mensaje);
       return false;
     }
   };

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { elegirFoto as abrirGaleria, FotoElegida } from "@/utils/imagenes";
 
 type Props = {
   nombre: string;
@@ -9,7 +9,7 @@ type Props = {
   size?: number;
   editable?: boolean;
   forma?: "circulo" | "rectangulo";
-  onCambiar?: (uri: string) => void;
+  onCambiar?: (foto: FotoElegida) => void;
 };
 
 export default function FotoBarbero({
@@ -31,15 +31,9 @@ export default function FotoBarbero({
 
   const elegirFoto = async () => {
     if (!onCambiar) return;
-    const resultado = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 5], // recorte vertical, como un afiche
-      quality: 0.6,
-    });
-    if (!resultado.canceled) {
-      onCambiar(resultado.assets[0].uri);
-    }
+    // Recorte vertical, como un afiche
+    const foto = await abrirGaleria({ aspecto: [4, 5], calidad: 0.6 });
+    if (foto) onCambiar(foto);
   };
 
   // ---------- FORMA RECTANGULAR (vista del cliente) ----------
