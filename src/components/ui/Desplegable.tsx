@@ -29,6 +29,10 @@ type Props<T extends string | number> = {
   style?: StyleProp<ViewStyle>;
 };
 
+// Alto fijo de cada opción en las listas sin buscador: permite abrirlas ya
+// desplazadas hasta la opción elegida (ej. las horas)
+const ALTO_OPCION = 52;
+
 // Sin tildes ni mayúsculas, para buscar "bogota" y encontrar "BOGOTÁ, D.C."
 const simplificar = (texto: string) =>
   texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -53,6 +57,8 @@ export default function Desplegable<T extends string | number>({
     const texto = simplificar(busqueda.trim());
     return texto ? opciones.filter((o) => simplificar(o.etiqueta).includes(texto)) : opciones;
   }, [opciones, busqueda]);
+
+  const indiceElegido = buscable ? -1 : opciones.findIndex((o) => o.valor === valor);
 
   const cerrar = () => {
     setAbierto(false);
@@ -113,6 +119,16 @@ export default function Desplegable<T extends string | number>({
               keyExtractor={(o) => String(o.valor)}
               keyboardShouldPersistTaps="handled"
               initialNumToRender={20}
+              {...(indiceElegido > 2
+                ? {
+                    initialScrollIndex: indiceElegido - 2,
+                    getItemLayout: (_: unknown, i: number) => ({
+                      length: ALTO_OPCION,
+                      offset: ALTO_OPCION * i,
+                      index: i,
+                    }),
+                  }
+                : {})}
               ListEmptyComponent={
                 <Text style={[styles.vacio, { color: colors.textSecondary }]}>Sin resultados</Text>
               }
@@ -126,7 +142,11 @@ export default function Desplegable<T extends string | number>({
                       onCambiar(item.valor);
                       cerrar();
                     }}
-                    style={[styles.opcion, { borderColor: colors.cardBorder }]}
+                    style={[
+                      styles.opcion,
+                      { borderColor: colors.cardBorder },
+                      !buscable && styles.altoFijo,
+                    ]}
                   >
                     <Text
                       style={[
@@ -162,10 +182,12 @@ const styles = StyleSheet.create({
   },
   deshabilitado: { opacity: 0.5 },
   texto: { flex: 1, fontSize: 14 },
+  // Anclado arriba: si estuviera centrado, al esconderse el teclado la lista se
+  // movería bajo el dedo y el primer toque no elegiría nada
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 60,
   },
@@ -179,6 +201,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  altoFijo: { height: ALTO_OPCION, paddingVertical: 0 },
   textoOpcion: { fontSize: 15 },
   activa: { fontWeight: "bold" },
   vacio: { textAlign: "center", paddingVertical: 20 },

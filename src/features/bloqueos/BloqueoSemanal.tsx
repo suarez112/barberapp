@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { ComponentProps, useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Selector from "@/components/ui/Selector";
@@ -32,9 +32,12 @@ const MODOS = [
 ] as const;
 
 // Colores de la tabla (igual en tema claro y oscuro)
-const SOLO_ESE_DIA = { fondo: "#7F1D1D", borde: "#EF4444", texto: "#FECACA", simbolo: "✕" };
-const CADA_SEMANA = { fondo: "#7C2D12", borde: "#F97316", texto: "#FED7AA", simbolo: "↻" };
-const CON_CITA = { fondo: "#166534", borde: "#22C55E", texto: "#DCFCE7", simbolo: "✓" };
+// Íconos dibujados (X, ↻, ✓): los caracteres de texto se ven de tamaños distintos
+type Icono = ComponentProps<typeof Ionicons>["name"];
+type EstiloCelda = { fondo: string; borde: string; texto: string; simbolo: Icono };
+const SOLO_ESE_DIA: EstiloCelda = { fondo: "#7F1D1D", borde: "#EF4444", texto: "#FECACA", simbolo: "close" };
+const CADA_SEMANA: EstiloCelda = { fondo: "#7C2D12", borde: "#F97316", texto: "#FED7AA", simbolo: "refresh" };
+const CON_CITA: EstiloCelda = { fondo: "#166534", borde: "#22C55E", texto: "#DCFCE7", simbolo: "checkmark" };
 const LIBRE_OSCURO = { fondo: "#2A2A2A", borde: "#404040" };
 const LIBRE_CLARO = { fondo: "#E5E7EB", borde: "#D1D5DB" };
 
@@ -373,9 +376,11 @@ export default function BloqueoSemanal({
                   <Text style={[s.diaNom, { color: estilo?.texto ?? colors.textSecondary }]}>
                     {d.diaNom}
                   </Text>
-                  <Text style={[s.diaNum, { color: estilo?.texto ?? colors.textPrimary }]}>
-                    {estilo ? estilo.simbolo : d.num}
-                  </Text>
+                  {estilo ? (
+                    <Ionicons name={estilo.simbolo} size={20} color={estilo.texto} style={s.iconoDia} />
+                  ) : (
+                    <Text style={[s.diaNum, { color: colors.textPrimary }]}>{d.num}</Text>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -403,7 +408,7 @@ export default function BloqueoSemanal({
                       (!abreEseDia(d.diaSemana) || d.fecha < hoy) && s.apagado,
                     ]}
                   >
-                    <Text style={[s.simbolo, { color: estilo?.texto }]}>{estilo?.simbolo ?? ""}</Text>
+                    {estilo ? <Ionicons name={estilo.simbolo} size={16} color={estilo.texto} /> : null}
                   </TouchableOpacity>
                 );
               })}
@@ -467,14 +472,14 @@ export default function BloqueoSemanal({
   );
 }
 
-type Leyenda = { color: string; borde: string; texto: string; simbolo?: string };
+type Leyenda = { color: string; borde: string; texto: string; simbolo?: Icono };
 
 function ItemLeyenda({ color, borde, texto, simbolo }: Leyenda) {
   const { colors } = useAppTheme();
   return (
     <View style={s.itemLeyenda}>
       <View style={[s.cuadro, { backgroundColor: color, borderColor: borde }]}>
-        {simbolo ? <Text style={s.simboloLeyenda}>{simbolo}</Text> : null}
+        {simbolo ? <Ionicons name={simbolo} size={11} color={COLORES.blanco} /> : null}
       </View>
       <Text style={[s.textoLeyenda, { color: colors.textSecondary }]}>{texto}</Text>
     </View>
@@ -522,7 +527,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   apagado: { opacity: 0.4 },
-  simbolo: { fontSize: 12, fontWeight: "bold" },
+  iconoDia: { marginVertical: 1 },
   leyenda: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
   itemLeyenda: { flexDirection: "row", alignItems: "center", gap: 6, marginRight: 14, marginBottom: 6 },
   cuadro: {
@@ -533,7 +538,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  simboloLeyenda: { fontSize: 10, fontWeight: "bold", color: COLORES.blanco },
   textoLeyenda: { fontSize: 11 },
   itemLista: {
     flexDirection: "row",

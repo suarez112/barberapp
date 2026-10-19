@@ -36,6 +36,9 @@ export default function Pantalla({ children, cabecera, pie }: Props) {
         <ScrollView
           style={styles.scroll}
           automaticallyAdjustKeyboardInsets
+          // Un botón o una opción se toca a la primera aunque el teclado esté abierto
+          // (también las listas en modales, que reciben los toques a través de este ScrollView)
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {children}
