@@ -1,12 +1,11 @@
-import { useFocusEffect } from "expo-router";
-import { ReactNode, useCallback, useState } from "react";
-import { ActivityIndicator, BackHandler, StyleSheet, View } from "react-native";
+import { ReactNode, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
+import PantallaAviso from "@/components/ui/PantallaAviso";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
-import { confirmar } from "@/utils/dialogos";
 import { diaDeHoy } from "@/utils/fechas";
 import AgendaTab from "../agenda/AgendaTab";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
@@ -20,6 +19,7 @@ import PanelTabBar, { Pestana, PestanaPanel } from "./components/PanelTabBar";
 import PerfilBadge from "./components/PerfilBadge";
 import SelectorSupervision from "./components/SelectorSupervision";
 import { useCargarPanel } from "./useCargarPanel";
+import { useSalirDelPanel } from "./useSalirDelPanel";
 
 type Props = {
   personal: Personal;
@@ -27,6 +27,8 @@ type Props = {
   encabezado?: ReactNode;
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
+  // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
+  onSuscripcionVencida?: () => void;
 };
 
 const PESTANA_AGENDA: Pestana = { id: "AGENDAMIENTOS", icono: "list", label: "Agenda" };
@@ -38,35 +40,28 @@ const PESTANA_MI_NEGOCIO: Pestana = { id: "MI_NEGOCIO", icono: "business-outline
 
 // Panel del negocio: agenda, bloqueos, clientes, cartera y administración.
 // Lo usan el personal (/panel) y la cuenta del administrador (/admin).
-export default function PanelNegocio({ personal, encabezado, miNegocio }: Props) {
+export default function PanelNegocio({
+  personal,
+  encabezado,
+  miNegocio,
+  onSuscripcionVencida,
+}: Props) {
   const { colors } = useAppTheme();
   const { empresa, barberos } = useNegocio();
   const cerrarSesion = useCerrarSesion();
-  const { cargando, error, recargar } = useCargarPanel(personal.token);
+  const salir = useSalirDelPanel();
+  const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
   const [pestana, setPestana] = useState<PestanaPanel>("AGENDAMIENTOS");
   // Se guarda aquí para conservar el día elegido al cambiar de pestaña
   const [diaAgenda, setDiaAgenda] = useState<Dia>(diaDeHoy);
   const [supervisadoId, setSupervisadoId] = useState<string | null>(null);
 
-  const salir = useCallback(async () => {
-    const ok = await confirmar({
-      titulo: "Cerrar sesión",
-      mensaje: "¿Deseas salir? Tendrás que volver a iniciar sesión.",
-      destructivo: true,
-    });
-    if (ok) cerrarSesion();
-  }, [cerrarSesion]);
-
-  // El botón atrás de Android no saca del panel con la sesión abierta: pide cerrarla
-  useFocusEffect(
-    useCallback(() => {
-      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-        salir();
-        return true;
-      });
-      return () => sub.remove();
-    }, [salir]),
-  );
+  // Un administrador pasa a la pantalla de planes; un empleado ve el aviso de abajo
+  useEffect(() => {
+    if (inactivo) onSuscripcionVencida?.();
+    // Solo cuando llega el 402
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inactivo]);
 
   // Los datos del integrante vienen frescos del servidor (ej. si cambió su rol)
   const yo = personal.barbero
@@ -159,6 +154,21 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
     }
   };
 
+  if (inactivo && !onSuscripcionVencida) {
+    return (
+      <Pantalla cabecera={{ onSalir: salir }}>
+        <PantallaAviso icono="storefront-outline" titulo="Negocio inactivo" mensaje={inactivo}>
+          <Boton
+            titulo="CERRAR SESIÓN"
+            variante="neutro"
+            onPress={cerrarSesion}
+            style={styles.botonAviso}
+          />
+        </PantallaAviso>
+      </Pantalla>
+    );
+  }
+
   const conSupervision =
     esAdmin && barberos.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
 
@@ -195,4 +205,5 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
 
 const styles = StyleSheet.create({
   cargando: { marginTop: 30 },
+  botonAviso: { marginTop: 24, alignSelf: "stretch" },
 });

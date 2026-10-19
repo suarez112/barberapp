@@ -2,43 +2,49 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import TextoInfo from "@/components/ui/TextoInfo";
+import { useRefrescoDiario } from "@/hooks/useRefrescoDiario";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import PanelNegocio from "../panel/PanelNegocio";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 import { Personal } from "../sesion/usePersonal";
-import AvisoPrueba from "./components/AvisoPrueba";
+import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
 import FotoNegocio from "./components/FotoNegocio";
-import PruebaVencida from "./components/PruebaVencida";
+import MiSuscripcion from "./components/MiSuscripcion";
+import PanelVencido from "./PanelVencido";
 import { useMiEmpresa } from "./useMiEmpresa";
 
 // Panel de cualquier administrador: la cuenta de la empresa (/admin) o un
 // integrante con rol Administrador (/panel). Los dos ven las mismas pestañas,
-// incluida "Mi negocio".
+// incluida "Mi negocio". Con la suscripción vencida solo Planes y Mi negocio.
 export default function PanelAdministrador({ personal }: { personal: Personal }) {
   const { colors } = useAppTheme();
   const cerrarSesion = useCerrarSesion();
   const {
-    prueba,
+    suscripcion,
     perfil,
-    bloqueo,
     cargando,
     errorCarga,
     recargar,
+    actualizarSuscripcion,
     guardarDatos,
     guardarFoto,
   } = useMiEmpresa(personal.token);
+
+  // Los días restantes cambian a medianoche; también puede haber cambiado
+  // el plan mientras la app estaba cerrada
+  useRefrescoDiario(actualizarSuscripcion);
 
   // La tarjeta del panel de la cuenta muestra el nombre de la administradora, no su correo
   const conNombre: Personal = personal.esCuentaAdmin && perfil?.nombreAdministradora
     ? { ...personal, nombre: perfil.nombreAdministradora }
     : personal;
 
-  // 402: la prueba o la suscripción terminó
-  if (bloqueo) {
+  // Primero se sabe si la suscripción está vigente, para no abrir un panel que respondería 402
+  if (cargando && !suscripcion) {
     return (
       <Pantalla cabecera={{ onSalir: cerrarSesion }}>
-        <PruebaVencida mensaje={bloqueo} onSalir={cerrarSesion} />
+        <ActivityIndicator color={colors.primary} style={styles.cargando} />
       </Pantalla>
     );
   }
@@ -80,6 +86,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
             </Text>
           </View>
 
+          {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
           <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
         </>
@@ -94,11 +101,16 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
     </View>
   );
 
+  if (suscripcion?.estado === "vencida") {
+    return <PanelVencido suscripcion={suscripcion} miNegocio={miNegocio} />;
+  }
+
   return (
     <PanelNegocio
       personal={conNombre}
-      encabezado={prueba ? <AvisoPrueba prueba={prueba} /> : null}
+      encabezado={suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
       miNegocio={miNegocio}
+      onSuscripcionVencida={actualizarSuscripcion}
     />
   );
 }

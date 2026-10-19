@@ -5,43 +5,34 @@ import { ApiError, esCancelada, mensajeDeError } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import {
   DatosEmpresa,
-  EstadoPrueba,
   FotoElegida,
   PerfilEmpresa,
+  Suscripcion,
   actualizarMiEmpresa,
-  obtenerEstadoPrueba,
   obtenerMiEmpresa,
+  obtenerSuscripcion,
   subirFotoEmpresa,
 } from "../cuenta/api";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
-const MENSAJE_PRUEBA_VENCIDA =
-  "Tu prueba gratuita de 15 días terminó. Activa tu suscripción para seguir usando las funciones de administrador.";
-
-// Estado de "Mi negocio": prueba gratuita, perfil y sus acciones.
+// Estado de "Mi negocio": suscripción, perfil y sus acciones. Los dos responden
+// aunque la suscripción haya vencido.
 // token: el de la cuenta admin o el de un integrante con rol Administrador.
 export function useMiEmpresa(token: string) {
   const cerrarSesion = useCerrarSesion();
   const senal = useSenalDeSalida();
-  const [prueba, setPrueba] = useState<EstadoPrueba | null>(null);
+  const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [perfil, setPerfil] = useState<PerfilEmpresa | null>(null);
-  // Mensaje del backend cuando la suscripción no está vigente (402)
-  const [bloqueo, setBloqueo] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
-  // 402: la prueba o la suscripción terminó. 401: el token ya no sirve.
-  // Devuelve true si el error se resolvió aquí (o si fue una cancelación).
+  // 401: el token ya no sirve. Devuelve true si el error se resolvió aquí
+  // (o si fue una cancelación).
   const manejarErrorDeAcceso = useCallback(
     (error: unknown) => {
       if (esCancelada(error)) return true;
-      if (!(error instanceof ApiError)) return false;
-      if (error.status === 402) {
-        setBloqueo(error.message || MENSAJE_PRUEBA_VENCIDA);
-        return true;
-      }
       // 403 (ej. le quitaron el rol de administrador) se muestra como error de carga
-      if (error.status === 401) {
+      if (error instanceof ApiError && error.status === 401) {
         avisar(
           "Sesión finalizada",
           mensajeDeError(error, "Vuelve a iniciar sesión."),
@@ -57,17 +48,13 @@ export function useMiEmpresa(token: string) {
     [],
   );
 
-  // Pide prueba y perfil; el estado cambia cuando responde el servidor
+  // Pide suscripción y perfil; el estado cambia cuando responde el servidor
   const cargar = useCallback(
     () =>
-      obtenerEstadoPrueba(token, senal())
-        .then(async (estado) => {
-          setPrueba(estado);
-          if (estado.pruebaVencida) {
-            setBloqueo(MENSAJE_PRUEBA_VENCIDA);
-            return;
-          }
-          setPerfil(await obtenerMiEmpresa(token, senal()));
+      Promise.all([obtenerSuscripcion(token, senal()), obtenerMiEmpresa(token, senal())])
+        .then(([estado, datos]) => {
+          setSuscripcion(estado);
+          setPerfil(datos);
         })
         .catch((error) => {
           if (manejarErrorDeAcceso(error)) return;
@@ -92,6 +79,17 @@ export function useMiEmpresa(token: string) {
     setErrorCarga(null);
     cargar();
   };
+
+  // Vuelve a consultar solo la suscripción (cada día, al volver a la app o
+  // cuando otra pantalla recibe 402). Si falla se queda con la anterior.
+  const actualizarSuscripcion = useCallback(() => {
+    obtenerSuscripcion(token, senal())
+      .then(setSuscripcion)
+      .catch((error) => {
+        if (manejarErrorDeAcceso(error)) return;
+        registrarCausa("Suscripción", error);
+      });
+  }, [token, senal, manejarErrorDeAcceso]);
 
   // Aviso común para guardar datos o foto; true si se guardó
   const ejecutar = async (accion: () => Promise<void>, porDefecto: string) => {
@@ -121,12 +119,12 @@ export function useMiEmpresa(token: string) {
     }, "No se pudo subir la foto.");
 
   return {
-    prueba,
+    suscripcion,
     perfil,
-    bloqueo,
     cargando,
     errorCarga,
     recargar,
+    actualizarSuscripcion,
     guardarDatos,
     guardarFoto,
   };

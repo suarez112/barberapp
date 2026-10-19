@@ -61,6 +61,12 @@ export const MESES_LARGOS = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
+// "2026-11-02" -> "2 de noviembre de 2026"
+export const fechaLarga = (fecha: string) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return `${d} de ${MESES_LARGOS[m - 1].toLowerCase()} de ${y}`;
+};
+
 // "2026-10-15" -> día del selector
 export const crearDia = (fecha: string): Dia => {
   const [y, m, d] = fecha.split("-").map(Number);

@@ -174,3 +174,38 @@ export const validarAcceso = (a: ValoresAcceso) => {
   if (a.clave !== a.confirmacion) return "Las contraseñas no coinciden";
   return null;
 };
+
+// Cuenta opcional de cliente: correo o usuario (al menos uno), mismas reglas que el backend
+export type ValoresCliente = {
+  nombre: string;
+  telefono: string;
+  correo: string;
+  usuario: string;
+  clave: string;
+  confirmacion: string;
+};
+
+export const CLIENTE_VACIO: ValoresCliente = {
+  nombre: "",
+  telefono: "",
+  correo: "",
+  usuario: "",
+  clave: "",
+  confirmacion: "",
+};
+
+export const validarCliente = (c: ValoresCliente) => {
+  const errorNombre = revisarTexto(c.nombre, "nombre", 100);
+  if (errorNombre) return errorNombre;
+  if (!c.telefono.trim()) return 'El campo "teléfono" es obligatorio';
+  const correo = c.correo.trim().toLowerCase();
+  const usuario = c.usuario.trim();
+  if (!correo && !usuario) return "Escribe tu correo o un nombre de usuario para iniciar sesión";
+  if (correo && (!CORREO.test(correo) || correo.length > 254)) return "El correo no es válido";
+  if (usuario && !USUARIO.test(usuario))
+    return "El usuario debe tener entre 4 y 20 caracteres: solo letras, números, punto y guion bajo";
+  if (c.clave.length < 8 || c.clave.length > 64)
+    return "La contraseña debe tener entre 8 y 64 caracteres";
+  if (c.clave !== c.confirmacion) return "Las contraseñas no coinciden";
+  return null;
+};

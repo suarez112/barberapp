@@ -10,7 +10,9 @@ export type PestanaPanel =
   | "CLIENTES"
   | "CARTERA"
   | "NEGOCIO"
-  | "MI_NEGOCIO";
+  | "MI_NEGOCIO"
+  // Solo con la suscripción vencida
+  | "PLANES";
 
 export type Pestana = {
   id: PestanaPanel;

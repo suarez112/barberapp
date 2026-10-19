@@ -1,14 +1,12 @@
 import { useState } from "react";
-import {
-  INDICATIVO_POR_DEFECTO,
-  detectarIndicativo,
-  separarIndicativo,
-} from "@/data/paises";
+import { INDICATIVO_POR_DEFECTO } from "@/data/paises";
 import { crearCita } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
+import { useCuenta } from "@/features/cuenta/CuentaProvider";
+import { ACEPTACION } from "@/features/legal/api";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { describirError, esEstado, registrarCausa } from "@/services/api/errores";
-import { mensajeDeError } from "@/services/api/http";
+import { ApiError, mensajeDeError } from "@/services/api/http";
 import { Barbero, Dia, Servicio } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import {
@@ -22,23 +20,46 @@ import {
   sumarDias,
 } from "@/utils/fechas";
 import { DatosConfirmacion } from "../components/ConfirmacionCita";
+import { useTelefono } from "./useTelefono";
+
+// 400 de POST /citas cuando falta aceptar los documentos: un cliente con cuenta
+// después de publicarse una versión nueva (o con la sesión vencida, que el
+// backend toma como invitado)
+const pideAceptarDocumentos = (error: unknown) =>
+  error instanceof ApiError &&
+  error.status === 400 &&
+  (error.message.startsWith("Publicamos una nueva versión") ||
+    error.message.startsWith("Debes aceptar la Política"));
 
 // Estado y reglas del formulario de reserva del cliente
 export function useReserva() {
   const { empresa, servicios } = useNegocio();
   const { citas, citasOcupadas, bloqueos, agregarCita, cargarOcupacion } =
     useAgenda();
+  const { usuario, token, actualizarUsuario } = useCuenta();
+
+  // Cliente con sesión: reserva con los datos de su cuenta (el backend ignora
+  // los del formulario). Una cuenta sin esos datos los escribe como invitado.
+  const cliente = usuario?.rol === "cliente" ? usuario : null;
+  const datosCuenta =
+    cliente?.nombre && cliente.telefono
+      ? {
+          nombre: cliente.nombre,
+          telefono: cliente.telefono,
+          indicativo: cliente.indicativo ?? INDICATIVO_POR_DEFECTO,
+        }
+      : null;
+  // Un cliente que ya aceptó no ve la casilla, salvo que haya una versión nueva
+  const pedirAutorizacion = !cliente || cliente.debeAceptarDocumentos === true;
 
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [dia, setDia] = useState<Dia>(() => crearDia(hoyColombiaISO()));
   const [hora, setHora] = useState("");
   const [nombre, setNombre] = useState("");
-  const [celular, setCelular] = useState("");
-  const [indicativo, setIndicativo] = useState(INDICATIVO_POR_DEFECTO);
-  // true cuando el cliente eligió el país a mano (o lo escribió con "+"): no se cambia solo
-  const [indicativoManual, setIndicativoManual] = useState(false);
-  const [aceptaHabeasData, setAceptaHabeasData] = useState(false);
+  const tel = useTelefono();
+  // La casilla de autorización empieza sin marcar
+  const [aceptaDatos, setAceptaDatos] = useState(false);
   const [confirmacion, setConfirmacion] = useState<DatosConfirmacion | null>(
     null,
   );
@@ -76,47 +97,30 @@ export function useReserva() {
     setHora("");
   };
 
-  const cambiarTelefono = (valor: string) => {
-    // Si escribe o pega el número con "+52 ..." o "0052 ...", se detecta el país
-    const separado = separarIndicativo(valor);
-    if (separado) {
-      setIndicativo(separado.indicativo);
-      setIndicativoManual(true);
-      setCelular(separado.telefono);
-      return;
-    }
-    setCelular(valor);
-    // Sin "+": se va adivinando el país según los dígitos que escribe
-    if (!indicativoManual) setIndicativo(detectarIndicativo(valor.replace(/\D/g, "")));
-  };
-
-  const elegirPais = (nuevo: string) => {
-    setIndicativo(nuevo);
-    setIndicativoManual(true);
-  };
-
   const limpiarFormulario = () => {
     setBarbero(null);
     setServicio(null);
     setHora("");
     setNombre("");
-    setCelular("");
-    setIndicativo(INDICATIVO_POR_DEFECTO);
-    setIndicativoManual(false);
-    setAceptaHabeasData(false);
+    tel.limpiar();
+    setAceptaDatos(false);
   };
 
   const agendar = async () => {
-    const telefono = celular.trim();
+    const datos = datosCuenta ?? {
+      nombre: nombre.trim(),
+      telefono: tel.telefono.trim(),
+      indicativo: tel.indicativo,
+    };
 
     const faltantes: string[] = [];
     if (!barbero) faltantes.push("Seleccionar Profesional");
     if (!servicio) faltantes.push("Seleccionar un Servicio");
     if (!hora) faltantes.push("Seleccionar la Hora de la cita");
-    if (!telefono) faltantes.push("Escribir tu Teléfono / Celular");
-    if (!nombre.trim()) faltantes.push("Escribir tu Nombre Completo");
-    if (!aceptaHabeasData)
-      faltantes.push("Aceptar la Autorización de Datos (Ley 1581)");
+    if (!datos.telefono) faltantes.push("Escribir tu Teléfono / Celular");
+    if (!datos.nombre) faltantes.push("Escribir tu Nombre Completo");
+    if (pedirAutorizacion && !aceptaDatos)
+      faltantes.push("Autorizar el tratamiento de tus datos y aceptar los Términos y Condiciones");
 
     if (faltantes.length > 0 || !barbero || !servicio || !empresa) {
       avisar(
@@ -136,20 +140,38 @@ export function useReserva() {
     }
 
     try {
-      const { cita } = await crearCita({
-        empresaId: empresa.id,
-        barberoId: barbero.id,
-        servicioId: servicio.id,
-        fecha: dia.fechaFull,
-        hora,
-        nombre: nombre.trim(),
-        telefono,
-        indicativo,
-      });
+      const { cita } = await crearCita(
+        {
+          empresaId: empresa.id,
+          barberoId: barbero.id,
+          servicioId: servicio.id,
+          fecha: dia.fechaFull,
+          hora,
+          ...datos,
+          // Solo cuando se mostró la casilla (y la persona la marcó)
+          ...(pedirAutorizacion ? ACEPTACION : {}),
+        },
+        // Con sesión de cliente la cita queda en "Mis citas"
+        cliente ? token : undefined,
+      );
       agregarCita(cita);
+      if (cliente?.debeAceptarDocumentos) actualizarUsuario({ debeAceptarDocumentos: false });
     } catch (error) {
       registrarCausa("Error al agendar:", error);
-      // 403: el teléfono está en la lista negra del negocio.
+      // Se publicó una versión nueva de los documentos: aparece la casilla
+      if (cliente && pideAceptarDocumentos(error)) {
+        actualizarUsuario({ debeAceptarDocumentos: true });
+        setAceptaDatos(false);
+        avisar(
+          "Documentos actualizados",
+          mensajeDeError(
+            error,
+            "Publicamos una nueva versión de la Política de Tratamiento de Datos o de los Términos y Condiciones. Acéptala para continuar.",
+          ),
+        );
+        return;
+      }
+      // 403: el teléfono está en la lista negra o el negocio no está recibiendo reservas.
       // 409: la hora se ocupó o el profesional no atiende en ese horario.
       const aviso = esEstado(error, 403)
         ? {
@@ -192,9 +214,11 @@ export function useReserva() {
     dia,
     hora,
     nombre,
-    celular,
-    indicativo,
-    aceptaHabeasData,
+    celular: tel.telefono,
+    indicativo: tel.indicativo,
+    datosCuenta,
+    pedirAutorizacion,
+    aceptaDatos,
     confirmacion,
     primerDia,
     ultimoDia,
@@ -204,9 +228,9 @@ export function useReserva() {
     elegirDia,
     elegirHora: setHora,
     setNombre,
-    cambiarTelefono,
-    elegirPais,
-    alternarHabeasData: () => setAceptaHabeasData((v) => !v),
+    cambiarTelefono: tel.cambiarTelefono,
+    elegirPais: tel.elegirPais,
+    setAceptaDatos,
     cerrarConfirmacion: () => setConfirmacion(null),
     agendar,
   };

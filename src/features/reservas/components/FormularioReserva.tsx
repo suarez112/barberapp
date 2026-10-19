@@ -6,6 +6,7 @@ import CampoTexto from "@/components/ui/CampoTexto";
 import SelectorDias from "@/components/ui/SelectorDias";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import CasillaAutorizacion from "@/features/legal/CasillaAutorizacion";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
@@ -33,7 +34,9 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     nombre,
     celular,
     indicativo,
-    aceptaHabeasData,
+    datosCuenta,
+    pedirAutorizacion,
+    aceptaDatos,
     primerDia,
     ultimoDia,
     horariosDisponibles,
@@ -44,7 +47,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     setNombre,
     cambiarTelefono,
     elegirPais,
-    alternarHabeasData,
+    setAceptaDatos,
     agendar,
   } = reserva;
 
@@ -104,34 +107,40 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
       )}
 
       <TituloSeccion>PASO 3 · TUS DATOS</TituloSeccion>
-      <CampoTelefono
-        telefono={celular}
-        indicativo={indicativo}
-        onCambiarTelefono={cambiarTelefono}
-        onElegirPais={elegirPais}
-      />
-      <CampoTexto
-        placeholder="Nombre Completo"
-        value={nombre}
-        onChangeText={setNombre}
-      />
+      {datosCuenta ? (
+        // Cliente con sesión: sus datos se llenan solos
+        <View
+          style={[styles.cuenta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+        >
+          <Ionicons name="person-circle-outline" size={28} color={colors.primary} />
+          <View style={styles.textosCuenta}>
+            <Text style={[styles.nombreCuenta, { color: colors.textPrimary }]}>
+              {datosCuenta.nombre}
+            </Text>
+            <Text style={[styles.detalleCuenta, { color: colors.textSecondary }]}>
+              +{datosCuenta.indicativo} {datosCuenta.telefono} · Reservas con tu cuenta
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <>
+          <CampoTelefono
+            telefono={celular}
+            indicativo={indicativo}
+            onCambiarTelefono={cambiarTelefono}
+            onElegirPais={elegirPais}
+          />
+          <CampoTexto
+            placeholder="Nombre Completo"
+            value={nombre}
+            onChangeText={setNombre}
+          />
+        </>
+      )}
 
-      <Tocable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: aceptaHabeasData }}
-        style={styles.habeasData}
-        onPress={alternarHabeasData}
-      >
-        <Ionicons
-          name={aceptaHabeasData ? "checkbox" : "square-outline"}
-          size={22}
-          color={colors.primary}
-        />
-        <Text style={[styles.textoHabeasData, { color: colors.textSecondary }]}>
-          Autorizo el tratamiento de mis datos personales exclusivamente para la
-          gestión de mi cita (Ley 1581 de 2012).
-        </Text>
-      </Tocable>
+      {pedirAutorizacion ? (
+        <CasillaAutorizacion aceptada={aceptaDatos} onCambiar={setAceptaDatos} />
+      ) : null}
 
       <Boton titulo="CONFIRMAR RESERVA" onPress={agendar} />
     </View>
@@ -148,12 +157,16 @@ const styles = StyleSheet.create({
   },
   sinMargen: { marginTop: 0 },
   enlace: { fontSize: 11, textDecorationLine: "underline" },
-  habeasData: {
+  cuenta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginVertical: 10,
-    paddingHorizontal: 4,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 10,
   },
-  textoHabeasData: { flex: 1, fontSize: 11, lineHeight: 14 },
+  textosCuenta: { flex: 1 },
+  nombreCuenta: { fontSize: 14, fontWeight: "bold" },
+  detalleCuenta: { fontSize: 12, marginTop: 2 },
 });

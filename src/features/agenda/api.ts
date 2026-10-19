@@ -10,6 +10,9 @@ export type NuevaCita = {
   nombre: string;
   telefono: string;
   indicativo: string;
+  // Obligatorios para invitados (y para un cliente cuando hay una versión nueva)
+  aceptaPoliticaDatos?: true;
+  aceptaTerminos?: true;
 };
 
 // Horas ya tomadas en el negocio (sin datos personales)
@@ -24,8 +27,9 @@ export const listarBloqueosPublicos = (empresaId: string) =>
     `/api/v1/citas/bloqueos?empresaId=${encodeURIComponent(empresaId)}`,
   );
 
-export const crearCita = (cita: NuevaCita) =>
-  request<{ cita: Cita }>("/api/v1/citas", { method: "POST", body: cita });
+// token: el de la cuenta del cliente; sin token es una reserva de invitado
+export const crearCita = (cita: NuevaCita, token?: string) =>
+  request<{ cita: Cita }>("/api/v1/citas", { method: "POST", body: cita, token });
 
 // Citas reales del negocio. Requiere el token del inicio de sesión
 export const listarAgenda = (token: string, signal?: AbortSignal) =>

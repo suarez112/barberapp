@@ -33,6 +33,8 @@ export interface Empresa {
   horarioCierre: string; // cierre más tardío de la semana, ej: "20:00"
   // Horario real de cada día (0 = domingo … 6 = sábado)
   horario?: DiaHorario[];
+  // false si la suscripción del negocio venció (vista pública de /empresas/validar)
+  recibiendoReservas?: boolean;
 }
 
 // Horario de un día del negocio. Cerrado: apertura y cierre null.

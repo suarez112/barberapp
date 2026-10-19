@@ -10,8 +10,8 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useIniciarSesion } from "./useIniciarSesion";
 
-// Una sola pantalla de ingreso: la administradora y el personal entran con su
-// correo o usuario; el backend decide a qué panel va cada quien.
+// Una sola pantalla de ingreso: la administradora, el personal y los clientes
+// con cuenta entran con su correo o usuario; el backend decide adónde va cada quien.
 export default function LoginScreen() {
   const { colors } = useAppTheme();
   const { back, canGoBack, replace } = useRouter();
@@ -41,7 +41,7 @@ export default function LoginScreen() {
       <View style={styles.contenedor}>
         <TituloSeccion>INICIAR SESIÓN</TituloSeccion>
         <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-          Administradoras y equipo del negocio: entra con tu correo o tu usuario.
+          Administradoras, equipo del negocio y clientes con cuenta: entra con tu correo o tu usuario.
         </Text>
 
         <View style={styles.formulario}>

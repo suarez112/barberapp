@@ -10,6 +10,8 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar } from "@/utils/dialogos";
+import { ACEPTACION } from "../legal/api";
+import CasillaAutorizacion, { MENSAJE_AUTORIZACION } from "../legal/CasillaAutorizacion";
 import { consultarCodigoDisponible, registrarEmpresa } from "./api";
 import { useSesion } from "../sesion/SesionProvider";
 import { useCuenta } from "./CuentaProvider";
@@ -31,6 +33,7 @@ export default function RegistroEmpresaScreen() {
   const { cerrarSesion } = useSesion();
   const [valores, setValores] = useState<ValoresEmpresa>(VALORES_VACIOS);
   const [acceso, setAcceso] = useState<ValoresAcceso>(ACCESO_VACIO);
+  const [aceptaDatos, setAceptaDatos] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   const volver = () => {
@@ -53,6 +56,10 @@ export default function RegistroEmpresaScreen() {
       avisar("Revisa el formulario", errorAcceso);
       return;
     }
+    if (!aceptaDatos) {
+      avisar("Autorización requerida", MENSAJE_AUTORIZACION);
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -67,6 +74,7 @@ export default function RegistroEmpresaScreen() {
         correo: acceso.correo.trim().toLowerCase(),
         usuario: acceso.usuario.trim(),
         clave: acceso.clave,
+        ...ACEPTACION,
       });
       await cerrarSesion();
       await iniciarCuenta(respuesta.usuario, respuesta.token);
@@ -149,6 +157,8 @@ export default function RegistroEmpresaScreen() {
           onChangeText={cambiarAcceso("confirmacion")}
           onSubmitEditing={registrar}
         />
+
+        <CasillaAutorizacion aceptada={aceptaDatos} onCambiar={setAceptaDatos} />
 
         <Boton
           titulo={enviando ? "REGISTRANDO…" : "REGISTRAR EMPRESA"}

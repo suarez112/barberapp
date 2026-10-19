@@ -4,7 +4,7 @@ import { ComponentProps, useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import Pantalla from "@/components/layout/Pantalla";
-import { estilosTexto } from "@/components/ui/estilosTexto";
+import TarjetaMenu from "@/components/ui/TarjetaMenu";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
@@ -26,7 +26,7 @@ const OPCIONES: Opcion[] = [
     ruta: "/cliente",
     icono: "person-outline",
     titulo: "Soy cliente",
-    descripcion: "Agenda tu cita con el código del establecimiento",
+    descripcion: "Reserva como invitado con el código del establecimiento, o con tu cuenta",
   },
 ];
 
@@ -49,32 +49,13 @@ export default function SeleccionRolScreen() {
         </Text>
 
         {OPCIONES.map((o) => (
-          <Tocable
+          <TarjetaMenu
             key={o.titulo}
-            accessibilityRole="button"
-            style={[
-              styles.tarjeta,
-              { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-            ]}
+            icono={o.icono}
+            titulo={o.titulo}
+            descripcion={o.descripcion}
             onPress={() => push(o.ruta)}
-          >
-            <Ionicons name={o.icono} size={32} color={colors.primary} />
-            <View style={styles.textos}>
-              <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-                {o.titulo}
-              </Text>
-              <Text
-                style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}
-              >
-                {o.descripcion}
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </Tocable>
+          />
         ))}
 
         <Tocable
@@ -106,15 +87,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 30,
   },
-  tarjeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 18,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 15,
-  },
-  textos: { marginLeft: 14, flex: 1 },
   enlace: { alignSelf: "center", padding: 12, marginTop: 10 },
   textoEnlace: { fontSize: 14, fontWeight: "600" },
 });

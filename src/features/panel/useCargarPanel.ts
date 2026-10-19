@@ -10,7 +10,8 @@ import { useNegocio } from "../negocio/NegocioProvider";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
 // Carga el negocio (colores, equipo, servicios) y la agenda con el token
-// del personal o de la cuenta admin. Si el token venció, cierra la sesión.
+// del personal o de la cuenta admin. Si el token venció, cierra la sesión;
+// si la suscripción venció (402), lo indica en `inactivo`.
 export function useCargarPanel(token: string) {
   const { abrirNegocio } = useNegocio();
   const { setCitas } = useAgenda();
@@ -18,6 +19,8 @@ export function useCargarPanel(token: string) {
   const senal = useSenalDeSalida();
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 402: la suscripción del negocio venció (mensaje del backend)
+  const [inactivo, setInactivo] = useState<string | null>(null);
 
   // El estado cambia solo cuando responde el servidor
   const cargar = useCallback(
@@ -38,6 +41,10 @@ export function useCargarPanel(token: string) {
             cerrarSesion();
             return;
           }
+          if (esEstado(e, 402)) {
+            setInactivo(aviso.mensaje);
+            return;
+          }
           setError(aviso.mensaje);
         })
         .finally(() => setCargando(false)),
@@ -53,8 +60,9 @@ export function useCargarPanel(token: string) {
   const recargar = () => {
     setCargando(true);
     setError(null);
+    setInactivo(null);
     cargar();
   };
 
-  return { cargando, error, recargar };
+  return { cargando, error, inactivo, recargar };
 }

@@ -2,22 +2,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
-import { EstadoPrueba } from "../../cuenta/api";
+import { fechaLarga } from "@/utils/fechas";
+import { Suscripcion } from "../../cuenta/api";
 
-// Días de prueba que le quedan a la empresa (no se muestra si no está en prueba)
-export default function AvisoPrueba({ prueba }: { prueba: EstadoPrueba }) {
+// Días que le quedan a la prueba o al plan. El backend decide cuándo mostrarlo:
+// siempre en la prueba y en los últimos 7 días de un plan.
+export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscripcion }) {
   const { colors } = useAppTheme();
-  if (prueba.diasRestantes === null) return null;
+  const { estado, plan, diasRestantes: dias, fechaFin, mostrarRecordatorio } = suscripcion;
+  if (!mostrarRecordatorio || estado === "vencida" || dias === null) return null;
 
-  const dias = prueba.diasRestantes;
   const urgente = dias <= 3;
-  const fin = prueba.trialEndsAt
-    ? new Date(prueba.trialEndsAt).toLocaleDateString("es-CO", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : null;
+  const quedan = dias === 1 ? "Te queda 1 día" : `Te quedan ${dias} días`;
+  const titulo =
+    estado === "prueba"
+      ? `${quedan} de prueba gratuita`
+      : `${quedan} de tu plan${plan ? ` ${plan}` : ""}`;
+  const termina = estado === "prueba" ? "La prueba termina" : "El plan termina";
 
   return (
     <View
@@ -36,14 +37,13 @@ export default function AvisoPrueba({ prueba }: { prueba: EstadoPrueba }) {
         color={urgente ? COLORES.advertencia : colors.primary}
       />
       <View style={styles.textos}>
-        <Text style={[styles.titulo, { color: colors.textPrimary }]}>
-          {dias === 1
-            ? "Te queda 1 día de prueba gratuita"
-            : `Te quedan ${dias} días de prueba gratuita`}
-        </Text>
-        {fin ? (
+        <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
+        {fechaFin ? (
           <Text style={[styles.detalle, { color: colors.textSecondary }]}>
-            La prueba termina el {fin}.
+            {termina} el {fechaLarga(fechaFin)}.{" "}
+            {estado === "prueba"
+              ? "Activa un plan para no perder el acceso."
+              : "Renuévalo para no perder el acceso."}
           </Text>
         ) : null}
       </View>

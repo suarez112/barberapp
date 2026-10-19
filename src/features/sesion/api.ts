@@ -4,10 +4,18 @@ import { UsuarioCuenta } from "../cuenta/api";
 
 export type BarberoLogin = Barbero & { empresaCodigo: string };
 
-// Login único: la administradora o el personal entran con su correo o usuario.
+// Login único: la administradora, el personal o un cliente con cuenta entran
+// con su correo o usuario.
 // El backend responde con el tipo de sesión que corresponde.
 export type RespuestaLoginUnico =
   | { tipo: "admin"; mensaje: string; token: string; usuario: UsuarioCuenta }
+  | {
+      tipo: "cliente";
+      mensaje: string;
+      token: string;
+      usuario: UsuarioCuenta;
+      debeAceptarDocumentos: boolean;
+    }
   | { tipo: "personal"; mensaje: string; token: string; barbero: BarberoLogin };
 
 export const loginUnico = (usuario: string, clave: string) =>

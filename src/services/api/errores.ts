@@ -57,7 +57,13 @@ export function describirError(
     case 401:
       return { titulo: "Sesión vencida", mensaje: error.message || "Inicia sesión de nuevo." };
     case 402:
-      return { titulo: "Prueba gratuita terminada", mensaje };
+      // A un empleado el backend siempre le dice que el negocio está inactivo
+      return {
+        titulo: mensaje.startsWith("Este negocio está inactivo")
+          ? "Negocio inactivo"
+          : "Suscripción vencida",
+        mensaje,
+      };
     case 403:
       return {
         titulo: "Sin permiso",

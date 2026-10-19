@@ -1,6 +1,7 @@
 import { request } from "../../services/api/http";
 import { DiaHorario } from "../../types";
 import { FotoElegida, formularioFoto } from "../../utils/imagenes";
+import { Aceptacion } from "../legal/api";
 
 export type { FotoElegida };
 
@@ -11,11 +12,18 @@ export type RolCuenta = "admin" | "cliente";
 
 export type UsuarioCuenta = {
   id: string;
-  correo: string;
-  // Usuario de inicio de sesión de la administradora; null en clientes
+  // Las administradoras siempre tienen correo; un cliente tiene correo, usuario o los dos
+  correo: string | null;
   usuario: string | null;
   rol: RolCuenta;
   empresaId: string | null;
+  // Datos del cliente que se usan al reservar (null en administradoras)
+  nombre?: string | null;
+  telefono?: string | null;
+  indicativo?: string | null;
+  // Cliente: se publicó una versión nueva de la política o los términos y debe
+  // aceptarla en su próxima reserva
+  debeAceptarDocumentos?: boolean;
 };
 
 // Horario de un día como lo recibe el backend: cerrado sin horas
@@ -61,11 +69,20 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   creadaEn: string;
 };
 
-export type EstadoPrueba = {
-  estadoSuscripcion: string;
-  trialEndsAt: string | null;
-  diasRestantes: number | null; // null si la empresa no está en prueba
-  pruebaVencida: boolean;
+export type EstadoSuscripcion = "prueba" | "activa" | "vencida";
+export type PlanSuscripcion = "mensual" | "anual";
+
+// Suscripción calculada con la fecha de Colombia (GET /admin/empresa/suscripcion)
+export type Suscripcion = {
+  estado: EstadoSuscripcion;
+  plan: PlanSuscripcion | null; // null en la prueba
+  fechaPago: string | null; // "2026-10-19"; null en la prueba
+  // Día en que termina la prueba o el plan. null en empresas activas de antes de los planes
+  fechaFin: string | null;
+  diasRestantes: number | null; // 0 si está vencida
+  // true siempre en la prueba y en los últimos 7 días de un plan
+  mostrarRecordatorio: boolean;
+  mensaje: string | null;
 };
 
 export type RespuestaRegistroEmpresa = {
@@ -88,21 +105,31 @@ export type RespuestaLoginCuenta = {
   usuario: UsuarioCuenta;
 };
 
-export const registrarEmpresa = (datos: DatosEmpresa & AccesoAdministradora) =>
+export const registrarEmpresa = (datos: DatosEmpresa & AccesoAdministradora & Aceptacion) =>
   request<RespuestaRegistroEmpresa>("/api/v1/cuentas/registro/empresa", {
     method: "POST",
     body: datos,
   });
 
-export const loginCuenta = (correo: string, clave: string) =>
-  request<RespuestaLoginCuenta>("/api/v1/cuentas/login", {
+// Cuenta opcional de cliente: correo o usuario (al menos uno) para iniciar sesión
+export type DatosCliente = {
+  nombre: string;
+  telefono: string;
+  indicativo: string;
+  correo?: string;
+  usuario?: string;
+  clave: string;
+};
+
+export const registrarCliente = (datos: DatosCliente & Aceptacion) =>
+  request<RespuestaLoginCuenta>("/api/v1/cuentas/registro/cliente", {
     method: "POST",
-    body: { correo, clave },
+    body: datos,
   });
 
-// Responde aunque la prueba haya vencido
-export const obtenerEstadoPrueba = (token: string, signal?: AbortSignal) =>
-  request<EstadoPrueba>("/api/v1/admin/empresa/prueba", { token, signal });
+// Responde aunque la suscripción haya vencido
+export const obtenerSuscripcion = (token: string, signal?: AbortSignal) =>
+  request<Suscripcion>("/api/v1/admin/empresa/suscripcion", { token, signal });
 
 export const obtenerMiEmpresa = (token: string, signal?: AbortSignal) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", { token, signal });
