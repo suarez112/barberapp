@@ -11,6 +11,9 @@ export type Dialogo = {
   mensaje?: string;
   // Solo confirmación: el botón Aceptar se pinta de rojo
   destructivo?: boolean;
+  // Solo confirmación: textos de los botones (por defecto ACEPTAR y CANCELAR)
+  textoAceptar?: string;
+  textoCancelar?: string;
   responder: (aceptado: boolean) => void;
 };
 
@@ -61,8 +64,10 @@ type OpcionesConfirmar = {
   titulo: string;
   mensaje: string;
   destructivo?: boolean;
+  textoAceptar?: string;
+  textoCancelar?: string;
 };
 
-// Pregunta con "Aceptar" y "Cancelar". true si la persona acepta.
-export const confirmar = ({ titulo, mensaje, destructivo = false }: OpcionesConfirmar) =>
-  mostrar({ tipo: "confirmacion", titulo, mensaje, destructivo });
+// Pregunta con "Aceptar" y "Cancelar" (o los textos dados). true si la persona acepta.
+export const confirmar = ({ titulo, mensaje, destructivo = false, ...textos }: OpcionesConfirmar) =>
+  mostrar({ tipo: "confirmacion", titulo, mensaje, destructivo, ...textos });

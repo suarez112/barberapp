@@ -1,17 +1,19 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
 import CampoClave from "@/components/ui/CampoClave";
+import Desplegable from "@/components/ui/Desplegable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
-import { Barbero } from "@/types";
+import { ApiError } from "@/services/api/http";
+import { Barbero, RolEquipo } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useSesion } from "../sesion/SesionProvider";
@@ -25,18 +27,58 @@ import {
 } from "./api";
 import { FotoElegida } from "@/utils/imagenes";
 
-const VACIO = { nombre: "", usuario: "", clave: "", especialidad: "", porcentaje: "" };
+const ROLES = [
+  { valor: "admin", etiqueta: "Administrador" },
+  { valor: "empleado", etiqueta: "Empleado" },
+] as const;
+
+// Igual que el backend: un empleado atiende clientes por defecto; un administrador no
+const atiendePorDefecto = (rol: RolEquipo) => rol === "empleado";
+
+type Campos = {
+  nombre: string;
+  usuario: string;
+  clave: string;
+  especialidad: string;
+  porcentaje: string;
+  rol: RolEquipo;
+  atiendeClientes: boolean;
+};
+
+const VACIO: Campos = {
+  nombre: "",
+  usuario: "",
+  clave: "",
+  especialidad: "",
+  porcentaje: "",
+  rol: "empleado",
+  atiendeClientes: true,
+};
 const PORCENTAJE_POR_DEFECTO = 50;
 
-const aCampos = (b: Barbero) => ({
+const rolDe = (b: Barbero): RolEquipo => b.rol ?? (b.esAdmin ? "admin" : "empleado");
+
+const aCampos = (b: Barbero): Campos => ({
   nombre: b.nombre,
   usuario: b.usuario,
   clave: "",
   especialidad: b.especialidad,
   porcentaje: b.porcentajeGanancia.toString(),
+  rol: rolDe(b),
+  atiendeClientes: b.atiendeClientes ?? atiendePorDefecto(rolDe(b)),
 });
 
-export default function EquipoAdmin({ personal }: { personal: Personal }) {
+// 409 del backend cuando el equipo llegó al número de empleados de Mi negocio
+const esEquipoLleno = (e: unknown) =>
+  e instanceof ApiError && e.status === 409 && /equipo ya tiene/i.test(e.message);
+
+type Props = {
+  personal: Personal;
+  // Abre la pestaña Mi negocio; sin ella no se ofrece el botón
+  onIrAMiNegocio?: () => void;
+};
+
+export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
   const { colors } = useAppTheme();
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
@@ -78,6 +120,8 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
       usuario: campos.usuario.trim().toLowerCase(),
       especialidad: campos.especialidad.trim() || null,
       porcentajeGanancia: pct,
+      rol: campos.rol,
+      atiendeClientes: campos.atiendeClientes,
       // Al editar, la contraseña vacía deja la actual
       ...(clave ? { clave } : {}),
     };
@@ -97,8 +141,27 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
       }
       reiniciar();
     } catch (e) {
+      if (esEquipoLleno(e)) {
+        avisarEquipoLleno((e as ApiError).message);
+        return;
+      }
       avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Usuario en uso" });
     }
+  };
+
+  // Mensaje del backend, con un botón para ir a aumentar el número de empleados
+  const avisarEquipoLleno = async (mensaje: string) => {
+    if (!onIrAMiNegocio || !/Mi negocio/i.test(mensaje)) {
+      avisar("Equipo completo", mensaje, "aviso");
+      return;
+    }
+    const ir = await confirmar({
+      titulo: "Equipo completo",
+      mensaje,
+      textoAceptar: "IR A MI NEGOCIO",
+      textoCancelar: "CERRAR",
+    });
+    if (ir) onIrAMiNegocio();
   };
 
   const eliminar = async (b: Barbero) => {
@@ -152,6 +215,45 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
           value={campos.clave}
           onChangeText={cambiar("clave")}
         />
+        <Desplegable
+          titulo="Rol"
+          placeholder="Rol"
+          opciones={ROLES}
+          valor={campos.rol}
+          // Nadie se quita a sí mismo el rol de administrador
+          deshabilitado={enEdicion ? soyYo(enEdicion.id) : false}
+          onCambiar={(rol) => {
+            cambiar("rol")(rol);
+            // En un integrante nuevo, el interruptor sigue el valor por defecto del rol
+            if (!enEdicion) cambiar("atiendeClientes")(atiendePorDefecto(rol));
+          }}
+        />
+        <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+          {campos.rol === "admin"
+            ? "Administrador: maneja todo el negocio, igual que la cuenta de la empresa."
+            : "Empleado: solo ve su agenda y su cartera."}
+        </Text>
+        <View
+          style={[styles.interruptor, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder }]}
+        >
+          <View style={styles.flex}>
+            <Text style={[styles.textoInterruptor, { color: colors.textPrimary }]}>
+              Atiende clientes
+            </Text>
+            <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+              {campos.atiendeClientes
+                ? "Aparece al reservar y recibe citas."
+                : "No aparece al reservar."}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Atiende clientes"
+            value={campos.atiendeClientes}
+            onValueChange={cambiar("atiendeClientes")}
+            trackColor={{ true: colors.primary, false: colors.cardBorder }}
+            thumbColor={COLORES.blanco}
+          />
+        </View>
         <CampoTexto
           placeholder="Especialidad (ej: Colorimetría · Manicure)"
           value={campos.especialidad}
@@ -184,7 +286,11 @@ export default function EquipoAdmin({ personal }: { personal: Personal }) {
               onCambiar={(foto) => cambiarFoto(b, foto)}
             />
             <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-              {b.nombre} {b.esAdmin ? "👑 (Admin)" : null}
+              {b.nombre} {b.esAdmin ? "👑" : null}
+            </Text>
+            <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
+              {rolDe(b) === "admin" ? "Administrador" : "Empleado"}
+              {b.atiendeClientes === false ? " · No atiende clientes" : " · Atiende clientes"}
             </Text>
             <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
               {b.especialidad || "Sin especialidad"} · Comisión: {b.porcentajeGanancia}%
@@ -221,5 +327,16 @@ const styles = StyleSheet.create({
   tituloLista: { marginTop: 20 },
   flex: { flex: 1 },
   usuario: { fontSize: 10, marginTop: 2 },
+  ayuda: { fontSize: 11, marginTop: 2, marginBottom: 8 },
+  interruptor: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    marginBottom: 10,
+  },
+  textoInterruptor: { fontSize: 14, fontWeight: "600" },
   acciones: { flexDirection: "row", gap: 12 },
 });

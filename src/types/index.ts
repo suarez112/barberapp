@@ -1,8 +1,14 @@
+export type RolEquipo = "admin" | "empleado";
+
 export interface Barbero {
   id: string;
   nombre: string;
   usuario: string;
+  // Igual a rol === "admin"
   esAdmin: boolean;
+  rol?: RolEquipo;
+  // Recibe reservas como profesional (los que no, no aparecen al reservar)
+  atiendeClientes?: boolean;
   especialidad: string;
   equipo?: string;
   porcentajeGanancia: number;

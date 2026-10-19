@@ -15,12 +15,19 @@ const SECCIONES = [
 ] as const;
 
 // Administración del negocio (solo administrador)
-export default function NegocioTab({ personal }: { personal: Personal }) {
+export default function NegocioTab({
+  personal,
+  onIrAMiNegocio,
+}: {
+  personal: Personal;
+  // Abre la pestaña Mi negocio (ej. para aumentar el número de empleados)
+  onIrAMiNegocio?: () => void;
+}) {
   const [seccion, setSeccion] = useState<Seccion>("EQUIPO");
   return (
     <View>
       <Selector opciones={SECCIONES} valor={seccion} onCambiar={setSeccion} />
-      {seccion === "EQUIPO" ? <EquipoAdmin personal={personal} /> : null}
+      {seccion === "EQUIPO" ? <EquipoAdmin personal={personal} onIrAMiNegocio={onIrAMiNegocio} /> : null}
       {seccion === "SERVICIOS" ? <ServiciosAdmin token={personal.token} /> : null}
       {seccion === "PRODUCTOS" ? <ProductosAdmin token={personal.token} /> : null}
     </View>

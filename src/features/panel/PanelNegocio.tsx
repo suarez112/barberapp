@@ -25,7 +25,7 @@ type Props = {
   personal: Personal;
   // Contenido fijo arriba (ej. aviso de días de prueba)
   encabezado?: ReactNode;
-  // Pestaña "Mi negocio" de la cuenta del administrador
+  // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
 };
 
@@ -78,14 +78,18 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
     ? (barberos.find((b) => b.id === supervisadoId) ?? yo ?? barberos[0] ?? null)
     : yo;
 
-  const pestanas = [
-    PESTANA_AGENDA,
-    PESTANA_BLOQUEOS,
-    ...(esAdmin ? [PESTANA_CLIENTES] : []),
-    PESTANA_CARTERA,
-    ...(esAdmin ? [PESTANA_NEGOCIO] : []),
-    ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
-  ];
+  // Todos los administradores (cuenta o integrante) ven las mismas pestañas;
+  // un empleado solo su agenda y su cartera.
+  const pestanas = esAdmin
+    ? [
+        PESTANA_AGENDA,
+        PESTANA_BLOQUEOS,
+        PESTANA_CLIENTES,
+        PESTANA_CARTERA,
+        PESTANA_NEGOCIO,
+        ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
+      ]
+    : [PESTANA_AGENDA, PESTANA_CARTERA];
   const activa = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
 
   const sinProfesionales = (
@@ -135,9 +139,21 @@ export default function PanelNegocio({ personal, encabezado, miNegocio }: Props)
       case "CLIENTES":
         return <ClientesTab token={personal.token} />;
       case "CARTERA":
-        return <CarteraPanel token={personal.token} esAdmin={esAdmin} />;
+        return (
+          <CarteraPanel
+            token={personal.token}
+            esAdmin={esAdmin}
+            barberos={barberos}
+            yoId={yo?.id ?? null}
+          />
+        );
       case "NEGOCIO":
-        return <NegocioTab personal={personal} />;
+        return (
+          <NegocioTab
+            personal={personal}
+            onIrAMiNegocio={miNegocio ? () => setPestana("MI_NEGOCIO") : undefined}
+          />
+        );
       case "MI_NEGOCIO":
         return miNegocio;
     }

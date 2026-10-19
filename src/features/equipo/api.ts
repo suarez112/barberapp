@@ -1,5 +1,5 @@
 import { request } from "../../services/api/http";
-import { Barbero } from "../../types";
+import { Barbero, RolEquipo } from "../../types";
 import { FotoElegida, formularioFoto } from "../../utils/imagenes";
 
 // Forma que devuelve /api/v1/equipo
@@ -7,7 +7,9 @@ type Profesional = {
   id: string;
   nombre: string;
   usuario: string;
+  rol: RolEquipo;
   esAdmin: boolean;
+  atiendeClientes: boolean;
   especialidad: string | null;
   porcentajeGanancia: number;
   foto: string | null;
@@ -17,7 +19,8 @@ export type DatosProfesional = {
   nombre: string;
   usuario: string;
   clave?: string; // obligatoria al crear; al editar, solo si se cambia
-  esAdmin?: boolean;
+  rol: RolEquipo;
+  atiendeClientes: boolean;
   especialidad: string | null;
   porcentajeGanancia: number;
 };

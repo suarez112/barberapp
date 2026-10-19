@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
 import { describirError, registrarCausa } from "@/services/api/errores";
-import { ApiError, mensajeDeError } from "@/services/api/http";
+import { ApiError, esCancelada, mensajeDeError } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import {
   DatosEmpresa,
@@ -12,16 +13,16 @@ import {
   obtenerMiEmpresa,
   subirFotoEmpresa,
 } from "../cuenta/api";
-import { useCuenta } from "../cuenta/CuentaProvider";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
 const MENSAJE_PRUEBA_VENCIDA =
   "Tu prueba gratuita de 15 días terminó. Activa tu suscripción para seguir usando las funciones de administrador.";
 
-// Estado del panel de la empresa: prueba gratuita, perfil y sus acciones
-export function useMiEmpresa() {
-  const { token } = useCuenta();
+// Estado de "Mi negocio": prueba gratuita, perfil y sus acciones.
+// token: el de la cuenta admin o el de un integrante con rol Administrador.
+export function useMiEmpresa(token: string) {
   const cerrarSesion = useCerrarSesion();
+  const senal = useSenalDeSalida();
   const [prueba, setPrueba] = useState<EstadoPrueba | null>(null);
   const [perfil, setPerfil] = useState<PerfilEmpresa | null>(null);
   // Mensaje del backend cuando la suscripción no está vigente (402)
@@ -30,15 +31,17 @@ export function useMiEmpresa() {
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
   // 402: la prueba o la suscripción terminó. 401: el token ya no sirve.
-  // Devuelve true si el error se resolvió aquí.
+  // Devuelve true si el error se resolvió aquí (o si fue una cancelación).
   const manejarErrorDeAcceso = useCallback(
     (error: unknown) => {
+      if (esCancelada(error)) return true;
       if (!(error instanceof ApiError)) return false;
       if (error.status === 402) {
         setBloqueo(error.message || MENSAJE_PRUEBA_VENCIDA);
         return true;
       }
-      if (error.status === 401 || error.status === 403) {
+      // 403 (ej. le quitaron el rol de administrador) se muestra como error de carga
+      if (error.status === 401) {
         avisar(
           "Sesión finalizada",
           mensajeDeError(error, "Vuelve a iniciar sesión."),
@@ -57,14 +60,14 @@ export function useMiEmpresa() {
   // Pide prueba y perfil; el estado cambia cuando responde el servidor
   const cargar = useCallback(
     () =>
-      obtenerEstadoPrueba(token)
+      obtenerEstadoPrueba(token, senal())
         .then(async (estado) => {
           setPrueba(estado);
           if (estado.pruebaVencida) {
             setBloqueo(MENSAJE_PRUEBA_VENCIDA);
             return;
           }
-          setPerfil(await obtenerMiEmpresa(token));
+          setPerfil(await obtenerMiEmpresa(token, senal()));
         })
         .catch((error) => {
           if (manejarErrorDeAcceso(error)) return;
@@ -77,7 +80,7 @@ export function useMiEmpresa() {
           );
         })
         .finally(() => setCargando(false)),
-    [token, manejarErrorDeAcceso],
+    [token, senal, manejarErrorDeAcceso],
   );
 
   useEffect(() => {

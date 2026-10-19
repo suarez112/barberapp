@@ -1,18 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { describirError } from "@/services/api/errores";
+import Desplegable from "@/components/ui/Desplegable";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { Barbero } from "@/types";
 import { fechaISO } from "@/utils/fechas";
 import { useAgenda } from "../agenda/AgendaProvider";
-import { Cartera, obtenerCartera } from "./api";
+import { GananciaProfesional } from "./api";
+import { useCartera } from "./useCartera";
 
 type Periodo = "DIARIO" | "SEMANAL" | "MENSUAL";
 
 type Props = {
   token: string;
   esAdmin: boolean;
+  // Equipo del negocio, para que el admin elija de quién ver la cartera
+  barberos: Barbero[];
+  // El integrante que usa la app (null para la cuenta de la empresa)
+  yoId: string | null;
 };
+
+const TODO_EL_NEGOCIO = "";
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MESES_LARGOS = [
@@ -77,17 +85,13 @@ const PERIODOS: { valor: Periodo; texto: string }[] = [
 
 // Ventas y ganancias de las citas completadas (calculadas por el servidor).
 // Admin: todo el negocio y cada profesional; integrante: lo suyo.
-export default function CarteraPanel({ token, esAdmin }: Props) {
+export default function CarteraPanel({ token, esAdmin, barberos, yoId }: Props) {
   const { colors } = useAppTheme();
   const { citas } = useAgenda();
   const [periodo, setPeriodo] = useState<Periodo>("DIARIO");
   const [atras, setAtras] = useState(0);
-  // Respuesta del servidor junto al rango que se pidió
-  const [resultado, setResultado] = useState<{
-    clave: string;
-    cartera: Cartera | null;
-    error: string | null;
-  } | null>(null);
+  // Admin: de quién ver la cartera ("" = todo el negocio)
+  const [verId, setVerId] = useState<string>(TODO_EL_NEGOCIO);
 
   const cambiarPeriodo = (p: Periodo) => {
     setPeriodo(p);
@@ -98,33 +102,22 @@ export default function CarteraPanel({ token, esAdmin }: Props) {
   const rangoActual = calcularRango(periodo, 0); // hoy / esta semana / este mes
   const desde = fechaISO(rango.inicio);
   const hasta = fechaISO(rango.fin);
-  const clave = `${desde}|${hasta}`;
-  // Mientras llega la respuesta del rango actual, se muestra "cargando"
-  const vigenteResultado = resultado?.clave === clave ? resultado : null;
-  const cartera = vigenteResultado?.cartera ?? null;
-  const error = vigenteResultado?.error ?? null;
+  // Si el integrante elegido ya no está en el equipo, se vuelve a todo el negocio
+  const elegido = esAdmin ? (barberos.find((b) => b.id === verId) ?? null) : null;
 
-  // La ganancia de cada cita usa el porcentaje que tenía al completarse
-  useEffect(() => {
-    let vigente = true;
-    obtenerCartera(token, desde, hasta)
-      .then((c) => vigente && setResultado({ clave: `${desde}|${hasta}`, cartera: c, error: null }))
-      .catch(
-        (e) =>
-          vigente &&
-          setResultado({
-            clave: `${desde}|${hasta}`,
-            cartera: null,
-            error: describirError(e, {
-              titulo: "",
-              porDefecto: "No se pudo cargar la cartera.",
-            }).mensaje,
-          }),
-      );
-    return () => {
-      vigente = false;
-    };
-  }, [token, desde, hasta]);
+  // Total del negocio (admin) o lo propio (empleado). La ganancia de cada cita
+  // usa el porcentaje que tenía al completarse.
+  const { cartera, error } = useCartera(token, desde, hasta, null);
+  // Admin: además, la cartera del integrante elegido (?barberoId=)
+  const integrante = useCartera(token, desde, hasta, elegido?.id ?? null, !!elegido);
+
+  const opcionesVer = [
+    { valor: TODO_EL_NEGOCIO, etiqueta: "Todo el negocio" },
+    ...barberos.map((b) => ({
+      valor: b.id,
+      etiqueta: b.id === yoId ? `${b.nombre} (tú)` : b.nombre,
+    })),
+  ];
 
   // LA PROYECCIÓN: citas confirmadas por realizar en el periodo ACTUAL
   const porRealizar = citas.filter((c) => {
@@ -163,6 +156,35 @@ export default function CarteraPanel({ token, esAdmin }: Props) {
       </Text>
     </View>
   );
+
+  // Cartera de un integrante elegido por el admin
+  const carteraIntegrante = (
+    nombre: string,
+    fila: GananciaProfesional | undefined,
+    errorFila: string | null,
+    cargandoFila: boolean,
+  ) => {
+    if (errorFila) return <Text style={s.infoText}>{errorFila}</Text>;
+    if (cargandoFila) return <ActivityIndicator color={colors.primary} style={s.cargando} />;
+    return (
+      <>
+        <View style={[s.filaTarjetas, s.separado]}>
+          {tarjeta(dinero(fila?.ventas ?? 0), `Ventas de ${nombre} (${fila?.citas ?? 0} citas)`)}
+          {tarjeta(
+            dinero(fila?.ganancia ?? 0),
+            `Comisión${fila ? ` (${fila.porcentajeGanancia}%)` : ""}`,
+            true,
+          )}
+        </View>
+        <View style={[s.filaTarjetas, s.separado]}>
+          {tarjeta(
+            dinero((fila?.ventas ?? 0) - (fila?.ganancia ?? 0)),
+            `Para el negocio (de ${nombre})`,
+          )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <View>
@@ -239,6 +261,25 @@ export default function CarteraPanel({ token, esAdmin }: Props) {
               <View style={[s.filaTarjetas, s.separado]}>
                 {tarjeta(dinero(cartera.gananciaEquipo), "Comisiones del equipo")}
               </View>
+
+              <Text style={[s.titulo, s.tituloSeparado, { color: colors.primary }]}>
+                VER CARTERA DE
+              </Text>
+              <Desplegable
+                titulo="Ver cartera de"
+                placeholder="Todo el negocio"
+                opciones={opcionesVer}
+                valor={elegido?.id ?? TODO_EL_NEGOCIO}
+                onCambiar={setVerId}
+              />
+              {elegido
+                ? carteraIntegrante(
+                    elegido.nombre,
+                    integrante.cartera?.porProfesional[0],
+                    integrante.cartera ? null : integrante.error,
+                    !integrante.cartera && !integrante.error,
+                  )
+                : null}
 
               <Text style={[s.titulo, s.tituloSeparado, { color: colors.primary }]}>
                 POR PROFESIONAL ({cartera.porProfesional.length})

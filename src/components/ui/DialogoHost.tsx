@@ -59,7 +59,7 @@ export default function DialogoHost() {
             onPress={() => dialogo.responder(true)}
           >
             <Text style={[s.textoBoton, dialogo.destructivo && { color: COLORES.blanco }]}>
-              ACEPTAR
+              {(esConfirmacion && dialogo.textoAceptar) || "ACEPTAR"}
             </Text>
           </Pressable>
 
@@ -73,7 +73,9 @@ export default function DialogoHost() {
               ]}
               onPress={() => dialogo.responder(false)}
             >
-              <Text style={[s.textoSecundario, { color: colors.textPrimary }]}>CANCELAR</Text>
+              <Text style={[s.textoSecundario, { color: colors.textPrimary }]}>
+                {dialogo.textoCancelar ?? "CANCELAR"}
+              </Text>
             </Pressable>
           )}
         </View>
