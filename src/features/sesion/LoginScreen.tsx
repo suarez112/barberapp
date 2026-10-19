@@ -3,29 +3,22 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
+import CampoClave from "@/components/ui/CampoClave";
 import CampoTexto from "@/components/ui/CampoTexto";
-import Selector from "@/components/ui/Selector";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TituloSeccion from "@/components/ui/TituloSeccion";
-import { useIniciarSesionCuenta } from "@/features/cuenta/useIniciarSesionCuenta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useIniciarSesion } from "./useIniciarSesion";
 
-type Modo = "PERSONAL" | "EMPRESA";
-
-const MODOS = [
-  { id: "PERSONAL", label: "Personal" },
-  { id: "EMPRESA", label: "Empresa" },
-] as const;
-
+// Una sola pantalla de ingreso: la administradora y el personal entran con su
+// correo o usuario; el backend decide a qué panel va cada quien.
 export default function LoginScreen() {
   const { colors } = useAppTheme();
   const { back, canGoBack, replace } = useRouter();
   const iniciarSesion = useIniciarSesion();
-  const iniciarSesionCuenta = useIniciarSesionCuenta();
-  const [modo, setModo] = useState<Modo>("PERSONAL");
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const volver = () => {
     if (canGoBack()) back();
@@ -33,57 +26,45 @@ export default function LoginScreen() {
   };
 
   const ingresar = async () => {
-    if (modo === "EMPRESA") {
-      // El admin va a su panel; un cliente solo a su apartado
-      const rol = await iniciarSesionCuenta(usuario, clave);
-      if (!rol) return;
-      setUsuario("");
-      setClave("");
-      replace(rol === "admin" ? "/admin" : "/cliente");
-      return;
-    }
-    if (await iniciarSesion(usuario, clave)) {
-      setUsuario("");
-      setClave("");
-      replace("/panel");
-    }
-  };
-
-  const cambiarModo = (nuevo: Modo) => {
-    setModo(nuevo);
+    if (enviando) return;
+    setEnviando(true);
+    const destino = await iniciarSesion(usuario, clave);
+    setEnviando(false);
+    if (!destino) return;
     setUsuario("");
     setClave("");
+    replace(destino);
   };
 
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.contenedor}>
-        <TituloSeccion>ACCESO INTEGRANTES Y ADMINISTRADORES</TituloSeccion>
-        <Selector opciones={MODOS} valor={modo} onCambiar={cambiarModo} />
+        <TituloSeccion>INICIAR SESIÓN</TituloSeccion>
         <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-          {modo === "PERSONAL"
-            ? "Integrantes del equipo: el usuario y la contraseña que te dio el administrador."
-            : "Administradores de empresa: el correo con el que registraste el negocio. Desde allí manejas agenda, equipo y todo el negocio."}
+          Administradoras y equipo del negocio: entra con tu correo o tu usuario.
         </Text>
 
         <View style={styles.formulario}>
           <CampoTexto
-            placeholder={modo === "PERSONAL" ? "Usuario" : "Correo"}
-            accessibilityLabel={modo === "PERSONAL" ? "Usuario" : "Correo"}
-            keyboardType={modo === "EMPRESA" ? "email-address" : "default"}
+            placeholder="Correo o usuario"
+            accessibilityLabel="Correo o usuario"
+            keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="username"
             value={usuario}
             onChangeText={setUsuario}
           />
-          <CampoTexto
+          <CampoClave
             placeholder="Contraseña"
-            secureTextEntry
+            accessibilityLabel="Contraseña"
+            autoComplete="current-password"
             value={clave}
             onChangeText={setClave}
             onSubmitEditing={ingresar}
           />
           <Boton
-            titulo="INGRESAR AL SISTEMA"
+            titulo={enviando ? "INGRESANDO…" : "INGRESAR"}
             onPress={ingresar}
             style={styles.boton}
           />

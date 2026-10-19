@@ -11,6 +11,8 @@ export type RolCuenta = "admin" | "cliente";
 export type UsuarioCuenta = {
   id: string;
   correo: string;
+  // Usuario de inicio de sesión de la administradora; null en clientes
+  usuario: string | null;
   rol: RolCuenta;
   empresaId: string | null;
 };

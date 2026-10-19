@@ -51,6 +51,11 @@ function PanelAdmin({ personal }: { personal: Personal }) {
     guardarFoto,
   } = useMiEmpresa();
 
+  // La tarjeta del panel muestra el nombre de la administradora, no su correo
+  const conNombre: Personal = perfil?.nombreAdministradora
+    ? { ...personal, nombre: perfil.nombreAdministradora }
+    : personal;
+
   // 402: la prueba o la suscripción terminó
   if (bloqueo) {
     return (
@@ -64,7 +69,7 @@ function PanelAdmin({ personal }: { personal: Personal }) {
     <View>
       <Text style={[styles.titulo, { color: colors.primary }]}>MI NEGOCIO</Text>
       <Text style={[styles.correo, { color: colors.textSecondary }]}>
-        Sesión: {personal.nombre}
+        Sesión: {conNombre.nombre}
       </Text>
 
       {cargando && !perfil ? (
@@ -113,7 +118,7 @@ function PanelAdmin({ personal }: { personal: Personal }) {
 
   return (
     <PanelNegocio
-      personal={personal}
+      personal={conNombre}
       encabezado={prueba ? <AvisoPrueba prueba={prueba} /> : null}
       miNegocio={miNegocio}
     />

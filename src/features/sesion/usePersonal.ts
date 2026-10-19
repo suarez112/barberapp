@@ -32,7 +32,8 @@ export function usePersonal(): Personal | null {
       esAdmin: true,
       barbero: null,
       esCuentaAdmin: true,
-      nombre: usuario.correo,
+      // AdminPanelScreen lo cambia por el nombre de la administradora al cargar "Mi negocio"
+      nombre: usuario.usuario ?? usuario.correo,
     };
   }
   return null;

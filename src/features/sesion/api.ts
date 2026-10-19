@@ -1,13 +1,17 @@
 import { request } from "../../services/api/http";
 import { Barbero } from "../../types";
+import { UsuarioCuenta } from "../cuenta/api";
 
-export type RespuestaLogin = {
-  token: string;
-  barbero: Barbero & { empresaCodigo: string };
-};
+export type BarberoLogin = Barbero & { empresaCodigo: string };
 
-export const loginBarbero = (usuario: string, clave: string) =>
-  request<RespuestaLogin>("/api/v1/auth/login", {
+// Login único: la administradora o el personal entran con su correo o usuario.
+// El backend responde con el tipo de sesión que corresponde.
+export type RespuestaLoginUnico =
+  | { tipo: "admin"; mensaje: string; token: string; usuario: UsuarioCuenta }
+  | { tipo: "personal"; mensaje: string; token: string; barbero: BarberoLogin };
+
+export const loginUnico = (usuario: string, clave: string) =>
+  request<RespuestaLoginUnico>("/api/v1/login", {
     method: "POST",
     body: { usuario, clave },
   });
