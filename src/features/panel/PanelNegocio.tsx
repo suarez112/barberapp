@@ -135,12 +135,7 @@ export default function PanelNegocio({
         return <ClientesTab token={personal.token} />;
       case "CARTERA":
         return (
-          <CarteraPanel
-            token={personal.token}
-            esAdmin={esAdmin}
-            barberos={barberos}
-            yoId={yo?.id ?? null}
-          />
+          <CarteraPanel token={personal.token} esAdmin={esAdmin} />
         );
       case "NEGOCIO":
         return (

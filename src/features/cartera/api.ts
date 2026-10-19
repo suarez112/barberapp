@@ -37,3 +37,43 @@ export const obtenerCartera = (
     { token, signal },
   );
 };
+
+export type PeriodoResumen = "hoy" | "semana" | "mes" | "rango";
+
+export type ProfesionalResumen = {
+  barberoId: string;
+  nombre: string;
+  activo: boolean;
+  citas: number;
+  ventas: number;
+  ganancia: number; // lo que ganó el profesional en el período
+};
+
+// GET /cartera/resumen: totales de un período con fechas de Colombia
+export type ResumenCartera = {
+  periodo: PeriodoResumen;
+  desde: string;
+  hasta: string;
+  barberoId: string | null;
+  totalVentas: number;
+  gananciaNegocio: number; // ventas − lo que ganó el equipo
+  citasCompletadas: number;
+  porProfesional: ProfesionalResumen[]; // de mayor a menor en ventas
+};
+
+// hoy, semana (lunes a domingo), mes, o rango con desde y hasta ("2026-10-01")
+export const obtenerResumenCartera = (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  signal?: AbortSignal,
+) => {
+  const fechas =
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : "";
+  return request<ResumenCartera>(`/api/v1/cartera/resumen?periodo=${periodo}${fechas}`, {
+    token,
+    signal,
+  });
+};
