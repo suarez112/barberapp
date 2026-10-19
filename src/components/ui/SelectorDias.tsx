@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
@@ -7,6 +7,7 @@ import { COLORES } from "../../theme/paleta";
 import { Dia } from "../../types";
 import {
   MESES_LARGOS,
+  diaDeHoy,
   diasDelMes,
   mesCorto,
   mesDeFecha,
@@ -21,6 +22,9 @@ type Props = {
   // Último día que se puede elegir; los siguientes no se muestran ni se navega a ellos
   hasta?: string;
 };
+
+// Ancho de cada día (60) + su margen (8): permite calcular dónde está cada uno
+const ANCHO_DIA = 68;
 
 // Días del mes visible, con flechas para cambiar de mes
 export default function SelectorDias({
@@ -40,6 +44,23 @@ export default function SelectorDias({
   const siguiente = sumarMeses(mes, 1);
   const puedeRetroceder = diasDelMes(anterior).some((d) => permitido(d.fechaFull));
   const puedeAvanzar = diasDelMes(siguiente).some((d) => permitido(d.fechaFull));
+
+  // Al abrir (y al cambiar de mes) la lista se desplaza sola hasta hoy, o hasta
+  // el día elegido si hoy no está en este mes, dejando visible el día anterior.
+  const lista = useRef<ScrollView>(null);
+  const hoy = diaDeHoy().fechaFull;
+  const indiceHoy = dias.findIndex((d) => d.fechaFull === hoy);
+  const indiceInicial =
+    indiceHoy >= 0 ? indiceHoy : dias.findIndex((d) => d.fechaFull === seleccionado.fechaFull);
+  // Una sola vez por mes: después la persona desplaza la lista a su gusto
+  const claveMes = `${mes.anio}-${mes.mes}`;
+  const desplazadoEn = useRef<string | null>(null);
+  const irAlDiaInicial = () => {
+    if (desplazadoEn.current === claveMes) return;
+    desplazadoEn.current = claveMes;
+    if (indiceInicial > 0)
+      lista.current?.scrollTo({ x: (indiceInicial - 1) * ANCHO_DIA, animated: false });
+  };
 
   const flecha = (
     icono: "chevron-back" | "chevron-forward",
@@ -73,9 +94,12 @@ export default function SelectorDias({
         )}
       </View>
 
-      {/* key: al cambiar de mes la lista vuelve al inicio */}
+      {/* key: al cambiar de mes la lista se crea de nuevo y vuelve a desplazarse */}
       <ScrollView
-        key={`${mes.anio}-${mes.mes}`}
+        key={claveMes}
+        ref={lista}
+        // Se desplaza cuando ya conoce el ancho de los días (antes scrollTo no hace nada)
+        onContentSizeChange={irAlDiaInicial}
         horizontal
         showsHorizontalScrollIndicator={false}
       >
