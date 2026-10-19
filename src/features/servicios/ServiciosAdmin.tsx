@@ -2,7 +2,9 @@ import { StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
+import CampoPrecio from "@/components/ui/CampoPrecio";
 import CampoTexto from "@/components/ui/CampoTexto";
+import Desplegable from "@/components/ui/Desplegable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -11,17 +13,22 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Servicio } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
-import { formatearPesos } from "@/utils/formato";
+import { formatearPesos, leerPrecio, textoDuracion } from "@/utils/formato";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { actualizarServicio, crearServicio, eliminarServicio } from "./api";
 
-const VACIO = { nombre: "", precio: "", duracion: "" };
+// Duraciones que se ofrecen al crear o editar un servicio (en minutos)
+const DURACIONES = [15, 20, 30, 40, 45, 60, 75, 90, 105, 120, 150, 180];
 
-const aCampos = (s: Servicio) => ({
+type Campos = { nombre: string; precio: string; duracion: number | null };
+
+const VACIO: Campos = { nombre: "", precio: "", duracion: null };
+
+const aCampos = (s: Servicio): Campos => ({
   nombre: s.nombre,
-  precio: s.precio.toString(),
-  duracion: String(s.duracionMin ?? parseInt(s.duracion, 10)),
+  precio: formatearPesos(s.precio),
+  duracion: s.duracionMin ?? (parseInt(s.duracion, 10) || null),
 });
 
 export default function ServiciosAdmin({ token }: { token: string }) {
@@ -32,14 +39,14 @@ export default function ServiciosAdmin({ token }: { token: string }) {
     useFormularioEdicion(VACIO, aCampos);
 
   const guardar = async () => {
-    const precio = Number(campos.precio.replace(/[^\d.]/g, ""));
-    const duracionMin = parseInt(campos.duracion, 10);
-    if (!campos.nombre.trim() || !campos.precio.trim() || isNaN(precio)) {
-      avisar("Datos Incompletos", "Escribe el nombre y precio del servicio.");
+    const precio = leerPrecio(campos.precio);
+    const duracionMin = campos.duracion;
+    if (!campos.nombre.trim() || isNaN(precio)) {
+      avisar("Datos incompletos", "Escribe el nombre y el precio del servicio.");
       return;
     }
-    if (isNaN(duracionMin) || duracionMin < 1 || duracionMin > 1440) {
-      avisar("Duración inválida", "Escribe la duración en minutos (ej: 30).");
+    if (!duracionMin) {
+      avisar("Falta la duración", "Elige cuánto dura el servicio.");
       return;
     }
     const datos = { nombre: campos.nombre.trim(), duracionMin, precio };
@@ -59,6 +66,13 @@ export default function ServiciosAdmin({ token }: { token: string }) {
       avisarError(e, { titulo: "No se pudo guardar el servicio" });
     }
   };
+
+  // Una duración guardada que no está en la lista (ej. 50 min) también se puede conservar
+  const opcionesDuracion = [
+    ...new Set([...DURACIONES, ...(campos.duracion ? [campos.duracion] : [])]),
+  ]
+    .sort((a, b) => a - b)
+    .map((m) => ({ valor: m, etiqueta: textoDuracion(m) }));
 
   const eliminar = async (s: Servicio) => {
     const ok = await confirmar({
@@ -89,17 +103,17 @@ export default function ServiciosAdmin({ token }: { token: string }) {
           value={campos.nombre}
           onChangeText={cambiar("nombre")}
         />
-        <CampoTexto
-          placeholder="Precio en $ (Ej: 35000)"
-          keyboardType="numeric"
+        <CampoPrecio
+          placeholder="Precio (ej: 35.000)"
+          accessibilityLabel="Precio"
           value={campos.precio}
           onChangeText={cambiar("precio")}
         />
-        <CampoTexto
-          placeholder="Duración en minutos (Ej: 45)"
-          keyboardType="numeric"
-          value={campos.duracion}
-          onChangeText={cambiar("duracion")}
+        <Desplegable
+          placeholder="Duración del servicio"
+          opciones={opcionesDuracion}
+          valor={campos.duracion}
+          onCambiar={cambiar("duracion")}
         />
         <BotonesFormulario
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR SERVICIO"}
@@ -118,7 +132,8 @@ export default function ServiciosAdmin({ token }: { token: string }) {
               {s.nombre}
             </Text>
             <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-              {s.duracion} · ${formatearPesos(s.precio)}
+              {s.duracionMin ? textoDuracion(s.duracionMin) : s.duracion} · $
+              {formatearPesos(s.precio)}
             </Text>
           </View>
           <View style={styles.acciones}>

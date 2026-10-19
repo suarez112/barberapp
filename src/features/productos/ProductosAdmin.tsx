@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
+import CampoPrecio from "@/components/ui/CampoPrecio";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
@@ -16,7 +17,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Producto } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
-import { formatearPesos } from "@/utils/formato";
+import { formatearPesos, leerPrecio } from "@/utils/formato";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 import { useAvisarError } from "../sesion/useAvisarError";
 import {
@@ -49,7 +50,7 @@ const VACIO: Campos = {
 
 const aCampos = (p: Producto): Campos => ({
   nombre: p.nombre,
-  precio: String(p.precio),
+  precio: formatearPesos(p.precio),
   descripcion: p.descripcion ?? "",
   fotoUrl: p.fotoUrl,
   fotoNueva: null,
@@ -94,8 +95,8 @@ export default function ProductosAdmin({ token }: { token: string }) {
   };
 
   const guardar = async () => {
-    const precio = Number(campos.precio.replace(/[^\d.]/g, ""));
-    if (!campos.nombre.trim() || !campos.precio.trim() || isNaN(precio)) {
+    const precio = leerPrecio(campos.precio);
+    if (!campos.nombre.trim() || isNaN(precio)) {
       avisar("Faltan datos", "Escribe el nombre y el precio del producto.");
       return;
     }
@@ -185,9 +186,9 @@ export default function ProductosAdmin({ token }: { token: string }) {
           value={campos.nombre}
           onChangeText={cambiar("nombre")}
         />
-        <CampoTexto
-          placeholder="Precio en $ (Ej: 25000)"
-          keyboardType="numeric"
+        <CampoPrecio
+          placeholder="Precio (ej: 25.000)"
+          accessibilityLabel="Precio"
           value={campos.precio}
           onChangeText={cambiar("precio")}
         />
