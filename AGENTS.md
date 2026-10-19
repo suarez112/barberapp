@@ -68,20 +68,26 @@ src/
   app/             Expo Router routes (each file is a screen). Keep them thin: they re-export a feature screen.
     _layout.tsx    root Stack (no header) wrapped in AppProviders
     index.tsx      role selection: "Soy empresa", "Soy cliente", login link (redirects /?codigo=X to /cliente?codigo=X;
-                   with a saved session it goes straight to /panel or /admin)
+                   with a saved session it goes straight to /panel, /admin or /mis-negocios)
     registro.tsx   -> features/cuenta/RegistroEmpresaScreen (company registration; form in cuenta/formulario/)
     login.tsx      -> single login: "Correo o usuario" + password (POST /api/v1/login)
-    cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile)
+    cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile). Without a business:
+                   "Continuar como invitado" (code) or "Crear cuenta / Iniciar sesión"; a client with a session
+                   is sent to /mis-negocios. /cliente?codigo=X (web link, QR, "Mis negocios") opens the business directly
+    cuenta-cliente.tsx -> features/cuenta/CuentaClienteScreen (client login + optional client registration)
+    mis-negocios.tsx   -> features/micuenta/MisNegociosScreen (saved businesses: add by code, remove, open to book)
+    mis-citas.tsx      -> features/micuenta/MisCitasScreen (appointments booked with the client session)
     panel.tsx      -> features/panel/PanelScreen (staff panel, staff token; a member with role
                    admin gets features/admin/PanelAdministrador, an employee PanelNegocio)
     admin.tsx      -> features/admin/AdminPanelScreen (company account, account token) ->
-                   features/admin/PanelAdministrador (PanelNegocio + trial notice + "Mi negocio")
+                   features/admin/PanelAdministrador (PanelNegocio + subscription banner + "Mi negocio";
+                   expired subscription: PanelVencido with only "Planes" and "Mi negocio")
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
                    department/municipality from GET /api/v1/ubicaciones, same-schedule checkbox or 7 days), validarEmpresa
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
                    context Provider for shared state and an api.ts with its backend calls
-                   (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, negocio,
-                   panel, productos, reservas, servicios, sesion)
+                   (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, legal, micuenta,
+                   negocio, panel, productos, reservas, servicios, sesion)
   components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader)
   providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > RestaurarSesion > Agenda)
   services/api/    config.ts (backend URL), http.ts (fetch wrapper), errores.ts (error -> clear message)
@@ -115,7 +121,7 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
   - Network failure, timeout or non-JSON response -> `ErrorDeConexion`.
   - `mensajeDeError(error, porDefecto)` returns the text to show the user.
 - Each feature declares its calls in its own `api.ts` (sesion, cuenta, negocio, agenda, clientes, equipo, servicios, productos, bloqueos, cartera). Add new endpoints the same way; do not call `fetch` from screens.
-- Errors: `request()` throws `ApiError` (server answered), `ErrorDeConexion` with `motivo` `sin-conexion` | `tiempo-agotado` | `respuesta-invalida`, or `ErrorDeEnvio` (the app could not build the request, e.g. an unreadable file; never reported as "no connection"). `services/api/errores.ts` `describirError()` turns any of them into `{ titulo, mensaje }` (no connection, timeout, 401 session expired, 402 trial ended, 403 no permission, 409 conflict with a custom title, 413 file too large, 429, 5xx server error); `registrarCausa()` logs the non-server cause with `console.log` (never `console.error` for connection failures: in development it opens Expo's red screen with the technical text) and skips cancelled requests. Panel actions use `features/sesion/useAvisarError.ts`, which also logs out on 401. Booking shows 403 (blacklisted phone) and 409 (busy or blocked slot) with the backend message.
+- Errors: `request()` throws `ApiError` (server answered), `ErrorDeConexion` with `motivo` `sin-conexion` | `tiempo-agotado` | `respuesta-invalida`, or `ErrorDeEnvio` (the app could not build the request, e.g. an unreadable file; never reported as "no connection"). `services/api/errores.ts` `describirError()` turns any of them into `{ titulo, mensaje }` (no connection, timeout, 401 session expired, 402 "Suscripción vencida" or "Negocio inactivo" for employees, 403 no permission, 409 conflict with a custom title, 413 file too large, 429, 5xx server error); `registrarCausa()` logs the non-server cause with `console.log` (never `console.error` for connection failures: in development it opens Expo's red screen with the technical text) and skips cancelled requests. Panel actions use `features/sesion/useAvisarError.ts`, which also logs out on 401. Booking shows 403 (blacklisted phone or business not receiving bookings) and 409 (busy or blocked slot) with the backend message.
 - Photos: `utils/imagenes.ts` `elegirFoto()` (checks JPG/PNG/WEBP and 5 MB like the backend) and `formularioFoto()` (multipart field `foto`). On Android/iOS the part is `new File(uri)` from `expo-file-system`: the SDK 57 global `fetch` is `expo/fetch`, which rejects the old React Native `{ uri, name, type }` part with "Unsupported FormDataPart implementation". Uploads get a 60 s timeout.
 
 ## UI building blocks
@@ -129,17 +135,19 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 ## Session and token
 
 - Two session types, one at a time: staff (`features/sesion/SesionProvider.tsx`, `useSesion()`) and account (`features/cuenta/CuentaProvider.tsx`, `useCuenta()`, `rol` `admin` | `cliente`). Logging into one closes the other.
-- `features/sesion/useIniciarSesion.ts` uses the single login `POST /api/v1/login` (email or username): `tipo: "admin"` opens the account session (`/admin`), `tipo: "personal"` the staff session (`/panel`). A client account gets 403 there, so with an email it falls back to `POST /api/v1/cuentas/login` and goes to `/cliente`.
+- `features/sesion/useIniciarSesion.ts` uses the single login `POST /api/v1/login` (email or username): `tipo: "admin"` opens the account session (`/admin`), `tipo: "cliente"` the client account session (`/mis-negocios`, keeps `debeAceptarDocumentos` in the saved user), `tipo: "personal"` the staff session (`/panel`). A 402 for an employee shows "Negocio inactivo".
 - The panel card shows the admin's `nombreAdministradora` (from `GET /api/v1/admin/empresa`), not the email.
 - **The session is persisted** with `expo-secure-store` (`features/sesion/sesionGuardada.ts`, key `sesion`): `iniciarSesion`/`iniciarCuenta` save it, `cerrarSesion`/`cerrarCuenta` delete it. On web there is no secure storage, so it stays in memory only.
 - `features/sesion/RestaurarSesionProvider.tsx` reads the saved session when the app opens; screens wait for `useSesionLista().lista` before redirecting. An expired token gets 401 on the first call and the session is closed.
 - `features/sesion/usePersonal.ts` gives one view of whoever uses the business panel (`token`, `esAdmin`, `barbero` or null for the account admin, `esCuentaAdmin`). The account admin token works on every staff endpoint as the business admin.
 - `features/sesion/useCerrarSesion.ts` closes both sessions, deletes the saved one and clears business and agenda data. The header button "Cerrar sesión" and Android back in a panel use it.
 - The panel (`features/panel/useCargarPanel.ts`) loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with that token; login only stores the session.
-- Admins (`features/admin/PanelAdministrador.tsx`, account or team admin, `useMiEmpresa(token)`): trial days (`AvisoPrueba`), the expired-trial screen on 402 (`PruebaVencida`) and "Mi negocio" (profile, photo, client code).
+- Admins (`features/admin/PanelAdministrador.tsx`, account or team admin, `useMiEmpresa(token)`): `GET /api/v1/admin/empresa/suscripcion` (works even when expired) drives `AvisoSuscripcion` (banner when `mostrarRecordatorio`: always in the trial, last 7 days of a plan), the "Mi suscripción" section (`MiSuscripcion`) and, with `estado = "vencida"`, `PanelVencido` ("Planes" with sample monthly/annual plans, no real payments, and "Mi negocio"). `hooks/useRefrescoDiario.ts` reloads the subscription when the app returns to the foreground and at Colombia midnight; a 402 from the panel load also reloads it. Employees of an expired business see "Negocio inactivo" (`useCargarPanel` `inactivo`).
+- Clients with an account (`features/micuenta/`, `/api/v1/mi-cuenta/...`): saved businesses and "Mis citas". Booking (`reservas/hooks/useReserva.ts`) sends the client token, shows the account name/phone instead of the fields, and hides the consent checkbox unless `debeAceptarDocumentos` is true (set at login, or when POST /citas answers 400 "Publicamos una nueva versión…"). Businesses with `recibiendoReservas: false` show "Este negocio no está recibiendo reservas por ahora".
+- Data consent (`features/legal/`): `CasillaAutorizacion` (unchecked by default) with links that open `DocumentoLegalModal` (GET /api/v1/legal/politica-datos and /terminos, markdown rendered by `components/ui/TextoMarkdown.tsx`). Required in company registration, client registration and guest booking; send `ACEPTACION` (`aceptaPoliticaDatos` + `aceptaTerminos` true).
 - Equipo (`features/equipo/EquipoAdmin.tsx`): role dropdown "Administrador / Empleado" (`rol`) and switch "Atiende clientes" (`atiendeClientes`). A 409 "Tu equipo ya tiene…" (team limit) shows the backend message with a button to the Mi negocio tab.
 - Cartera (`features/cartera/CarteraPanel.tsx`, `useCartera`): admins see the business total plus a "Ver cartera de" dropdown per member (including themselves) using `?barberoId=`; employees only their own.
-- Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/panel` redirects to `/login` without a staff session and to `/admin` for the account admin.
+- Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/mis-negocios` and `/mis-citas` redirect to `/cliente` without a client session; `/panel` redirects to `/login` without a staff session and to `/admin` for the account admin.
 - `request()` sends a `FormData` body as multipart (no JSON `Content-Type`).
 
 ## Calendar
