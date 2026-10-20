@@ -5,7 +5,7 @@ import TextoInfo from "@/components/ui/TextoInfo";
 import { useRefrescoDiario } from "@/hooks/useRefrescoDiario";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import PanelNegocio from "../panel/PanelNegocio";
-import { useCerrarSesion } from "../sesion/useCerrarSesion";
+import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
@@ -20,7 +20,7 @@ import { useMiEmpresa } from "./useMiEmpresa";
 // incluida "Mi negocio". Con la suscripción vencida solo Planes y Mi negocio.
 export default function PanelAdministrador({ personal }: { personal: Personal }) {
   const { colors } = useAppTheme();
-  const cerrarSesion = useCerrarSesion();
+  const cerrarSesion = useConfirmarCerrarSesion();
   const {
     suscripcion,
     perfil,

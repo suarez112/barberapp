@@ -1,22 +1,27 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import BotonCabecera from "./BotonCabecera";
+import MenuCabecera from "./MenuCabecera";
 
 export type OpcionesCabecera = {
   onVolver?: () => void;
+  // Cerrar sesión (pide confirmación); aparece en el menú
   onSalir?: () => void;
 };
 
-export default function AppHeader({
-  onVolver,
-  onSalir,
-}: OpcionesCabecera) {
-  const { colors, esOscuro, alternarTema } = useAppTheme();
+// Alto fijo de la barra: los botones miden 44 px
+const ALTO = 56;
+
+// Barra compacta: volver (si aplica), nombre del negocio y un menú con el tema
+// y, con una sesión abierta, "Cerrar sesión"
+export default function AppHeader({ onVolver, onSalir }: OpcionesCabecera) {
+  const { colors } = useAppTheme();
   const { empresa } = useNegocio();
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   return (
     <View
@@ -37,30 +42,26 @@ export default function AppHeader({
         </Tocable>
       ) : null}
 
-      <Text style={[styles.titulo, { color: colors.primaryText }]}>
-        {empresa ? `✨ ${empresa.nombre}` : "✂️ AGENDAMIENTOS"}
+      <Text
+        accessibilityRole="header"
+        numberOfLines={1}
+        style={[styles.titulo, { color: colors.primaryText }]}
+      >
+        {empresa ? empresa.nombre : "AGENDAMIENTOS"}
       </Text>
 
-      <View style={styles.acciones}>
-        <BotonCabecera
-          icono={esOscuro ? "sunny-outline" : "moon-outline"}
-          etiqueta={esOscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
-          onPress={alternarTema}
-        />
+      <BotonCabecera
+        icono="menu-outline"
+        etiqueta="Menú"
+        ayuda={onSalir ? "Abre las opciones de tema y cerrar sesión" : "Abre las opciones de tema"}
+        onPress={() => setMenuAbierto(true)}
+      />
 
-        {onSalir ? (
-          <Tocable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar sesión"
-            accessibilityHint="Sale de tu cuenta en este celular"
-            style={styles.salir}
-            onPress={onSalir}
-          >
-            <Ionicons name="log-out-outline" size={14} color={COLORES.peligroSuave} />
-            <Text style={styles.salirTexto}>Cerrar sesión</Text>
-          </Tocable>
-        ) : null}
-      </View>
+      <MenuCabecera
+        visible={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
+        onSalir={onSalir}
+      />
     </View>
   );
 }
@@ -68,23 +69,12 @@ export default function AppHeader({
 const styles = StyleSheet.create({
   barra: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: 8,
+    height: ALTO,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
   },
-  volver: { minWidth: 44, minHeight: 44, justifyContent: "center" },
-  titulo: { fontSize: 16, fontWeight: "bold", letterSpacing: 1 },
-  acciones: { flexDirection: "row", alignItems: "center", gap: 10 },
-  salir: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    minHeight: 44,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    backgroundColor: COLORES.peligroOscuro,
-  },
-  salirTexto: { fontSize: 13, fontWeight: "bold", color: COLORES.peligroSuave },
+  volver: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  titulo: { flex: 1, fontSize: 16, fontWeight: "bold", letterSpacing: 0.5, paddingHorizontal: 4 },
 });

@@ -27,7 +27,7 @@ export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, childre
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={20} color={colors.primaryText} />
+      <Ionicons name={icono} size={24} color={colors.primaryText} />
       {children}
     </Tocable>
   );
@@ -35,8 +35,8 @@ export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, childre
 
 const styles = StyleSheet.create({
   boton: {
-    minWidth: 44,
-    minHeight: 44,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
