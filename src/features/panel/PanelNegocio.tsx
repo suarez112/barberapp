@@ -11,6 +11,7 @@ import AgendaTab from "../agenda/AgendaTab";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
 import CarteraPanel from "../cartera/CarteraPanel";
 import ClientesTab from "../clientes/ClientesTab";
+import { Suscripcion } from "../cuenta/api";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { Personal } from "../sesion/usePersonal";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
@@ -29,6 +30,9 @@ type Props = {
   miNegocio?: ReactNode;
   // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
   onSuscripcionVencida?: () => void;
+  // Administradores: plan y cupo del equipo; onEquipoCambiado lo vuelve a consultar
+  suscripcion?: Suscripcion | null;
+  onEquipoCambiado?: () => void;
 };
 
 const PESTANA_AGENDA: Pestana = { id: "AGENDAMIENTOS", icono: "list", label: "Agenda" };
@@ -45,6 +49,8 @@ export default function PanelNegocio({
   encabezado,
   miNegocio,
   onSuscripcionVencida,
+  suscripcion = null,
+  onEquipoCambiado,
 }: Props) {
   const { colors } = useAppTheme();
   const { empresa, barberos } = useNegocio();
@@ -146,7 +152,8 @@ export default function PanelNegocio({
         return (
           <NegocioTab
             personal={personal}
-            onIrAMiNegocio={miNegocio ? () => setPestana("MI_NEGOCIO") : undefined}
+            suscripcion={suscripcion}
+            onEquipoCambiado={onEquipoCambiado}
           />
         );
       case "MI_NEGOCIO":

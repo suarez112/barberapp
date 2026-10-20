@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import SelectorDias from "@/components/ui/SelectorDias";
@@ -6,6 +7,8 @@ import { crearDia, fechaLarga, hoyColombiaISO, sumarDias } from "@/utils/fechas"
 import { formatearPesos } from "@/utils/formato";
 import { PeriodoResumen, ProfesionalResumen } from "./api";
 import ProyeccionCartera from "./ProyeccionCartera";
+import { periodoVisible, textoRango } from "./periodoVisible";
+import { useFechaRegistro } from "./useFechaRegistro";
 import { useResumenCartera } from "./useResumenCartera";
 
 const PERIODOS: { valor: PeriodoResumen; texto: string }[] = [
@@ -20,6 +23,13 @@ const MAX_DIAS_RANGO = 365;
 
 const dinero = (n: number) => `$${formatearPesos(n)}`;
 
+// Texto de las flechas según el período
+const UNIDAD: Record<Exclude<PeriodoResumen, "rango">, { anterior: string; siguiente: string }> = {
+  hoy: { anterior: "Día anterior", siguiente: "Día siguiente" },
+  semana: { anterior: "Semana anterior", siguiente: "Semana siguiente" },
+  mes: { anterior: "Mes anterior", siguiente: "Mes siguiente" },
+};
+
 // Tablero de la cartera del administrador: totales del período, citas por
 // profesional (de mayor a menor) y el detalle del profesional que se toque.
 export default function TableroCartera({ token }: { token: string }) {
@@ -29,7 +39,25 @@ export default function TableroCartera({ token }: { token: string }) {
   const [desde, setDesde] = useState(() => `${hoyColombiaISO().slice(0, 8)}01`);
   const [hasta, setHasta] = useState(hoyColombiaISO);
   const [elegidoId, setElegidoId] = useState<string | null>(null);
-  const { resumen, error } = useResumenCartera(token, periodo, desde, hasta);
+  // Hoy, Semana y Mes: cuántos días, semanas o meses hacia atrás (0 = el actual)
+  const [atras, setAtras] = useState(0);
+  const registro = useFechaRegistro(token);
+  const hoy = hoyColombiaISO();
+
+  // Rango libre: entre el registro del negocio y hoy (el backend no acepta más)
+  const minimo = registro ?? undefined;
+  const desdeRango = minimo && desde < minimo ? minimo : desde;
+  const hastaRango = hasta < desdeRango ? desdeRango : hasta > hoy ? hoy : hasta;
+  const maxHasta = sumarDias(desdeRango, MAX_DIAS_RANGO) < hoy ? sumarDias(desdeRango, MAX_DIAS_RANGO) : hoy;
+
+  const visible = periodo === "rango" ? null : periodoVisible(periodo, atras, hoy, registro);
+  const consulta = visible ?? { periodo: "rango" as const, desde: desdeRango, hasta: hastaRango };
+  const { resumen, error } = useResumenCartera(token, consulta.periodo, consulta.desde, consulta.hasta);
+
+  const cambiarPeriodo = (p: PeriodoResumen) => {
+    setPeriodo(p);
+    setAtras(0); // al cambiar de período se vuelve al actual
+  };
 
   const cambiarDesde = (fecha: string) => {
     setDesde(fecha);
@@ -146,7 +174,7 @@ export default function TableroCartera({ token }: { token: string }) {
             accessibilityLabel={op.texto}
             accessibilityHint="Cambia el periodo del tablero"
             style={[s.btnSegmento, periodo === op.valor && { backgroundColor: colors.primary }]}
-            onPress={() => setPeriodo(op.valor)}
+            onPress={() => cambiarPeriodo(op.valor)}
           >
             <Text
               style={[s.textoSegmento, { color: periodo === op.valor ? colors.onPrimary : colors.textSecondary }]}
@@ -160,26 +188,65 @@ export default function TableroCartera({ token }: { token: string }) {
       {periodo === "rango" ? (
         <View>
           <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Desde</Text>
-          <SelectorDias seleccionado={crearDia(desde)} onSeleccionar={(d) => cambiarDesde(d.fechaFull)} />
+          <SelectorDias
+            seleccionado={crearDia(desdeRango)}
+            onSeleccionar={(d) => cambiarDesde(d.fechaFull)}
+            desde={minimo}
+            hasta={hoy}
+          />
           <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Hasta</Text>
           <SelectorDias
             // Al cambiar "desde" el selector vuelve a abrir en el mes de "hasta"
-            key={desde}
-            seleccionado={crearDia(hasta)}
+            key={desdeRango}
+            seleccionado={crearDia(hastaRango)}
             onSeleccionar={(d) => setHasta(d.fechaFull)}
-            desde={desde}
-            hasta={sumarDias(desde, MAX_DIAS_RANGO)}
+            desde={desdeRango}
+            hasta={maxHasta}
           />
         </View>
       ) : null}
 
-      {resumen ? (
+      {visible && periodo !== "rango" ? (
+        // Flechas: atrás hasta el registro del negocio, adelante hasta el período actual
+        <View style={[s.navegador, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={UNIDAD[periodo].anterior}
+            accessibilityHint={
+              visible.hayAnterior ? "Muestra el período anterior" : "No hay datos antes del registro del negocio"
+            }
+            accessibilityState={{ disabled: !visible.hayAnterior }}
+            disabled={!visible.hayAnterior}
+            onPress={() => setAtras((n) => n + 1)}
+            style={[s.flecha, !visible.hayAnterior && s.flechaApagada]}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <Text
+            accessibilityLiveRegion="polite"
+            style={[s.textoNavegador, { color: colors.textPrimary }]}
+          >
+            {textoRango(visible.desde, visible.hasta)}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={UNIDAD[periodo].siguiente}
+            accessibilityHint={visible.haySiguiente ? "Muestra el período siguiente" : "Ya estás en el período actual"}
+            accessibilityState={{ disabled: !visible.haySiguiente }}
+            disabled={!visible.haySiguiente}
+            onPress={() => setAtras((n) => Math.max(0, n - 1))}
+            style={[s.flecha, !visible.haySiguiente && s.flechaApagada]}
+          >
+            <Ionicons name="chevron-forward" size={24} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+      ) : (
         <Text style={[s.fechas, { color: colors.textSecondary }]}>
-          {resumen.desde === resumen.hasta
-            ? fechaLarga(resumen.desde)
-            : `${fechaLarga(resumen.desde)} – ${fechaLarga(resumen.hasta)}`}
+          {consulta.desde === consulta.hasta
+            ? fechaLarga(consulta.desde)
+            : `${fechaLarga(consulta.desde)} – ${fechaLarga(consulta.hasta)}`}
         </Text>
-      ) : null}
+      )}
 
       {error ? <Text style={s.error}>{error}</Text> : null}
       {!resumen && !error ? <ActivityIndicator color={colors.primaryText} style={s.cargando} /> : null}
@@ -229,6 +296,19 @@ const s = StyleSheet.create({
   textoSegmento: { fontSize: 12, fontWeight: "bold" },
   etiquetaRango: { fontSize: 12, fontWeight: "bold", marginTop: 6 },
   fechas: { fontSize: 13, textAlign: "center", marginBottom: 10 },
+  navegador: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    marginBottom: 12,
+  },
+  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  flechaApagada: { opacity: 0.25 },
+  textoNavegador: { flex: 1, fontSize: 14, fontWeight: "bold", textAlign: "center" },
   cargando: { marginVertical: 20 },
   error: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
   filaTarjetas: { flexDirection: "row", gap: 8 },

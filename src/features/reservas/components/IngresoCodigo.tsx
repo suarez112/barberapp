@@ -15,7 +15,7 @@ export default function IngresoCodigo() {
 
   const entrar = async () => {
     if (!codigo.trim()) {
-      setError("Escribe el código que te dio el negocio, por ejemplo INFINITY.");
+      setError("Escribe el código que te dio el negocio.");
       return;
     }
     if (await abrirNegocio(codigo)) setCodigo("");
@@ -31,14 +31,14 @@ export default function IngresoCodigo() {
           { color: colors.textSecondary },
         ]}
       >
-        Ingresa el código facilitado (Prueba: `INFINITY` o `BUNKER`)
+        Ingresa el código que te dio el negocio
       </Text>
 
       <CampoTexto
         etiqueta="Código del negocio"
         error={error}
         ayuda="Letras y números que te dio el negocio"
-        placeholder="ej: INFINITY"
+        placeholder="Letras y números, máximo 10"
         autoCapitalize="characters"
         autoCorrect={false}
         autoComplete="off"

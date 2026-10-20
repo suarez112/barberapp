@@ -1,10 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
-import CampoTexto from "@/components/ui/CampoTexto";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -23,23 +21,12 @@ const PRECISION_MALA_M = 50;
 // El backend guarda 6 decimales (≈ 11 cm)
 const redondear6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
-// "6.244203, -75.581211" (como lo copia Google Maps) -> punto, o null si no es válido
-const leerCoordenadas = (texto: string): Punto | null => {
-  const m = texto.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
-  if (!m) return null;
-  const latitude = Number(m[1]);
-  const longitude = Number(m[2]);
-  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
-  return { latitude, longitude };
-};
-
 type Props = {
   perfil: PerfilEmpresa;
   onGuardar: (coordenadas: Coordenadas) => Promise<boolean>;
 };
 
-// Ubicación del negocio en el mapa: pin arrastrable, GPS del celular o
-// coordenadas pegadas de Google Maps. "Cómo llegar" del cliente usa este punto.
+// Ubicación del negocio en el mapa: pin arrastrable o GPS del celular. "Cómo llegar" del cliente usa este punto.
 export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
   const { colors } = useAppTheme();
   const guardado: Punto | null =
@@ -47,13 +34,11 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
       ? { latitude: perfil.latitud, longitude: perfil.longitud }
       : null;
   const [punto, setPunto] = useState<Punto | null>(guardado);
-  // Precisión del GPS del punto actual; null si se ubicó a mano o con coordenadas
+  // Precisión del GPS del punto actual; null si se ubicó a mano
   const [precision, setPrecision] = useState<number | null>(perfil.precisionUbicacion);
   const [centrar, setCentrar] = useState(0);
   const [buscando, setBuscando] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [coordenadas, setCoordenadas] = useState("");
-  const [errorCoordenadas, setErrorCoordenadas] = useState<string | undefined>();
   const detenerGps = useRef<(() => void) | null>(null);
 
   // Al salir de la pantalla se deja de leer el GPS
@@ -165,26 +150,6 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
     }
   };
 
-  const pegarDelPortapapeles = async () => {
-    try {
-      const texto = await Clipboard.getStringAsync();
-      setCoordenadas(texto.trim());
-      setErrorCoordenadas(undefined);
-    } catch (error) {
-      registrarCausa("Pegar coordenadas", error);
-    }
-  };
-
-  const usarCoordenadas = () => {
-    const p = leerCoordenadas(coordenadas);
-    if (!p) {
-      setErrorCoordenadas("Escribe la latitud y la longitud separadas por coma, ej: 6.244203, -75.581211");
-      return;
-    }
-    setErrorCoordenadas(undefined);
-    colocar(p, null);
-  };
-
   const guardar = async () => {
     if (!punto || guardando) return;
     setGuardando(true);
@@ -217,7 +182,7 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
       <Text style={[styles.nota, { color: colors.textSecondary }]}>
         {punto
           ? "Mantén presionado el pin y arrástralo hasta la puerta de tu negocio, o toca el mapa para moverlo."
-          : "Aún no hay ubicación. Usa tu ubicación actual, pega coordenadas de Google Maps o toca el mapa."}{" "}
+          : "Aún no hay ubicación. Usa tu ubicación actual o toca el mapa para poner el pin."}{" "}
         Tus clientes la usarán en &quot;Cómo llegar&quot;.
       </Text>
 
@@ -243,44 +208,6 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
         ayuda="Lee el GPS del celular hasta 20 segundos y pone el pin ahí. Úsalo dentro del local"
         variante="neutro"
         onPress={usarUbicacionActual}
-      />
-
-      <CampoTexto
-        etiqueta="Pegar coordenadas de Google Maps"
-        placeholder="ej: 6.244203, -75.581211"
-        ayuda="En Google Maps mantén presionado el punto de tu negocio, toca las coordenadas que aparecen arriba para copiarlas y pégalas aquí"
-        value={coordenadas}
-        onChangeText={(t) => {
-          setCoordenadas(t);
-          setErrorCoordenadas(undefined);
-        }}
-        error={errorCoordenadas}
-        keyboardType="numbers-and-punctuation"
-        autoCorrect={false}
-        autoComplete="off"
-        onSubmitEditing={usarCoordenadas}
-        derecha={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Pegar"
-            accessibilityHint="Pega lo que copiaste en Google Maps"
-            onPress={pegarDelPortapapeles}
-            style={styles.pegar}
-          >
-            <Text style={[styles.textoPegar, { color: colors.primaryText }]}>Pegar</Text>
-          </Pressable>
-        }
-        style={styles.campo}
-      />
-      <Text style={[styles.nota, { color: colors.textSecondary }]}>
-        En Google Maps, mantén presionado el punto exacto de tu negocio; arriba aparecen dos números
-        (ej: 6.244203, -75.581211). Tócalos para copiarlos y pégalos aquí.
-      </Text>
-      <Boton
-        titulo="UBICAR EN EL MAPA"
-        ayuda="Pone el pin en las coordenadas escritas"
-        variante="neutro"
-        onPress={usarCoordenadas}
       />
 
       <Boton
@@ -316,9 +243,6 @@ const styles = StyleSheet.create({
   },
   textoEstado: { fontSize: 13, fontWeight: "bold" },
   precision: { fontSize: 13, fontWeight: "bold" },
-  campo: { marginTop: 16 },
-  pegar: { minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 8 },
-  textoPegar: { fontSize: 13, fontWeight: "bold" },
   botonEnlace: {
     flexDirection: "row",
     alignItems: "center",

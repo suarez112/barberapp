@@ -120,6 +120,8 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
       encabezado={suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
       miNegocio={miNegocio}
       onSuscripcionVencida={actualizarSuscripcion}
+      suscripcion={suscripcion}
+      onEquipoCambiado={actualizarSuscripcion}
     />
   );
 }

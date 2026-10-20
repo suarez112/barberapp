@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import BotonIcono from "@/components/ui/BotonIcono";
+import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import Insignia from "@/components/ui/Insignia";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -9,7 +7,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { fechaLarga } from "@/utils/fechas";
 import { EstadoSuscripcion, Suscripcion } from "../../cuenta/api";
-import { ListaPlanes } from "./ElegirPlan";
+import PlanesModal from "../../planes/PlanesModal";
 
 const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
   prueba: { texto: "PRUEBA GRATUITA", color: COLORES.info },
@@ -18,12 +16,14 @@ const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
 };
 
 const textoDias = (dias: number) => (dias === 1 ? "1 día" : `${dias} días`);
+const textoPersonas = (n: number) => (n === 1 ? "1 persona" : `${n} personas`);
 
 // Sección "Mi suscripción" de Mi negocio
 export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcion }) {
   const { colors } = useAppTheme();
   const [verPlanes, setVerPlanes] = useState(false);
   const { estado, plan, fechaPago, fechaFin, diasRestantes, diasPruebaSumados } = suscripcion;
+  const { planEquipo, cupoUsado } = suscripcion;
 
   // "Plan mensual · Activo"; la prueba y los vencidos llevan su insignia
   const titulo =
@@ -60,6 +60,8 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           )}
           <Insignia texto={ESTADOS[estado].texto} color={ESTADOS[estado].color} />
         </View>
+        {fila("Plan", `${planEquipo.nombre} · hasta ${textoPersonas(planEquipo.cupo)}`)}
+        {fila("Cupo usado", `${cupoUsado} de ${textoPersonas(planEquipo.cupo)}`)}
         {estado !== "prueba" ? fila("Fecha de pago", fechaPago ? fechaLarga(fechaPago) : "—") : null}
         {fila(
           estado === "prueba" ? "La prueba termina" : "Fecha de vencimiento",
@@ -76,41 +78,28 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
             {suscripcion.mensaje}
           </Text>
         ) : null}
-        {estado === "prueba" ? (
-          <Boton
-            titulo="ACTIVAR PLAN AHORA"
-            ayuda="Muestra los planes mensual y anual. Los días de prueba que te quedan se suman al plan"
-            onPress={() => setVerPlanes(true)}
-            style={styles.boton}
-          />
-        ) : null}
+        <Boton
+          titulo={estado === "prueba" ? "ACTIVAR PLAN AHORA" : "CAMBIAR DE PLAN"}
+          ayuda={
+            estado === "prueba"
+              ? "Muestra los planes Básico, Equipo y Pro. Los días de prueba que te quedan se suman al plan"
+              : "Muestra los planes Básico, Equipo y Pro con sus precios"
+          }
+          onPress={() => setVerPlanes(true)}
+          style={styles.boton}
+        />
       </View>
 
-      <Modal
+      <PlanesModal
         visible={verPlanes}
-        animationType="slide"
-        onRequestClose={() => setVerPlanes(false)}
-      >
-        <SafeAreaView style={[styles.pantalla, { backgroundColor: colors.bg }]}>
-          <View style={styles.cabecera}>
-            <Text style={[styles.tituloPlanes, { color: colors.primaryText }]}>PLANES</Text>
-            <BotonIcono
-              icono="close"
-              tamano={26}
-              color={colors.textPrimary}
-              etiqueta="Cerrar planes"
-              ayuda="Vuelve a Mi negocio"
-              onPress={() => setVerPlanes(false)}
-            />
-          </View>
-          <ScrollView contentContainerStyle={styles.contenido}>
-            <Text style={[styles.nota, { color: colors.textSecondary }]}>
-              Si activas un plan durante la prueba, los días gratis que te quedan se suman al plan.
-            </Text>
-            <ListaPlanes />
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+        onCerrar={() => setVerPlanes(false)}
+        suscripcion={suscripcion}
+        nota={
+          estado === "prueba"
+            ? "Si activas un plan durante la prueba, los días gratis que te quedan se suman al plan."
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -130,15 +119,4 @@ const styles = StyleSheet.create({
   valor: { fontSize: 13, fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 10 },
   mensaje: { fontSize: 12, lineHeight: 17, paddingTop: 10 },
   boton: { marginTop: 12, marginBottom: 10 },
-  pantalla: { flex: 1 },
-  cabecera: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  tituloPlanes: { fontSize: 18, fontWeight: "bold", letterSpacing: 1 },
-  contenido: { paddingHorizontal: 16, paddingBottom: 30 },
-  nota: { fontSize: 13, textAlign: "center", marginTop: 4 },
 });

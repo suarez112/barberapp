@@ -92,7 +92,14 @@ export type Suscripcion = {
   // true siempre en la prueba y en los últimos 7 días de un plan
   mostrarRecordatorio: boolean;
   mensaje: string | null;
+  // Plan por tamaño de equipo (también en la prueba). "plan" es el periodo
+  planEquipo: { id: IdPlanEquipo; nombre: string; cupo: number };
+  cupoUsado: number; // integrantes activos en Equipo
+  cupoDisponible: number; // cuántos más se pueden agregar
+  fechaRegistro: string | null; // "2026-10-05", día en que se registró el negocio
 };
+
+export type IdPlanEquipo = "basico" | "equipo" | "pro";
 
 export type RespuestaRegistroEmpresa = {
   mensaje: string;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 import Selector from "@/components/ui/Selector";
+import { Suscripcion } from "../cuenta/api";
 import EquipoAdmin from "../equipo/EquipoAdmin";
 import ProductosAdmin from "../productos/ProductosAdmin";
 import ServiciosAdmin from "../servicios/ServiciosAdmin";
@@ -17,17 +18,25 @@ const SECCIONES = [
 // Administración del negocio (solo administrador)
 export default function NegocioTab({
   personal,
-  onIrAMiNegocio,
+  suscripcion,
+  onEquipoCambiado,
 }: {
   personal: Personal;
-  // Abre la pestaña Mi negocio (ej. para aumentar el número de empleados)
-  onIrAMiNegocio?: () => void;
+  // Plan y cupo del equipo (null mientras carga)
+  suscripcion: Suscripcion | null;
+  onEquipoCambiado?: () => void;
 }) {
   const [seccion, setSeccion] = useState<Seccion>("EQUIPO");
   return (
     <View>
       <Selector opciones={SECCIONES} valor={seccion} onCambiar={setSeccion} />
-      {seccion === "EQUIPO" ? <EquipoAdmin personal={personal} onIrAMiNegocio={onIrAMiNegocio} /> : null}
+      {seccion === "EQUIPO" ? (
+        <EquipoAdmin
+          personal={personal}
+          suscripcion={suscripcion}
+          onEquipoCambiado={onEquipoCambiado}
+        />
+      ) : null}
       {seccion === "SERVICIOS" ? <ServiciosAdmin token={personal.token} /> : null}
       {seccion === "PRODUCTOS" ? <ProductosAdmin token={personal.token} /> : null}
     </View>

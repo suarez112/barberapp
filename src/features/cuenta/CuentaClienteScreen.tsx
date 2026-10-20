@@ -8,6 +8,7 @@ import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import Selector from "@/components/ui/Selector";
+import Tocable from "@/components/ui/Tocable";
 import { useTelefono } from "@/hooks/useTelefono";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError } from "@/services/api/http";
@@ -66,6 +67,8 @@ export default function CuentaClienteScreen() {
 }
 
 function FormularioEntrar({ onListo }: { onListo: (destino: Destino) => void }) {
+  const { colors } = useAppTheme();
+  const { push } = useRouter();
   const iniciarSesion = useIniciarSesion();
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
@@ -124,6 +127,17 @@ function FormularioEntrar({ onListo }: { onListo: (destino: Destino) => void }) 
         onPress={ingresar}
         style={styles.boton}
       />
+      <Tocable
+        accessibilityRole="link"
+        accessibilityLabel="¿Olvidaste tu contraseña?"
+        accessibilityHint="Abre los pasos para cambiarla con un código enviado a tu correo"
+        style={styles.enlace}
+        onPress={() => push("/recuperar-clave")}
+      >
+        <Text style={[styles.textoEnlace, { color: colors.primaryText }]}>
+          ¿Olvidaste tu contraseña?
+        </Text>
+      </Tocable>
     </View>
   );
 }
@@ -289,4 +303,6 @@ const styles = StyleSheet.create({
   centrado: { textAlign: "center" },
   ayuda: { marginTop: 0, marginBottom: 8 },
   boton: { marginTop: 10 },
+  enlace: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  textoEnlace: { fontSize: 14, fontWeight: "bold", textDecorationLine: "underline" },
 });

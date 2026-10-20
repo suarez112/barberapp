@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
 import Acordeon from "@/components/ui/Acordeon";
+import Boton from "@/components/ui/Boton";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
@@ -26,6 +28,8 @@ import {
   subirFotoProfesional,
 } from "./api";
 import { FotoElegida } from "@/utils/imagenes";
+import { Suscripcion } from "../cuenta/api";
+import PlanesModal from "../planes/PlanesModal";
 
 const ROLES = [
   { valor: "admin", etiqueta: "Administrador" },
@@ -68,23 +72,26 @@ const aCampos = (b: Barbero): Campos => ({
   atiendeClientes: b.atiendeClientes ?? atiendePorDefecto(rolDe(b)),
 });
 
-// 409 del backend cuando el equipo llegó al número de empleados de Mi negocio
+// 409 del backend cuando el equipo llegó al cupo de su plan
 const esEquipoLleno = (e: unknown) =>
   e instanceof ApiError && e.status === 409 && /equipo ya tiene/i.test(e.message);
 
 type Props = {
   personal: Personal;
-  // Abre la pestaña Mi negocio; sin ella no se ofrece el botón
-  onIrAMiNegocio?: () => void;
+  // Plan y cupo del equipo (null mientras carga)
+  suscripcion: Suscripcion | null;
+  // Se agregó o retiró a alguien: hay que volver a consultar el cupo
+  onEquipoCambiado?: () => void;
 };
 
-export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
+export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }: Props) {
   const { colors } = useAppTheme();
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
   const avisarError = useAvisarError();
   const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
+  const [verPlanes, setVerPlanes] = useState(false);
   const token = personal.token;
   const soyYo = (id: string) => personal.barbero?.id === id;
 
@@ -133,6 +140,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
       } else {
         const nuevo = await crearProfesional(token, datos);
         setBarberos((prev) => [...prev, nuevo]);
+        onEquipoCambiado?.();
         avisar(
           "¡Éxito!",
           `${nuevo.nombre} registrado con ${nuevo.porcentajeGanancia}% de ganancia. Entra con el usuario "${nuevo.usuario}".`,
@@ -149,19 +157,16 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
     }
   };
 
-  // Mensaje del backend, con un botón para ir a aumentar el número de empleados
+  // Mensaje del backend, con un botón para ver los planes
   const avisarEquipoLleno = async (mensaje: string) => {
-    if (!onIrAMiNegocio || !/Mi negocio/i.test(mensaje)) {
-      avisar("Equipo completo", mensaje, "aviso");
-      return;
-    }
-    const ir = await confirmar({
+    onEquipoCambiado?.();
+    const ver = await confirmar({
       titulo: "Equipo completo",
       mensaje,
-      textoAceptar: "IR A MI NEGOCIO",
+      textoAceptar: "VER PLANES",
       textoCancelar: "CERRAR",
     });
-    if (ir) onIrAMiNegocio();
+    if (ver) setVerPlanes(true);
   };
 
   const eliminar = async (b: Barbero) => {
@@ -174,6 +179,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
     try {
       await eliminarProfesional(token, b.id);
       setBarberos((prev) => prev.filter((x) => x.id !== b.id));
+      onEquipoCambiado?.();
       if (enEdicion?.id === b.id) reiniciar();
       avisar("Eliminado", `${b.nombre} retirado.`, "exito");
     } catch (e) {
@@ -191,8 +197,41 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
     }
   };
 
+  const lleno = !!suscripcion && suscripcion.cupoDisponible <= 0;
+
   return (
     <>
+      {suscripcion ? (
+        <View
+          style={[
+            styles.cupo,
+            { backgroundColor: colors.cardBg, borderColor: lleno ? COLORES.advertencia : colors.cardBorder },
+          ]}
+        >
+          <Text style={[styles.textoCupo, { color: colors.textPrimary }]}>
+            {lleno ? "⚠️ Tu equipo está completo: " : "Tu equipo: "}
+            {suscripcion.cupoUsado} de {suscripcion.planEquipo.cupo} personas del plan{" "}
+            {suscripcion.planEquipo.nombre}.
+          </Text>
+          {lleno ? (
+            <>
+              <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+                Para agregar a alguien más, cambia a un plan más grande o retira a quien ya no
+                trabaje en el negocio.
+              </Text>
+              <Boton
+                titulo="VER PLANES"
+                ayuda="Muestra los planes Básico, Equipo y Pro con su cupo y precios"
+                onPress={() => setVerPlanes(true)}
+                style={styles.botonPlanes}
+              />
+            </>
+          ) : null}
+        </View>
+      ) : null}
+
+      <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+
       <Acordeon
         titulo={enEdicion ? "✏️ EDITANDO INTEGRANTE" : "➕ REGISTRAR NUEVO INTEGRANTE"}
         abierto={abierto}
@@ -364,6 +403,9 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
 
 const styles = StyleSheet.create({
   acordeon: { marginTop: 15 },
+  cupo: { borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 15 },
+  textoCupo: { fontSize: 13, fontWeight: "bold" },
+  botonPlanes: { marginTop: 10 },
   tituloLista: { marginTop: 20 },
   flex: { flex: 1 },
   usuario: { fontSize: 10, marginTop: 2 },
