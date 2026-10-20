@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
+import { APP_NOMBRE } from "@/config/app";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import BotonCabecera from "./BotonCabecera";
@@ -47,7 +48,7 @@ export default function AppHeader({ onVolver, onSalir }: OpcionesCabecera) {
         numberOfLines={1}
         style={[styles.titulo, { color: colors.primaryText }]}
       >
-        {empresa ? empresa.nombre : "AGENDAMIENTOS"}
+        {empresa ? empresa.nombre : APP_NOMBRE.toUpperCase()}
       </Text>
 
       <BotonCabecera

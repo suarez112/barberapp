@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -24,6 +25,7 @@ type Opcion = {
 export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
   const { colors, esOscuro, alternarTema } = useAppTheme();
   const { bottom } = useSafeAreaInsets();
+  const { push } = useRouter();
 
   const opciones: Opcion[] = [
     {
@@ -33,6 +35,15 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
       onPress: () => {
         alternarTema();
         onCerrar();
+      },
+    },
+    {
+      icono: "help-circle-outline",
+      texto: "Ayuda",
+      ayuda: "Abre PQRS, información del desarrollador y datos de la app",
+      onPress: () => {
+        onCerrar();
+        push("/ayuda");
       },
     },
   ];

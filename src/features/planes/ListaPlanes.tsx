@@ -123,7 +123,7 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
               </Text>
             ) : null}
             <Boton
-              titulo={actual ? "ES TU PLAN ACTUAL" : `ELEGIR ${p.nombre.toUpperCase()}`}
+              titulo={actual ? "ES TU PLAN ACTUAL" : "PAGOS DISPONIBLES PR�XIMAMENTE"}
               ayuda={`Plan ${p.nombre}, hasta ${personas(p.cupo)}: ${formatearPesos(precio)} pesos ${sufijo}. Los pagos estarán disponibles próximamente`}
               onPress={() => elegir(p)}
               deshabilitado={actual || noCabe}
