@@ -2,7 +2,6 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
-import Boton from "@/components/ui/Boton";
 import PantallaAviso from "@/components/ui/PantallaAviso";
 import Selector from "@/components/ui/Selector";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
@@ -106,21 +105,12 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
   if (empresa.recibiendoReservas === false) {
     return (
       <View>
-        <InfoNegocio codigo={empresa.codigoAcceso} />
+        <InfoNegocio codigo={empresa.codigoAcceso} onCambiarNegocio={onCambiarCodigo} />
         <PantallaAviso
           icono="calendar-clear-outline"
           titulo="Este negocio no está recibiendo reservas por ahora"
           mensaje="Intenta más tarde o comunícate directamente con el negocio."
         >
-          {onCambiarCodigo ? (
-            <Boton
-              titulo="CAMBIAR CÓDIGO"
-              ayuda="Vuelve a escribir el código de otro negocio"
-              variante="neutro"
-              onPress={onCambiarCodigo}
-              style={styles.botonAviso}
-            />
-          ) : null}
         </PantallaAviso>
       </View>
     );
@@ -128,7 +118,7 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
 
   return (
     <View>
-      <InfoNegocio codigo={empresa.codigoAcceso} />
+      <InfoNegocio codigo={empresa.codigoAcceso} onCambiarNegocio={onCambiarCodigo} />
       <Selector
         opciones={VISTAS}
         valor={vista}
@@ -142,7 +132,7 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
           <CatalogoProductos codigo={empresa.codigoAcceso} />
         </View>
       ) : (
-        <FormularioReserva reserva={reserva} onCambiarCodigo={onCambiarCodigo} />
+        <FormularioReserva reserva={reserva} />
       )}
 
       <ConfirmacionCita
@@ -159,6 +149,5 @@ const styles = StyleSheet.create({
   selectorVista: { marginTop: 10, marginBottom: 6 },
   textoVista: { fontSize: 14 },
   productos: { marginTop: 10 },
-  botonAviso: { marginTop: 24, alignSelf: "stretch" },
   cargando: { marginTop: 40 },
 });

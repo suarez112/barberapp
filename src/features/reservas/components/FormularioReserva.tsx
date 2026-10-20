@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-import Tocable from "@/components/ui/Tocable";
 import Boton from "@/components/ui/Boton";
 import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto from "@/components/ui/CampoTexto";
@@ -20,11 +19,9 @@ import SelectorServicio from "./SelectorServicio";
 
 type Props = {
   reserva: EstadoReserva;
-  // Oculto cuando el cliente entró por enlace: ese negocio es fijo
-  onCambiarCodigo?: () => void;
 };
 
-export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
+export default function FormularioReserva({ reserva }: Props) {
   const { colors } = useAppTheme();
   const { empresa, barberos, servicios } = useNegocio();
   const {
@@ -53,24 +50,7 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
 
   return (
     <View>
-      <View style={styles.encabezado}>
-        <TituloSeccion style={styles.sinMargen}>
-          PASO 1 · SELECCIONA PROFESIONAL
-        </TituloSeccion>
-        {onCambiarCodigo ? (
-          <Tocable
-            accessibilityRole="button"
-            accessibilityLabel="Cambiar código"
-            accessibilityHint="Vuelve a la pantalla para escribir el código de otro negocio"
-            onPress={onCambiarCodigo}
-            style={styles.botonEnlace}
-          >
-            <Text style={[styles.enlace, { color: colors.textSecondary }]}>
-              Cambiar Código
-            </Text>
-          </Tocable>
-        ) : null}
-      </View>
+      <TituloSeccion>PASO 1 · SELECCIONA PROFESIONAL</TituloSeccion>
       <SelectorProfesional
         barberos={barberos}
         seleccionado={barbero}
@@ -177,15 +157,6 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
 
 const styles = StyleSheet.create({
   limite: { fontSize: 12, marginTop: -8, marginBottom: 12 },
-  encabezado: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  sinMargen: { marginTop: 0 },
-  enlace: { fontSize: 12, textDecorationLine: "underline" },
-  botonEnlace: { minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   cuenta: {
     flexDirection: "row",
     alignItems: "center",

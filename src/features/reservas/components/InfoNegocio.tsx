@@ -14,10 +14,17 @@ const AYUDAS: Record<string, string> = {
   Copiar: "Copia el código del negocio",
   Compartir: "Comparte el código del negocio por otra app",
   "Cómo llegar": "Abre el mapa con la ubicación del negocio",
+  "Cambiar de negocio": "Vuelve a la pantalla para escribir el código de otro negocio",
+};
+
+type Props = {
+  codigo: string;
+  // Solo para invitados que entraron con un código escrito
+  onCambiarNegocio?: () => void;
 };
 
 // Tarjeta con la foto y los datos del negocio que ve el cliente
-export default function InfoNegocio({ codigo }: { codigo: string }) {
+export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
   const { colors } = useAppTheme();
   const [perfil, setPerfil] = useState<PerfilPublico | null>(null);
 
@@ -32,7 +39,21 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
     };
   }, [codigo]);
 
-  if (!perfil) return null;
+  const cambiarNegocio = onCambiarNegocio ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Cambiar de negocio"
+      accessibilityHint={AYUDAS["Cambiar de negocio"]}
+      onPress={onCambiarNegocio}
+      style={({ pressed }) => [styles.enlace, pressed && styles.presionado]}
+    >
+      <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
+      <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>Cambiar de negocio</Text>
+    </Pressable>
+  ) : null;
+
+  // Sin perfil se puede reservar igual; solo queda la opción de cambiar de negocio
+  if (!perfil) return cambiarNegocio;
 
   const ubicacion = [perfil.direccion, perfil.ciudad, perfil.departamento]
     .filter(Boolean)
@@ -146,6 +167,7 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
         {perfil.googleMapsUrl ? (
           <View style={styles.botones}>{boton("navigate-outline", "Cómo llegar", comoLlegar)}</View>
         ) : null}
+        {cambiarNegocio}
       </View>
     </View>
   );
@@ -181,4 +203,13 @@ const styles = StyleSheet.create({
   },
   presionado: { opacity: 0.7 },
   textoBoton: { fontSize: 13, fontWeight: "bold" },
+  enlace: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    minHeight: 44,
+    marginTop: 4,
+  },
+  textoEnlace: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
 });
