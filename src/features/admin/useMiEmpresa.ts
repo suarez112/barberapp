@@ -12,6 +12,7 @@ import {
   obtenerMiEmpresa,
   obtenerSuscripcion,
   subirFotoEmpresa,
+  Coordenadas,
 } from "../cuenta/api";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
@@ -108,9 +109,9 @@ export function useMiEmpresa(token: string) {
       avisar("Datos guardados", "La información del negocio se actualizó.", "exito");
     }, "No se pudieron guardar los datos.");
 
-  const guardarUbicacion = (latitud: number, longitud: number) =>
+  const guardarUbicacion = (coordenadas: Coordenadas) =>
     ejecutar(async () => {
-      setPerfil(await actualizarMiEmpresa(token, { latitud, longitud }));
+      setPerfil(await actualizarMiEmpresa(token, coordenadas));
       avisar(
         "Ubicación guardada",
         "Tus clientes verán el botón \"Cómo llegar\" con esta ubicación.",

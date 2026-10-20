@@ -67,6 +67,8 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   // Ubicación en el mapa (opcional; siempre juntas)
   latitud: number | null;
   longitud: number | null;
+  // Precisión del GPS en metros cuando se guardó (null si se ubicó a mano)
+  precisionUbicacion: number | null;
   // Enlace de Google Maps (coordenadas o dirección); null si no hay datos
   googleMapsUrl: string | null;
   estadoSuscripcion: string;
@@ -142,7 +144,12 @@ export const obtenerMiEmpresa = (token: string, signal?: AbortSignal) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", { token, signal });
 
 // Coordenadas del negocio: van siempre juntas (null en las dos las quita)
-export type Coordenadas = { latitud: number | null; longitud: number | null };
+// precisionUbicacion (metros) solo va con coordenadas leídas del GPS
+export type Coordenadas = {
+  latitud: number | null;
+  longitud: number | null;
+  precisionUbicacion?: number | null;
+};
 
 export const actualizarMiEmpresa = (
   token: string,
