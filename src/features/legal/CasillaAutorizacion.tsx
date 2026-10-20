@@ -4,6 +4,7 @@ import { StyleSheet, Text } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { TipoDocumento } from "./api";
+import AvisoPrivacidad from "./AvisoPrivacidad";
 import DocumentoLegalModal from "./DocumentoLegalModal";
 
 type Props = {
@@ -14,7 +15,8 @@ type Props = {
 };
 
 // Casilla obligatoria (empieza sin marcar) para autorizar el tratamiento de datos
-// y aceptar los Términos. Cada enlace abre su documento en un modal.
+// y aceptar los Términos. Encima va el Aviso de privacidad corto y cada enlace abre
+// su documento en un modal.
 export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Props) {
   const { colors } = useAppTheme();
   const [abierto, setAbierto] = useState<TipoDocumento | null>(null);
@@ -31,6 +33,7 @@ export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Prop
 
   return (
     <>
+      <AvisoPrivacidad />
       <Tocable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: aceptada }}

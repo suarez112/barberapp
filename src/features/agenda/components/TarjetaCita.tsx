@@ -26,6 +26,8 @@ const minutosDeRetraso = (c: Cita) =>
 
 type Props = {
   cita: Cita;
+  // Se abrió desde una notificación
+  resaltada?: boolean;
   puedeCompletar: boolean;
   esAdmin: boolean;
   onCompletar: (c: Cita) => void;
@@ -34,6 +36,7 @@ type Props = {
 
 export default function TarjetaCita({
   cita: c,
+  resaltada = false,
   puedeCompletar,
   esAdmin,
   onCompletar,
@@ -52,6 +55,7 @@ export default function TarjetaCita({
       style={[
         styles.tarjeta,
         { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+        resaltada && { borderColor: colors.primaryText, borderWidth: 2 },
       ]}
     >
       <View style={styles.fila}>

@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
@@ -44,6 +44,8 @@ function MisCitas({ token }: { token: string }) {
   const { colors } = useAppTheme();
   const { back, canGoBack, replace } = useRouter();
   const avisarError = useAvisarError();
+  // Cita abierta desde una notificación: se muestra resaltada
+  const { citaId } = useLocalSearchParams<{ citaId?: string }>();
   const senal = useSenalDeSalida();
   const [citas, setCitas] = useState<CitaCliente[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
@@ -78,7 +80,11 @@ function MisCitas({ token }: { token: string }) {
   const tarjeta = (c: CitaCliente) => (
     <View
       key={c.id}
-      style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+      style={[
+        styles.tarjeta,
+        { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+        c.id === citaId && { borderColor: colors.primaryText, borderWidth: 2 },
+      ]}
     >
       <View style={styles.encabezado}>
         <Text style={[styles.negocio, { color: colors.textPrimary }]}>{c.negocio}</Text>

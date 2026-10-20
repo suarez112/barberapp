@@ -1,11 +1,12 @@
 import { request } from "../../services/api/http";
 
-// Política de Tratamiento de Datos y Términos y Condiciones vigentes (Ley 1581 de 2012)
+// Política de Tratamiento de Datos, Términos y Condiciones y Aviso de privacidad corto
+// vigentes (Ley 1581 de 2012)
 
-export type TipoDocumento = "politica-datos" | "terminos";
+export type TipoDocumento = "politica-datos" | "terminos" | "aviso-privacidad";
 
 export type DocumentoLegal = {
-  tipo: "politica_datos" | "terminos";
+  tipo: "politica_datos" | "terminos" | "aviso_privacidad";
   version: string;
   titulo: string;
   contenido: string; // markdown

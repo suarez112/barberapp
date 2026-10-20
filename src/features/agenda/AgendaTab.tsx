@@ -35,14 +35,29 @@ type Props = {
   personal: Personal;
   dia: Dia;
   onCambiarDia: (d: Dia) => void;
+  // Cita abierta desde una notificación: se muestra resaltada
+  citaResaltadaId?: string | null;
 };
 
 // Citas del profesional para el día elegido, en orden de hora
-export default function AgendaTab({ profesional, personal, dia, onCambiarDia }: Props) {
+export default function AgendaTab({
+  profesional,
+  personal,
+  dia,
+  onCambiarDia,
+  citaResaltadaId = null,
+}: Props) {
   const { citas } = useAgenda();
   const { empresa } = useNegocio();
   const { completar, cancelar, puedeCompletar } = useAccionesCita(personal);
   const [filtro, setFiltro] = useState<Filtro>("todas");
+
+  // Una cita abierta desde una notificación no debe quedar oculta por un filtro
+  const [resaltadaVista, setResaltadaVista] = useState(citaResaltadaId);
+  if (resaltadaVista !== citaResaltadaId) {
+    setResaltadaVista(citaResaltadaId);
+    if (citaResaltadaId) setFiltro("todas");
+  }
 
   const citasDelDia = citas
     .filter(
@@ -89,6 +104,7 @@ export default function AgendaTab({ profesional, personal, dia, onCambiarDia }: 
           <TarjetaCita
             key={c.id}
             cita={c}
+            resaltada={c.id === citaResaltadaId}
             puedeCompletar={puedeCompletar(c)}
             esAdmin={personal.esAdmin}
             onCompletar={completar}

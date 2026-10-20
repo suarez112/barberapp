@@ -47,6 +47,13 @@
       ],
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "color": "#208AEF",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "La app usa tu ubicación para guardar dónde está tu negocio en el mapa."

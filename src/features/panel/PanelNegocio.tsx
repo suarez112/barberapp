@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
@@ -6,13 +6,16 @@ import PantallaAviso from "@/components/ui/PantallaAviso";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
-import { diaDeHoy } from "@/utils/fechas";
+import { avisar } from "@/utils/dialogos";
+import { crearDia, diaDeHoy } from "@/utils/fechas";
 import AgendaTab from "../agenda/AgendaTab";
+import { useAgenda } from "../agenda/AgendaProvider";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
 import CarteraPanel from "../cartera/CarteraPanel";
 import ClientesTab from "../clientes/ClientesTab";
 import { Suscripcion } from "../cuenta/api";
 import { useNegocio } from "../negocio/NegocioProvider";
+import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
 import { Personal } from "../sesion/usePersonal";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 import NegocioTab from "./NegocioTab";
@@ -61,6 +64,35 @@ export default function PanelNegocio({
   // Se guarda aquí para conservar el día elegido al cambiar de pestaña
   const [diaAgenda, setDiaAgenda] = useState<Dia>(diaDeHoy);
   const [supervisadoId, setSupervisadoId] = useState<string | null>(null);
+  // Cita que se abrió desde una notificación (se muestra resaltada)
+  const [citaResaltadaId, setCitaResaltadaId] = useState<string | null>(null);
+  const { citas } = useAgenda();
+  const { citaPendiente, limpiarCitaPendiente } = useNotificaciones();
+  const citaYaRecargada = useRef<string | null>(null);
+
+  // Al tocar una notificación: va a la agenda, al día y al profesional de esa cita.
+  // Si la cita es nueva y todavía no está en la agenda, se recarga una vez.
+  /* eslint-disable react-hooks/set-state-in-effect -- responde a un evento externo (la notificación tocada) */
+  useEffect(() => {
+    if (!citaPendiente || !empresa || cargando) return;
+    const cita = citas.find((c) => c.id === citaPendiente);
+    if (cita) {
+      setPestana("AGENDAMIENTOS");
+      setDiaAgenda(crearDia(cita.fecha));
+      setSupervisadoId(cita.barberoId);
+      setCitaResaltadaId(cita.id);
+      limpiarCitaPendiente();
+    } else if (citaYaRecargada.current !== citaPendiente) {
+      citaYaRecargada.current = citaPendiente;
+      recargar();
+    } else {
+      limpiarCitaPendiente();
+      avisar("Cita no encontrada", "No encontramos esa cita en tu agenda. Puede que ya no exista.", "aviso");
+    }
+    // recargar y limpiarCitaPendiente cambian en cada render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [citaPendiente, citas, empresa, cargando]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Un administrador pasa a la pantalla de planes; un empleado ve el aviso de abajo
   useEffect(() => {
@@ -123,7 +155,11 @@ export default function PanelNegocio({
             profesional={profesional}
             personal={personal}
             dia={diaAgenda}
-            onCambiarDia={setDiaAgenda}
+            onCambiarDia={(d) => {
+              setDiaAgenda(d);
+              setCitaResaltadaId(null);
+            }}
+            citaResaltadaId={citaResaltadaId}
           />
         ) : (
           sinProfesionales

@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Tocable from "@/components/ui/Tocable";
+import { useNotificaciones } from "@/features/notificaciones/NotificacionesProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
 type Props = {
@@ -26,6 +27,7 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
   const { colors, esOscuro, alternarTema } = useAppTheme();
   const { bottom } = useSafeAreaInsets();
   const { push } = useRouter();
+  const notificaciones = useNotificaciones();
 
   const opciones: Opcion[] = [
     {
@@ -37,6 +39,25 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
         onCerrar();
       },
     },
+    ...(notificaciones.visible
+      ? [
+          {
+            icono: notificaciones.activas
+              ? ("notifications-outline" as const)
+              : ("notifications-off-outline" as const),
+            texto: notificaciones.activas
+              ? "Notificaciones: activadas"
+              : "Notificaciones: desactivadas",
+            ayuda: notificaciones.activas
+              ? "Desactiva los avisos de citas en este celular"
+              : "Activa los avisos de citas en este celular",
+            onPress: () => {
+              onCerrar();
+              notificaciones.alternar();
+            },
+          },
+        ]
+      : []),
     {
       icono: "help-circle-outline",
       texto: "Ayuda",
