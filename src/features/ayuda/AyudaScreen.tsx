@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
 import TarjetaMenu from "@/components/ui/TarjetaMenu";
+import { CONTACTO } from "@/config/app";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
 import { useCerrarSesion } from "@/features/sesion/useCerrarSesion";
 import { describirError, registrarCausa } from "@/services/api/errores";
@@ -14,7 +15,9 @@ import { avisar, confirmar } from "@/utils/dialogos";
 import { eliminarCuenta } from "./api";
 import { useVolver } from "./volverAyuda";
 
-// Ayuda: PQRS, desarrollador, acerca de y, con una cuenta abierta, eliminarla
+const correoContacto = CONTACTO.correo.trim();
+
+// Ayuda: PQRS, acerca de, contacto con el desarrollador y, con una cuenta abierta, eliminarla
 export default function AyudaScreen() {
   const { colors } = useAppTheme();
   const { push, replace } = useRouter();
@@ -25,6 +28,11 @@ export default function AyudaScreen() {
   const [clave, setClave] = useState("");
   const [errorClave, setErrorClave] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState(false);
+
+  const escribirAlDesarrollador = () =>
+    Linking.openURL(`mailto:${correoContacto}`).catch(() =>
+      avisar("No se pudo abrir el correo", `Escribe a ${correoContacto} desde tu aplicación de correo.`, "error"),
+    );
 
   const empezarEliminacion = async () => {
     const seguir = await confirmar({
@@ -99,17 +107,27 @@ export default function AyudaScreen() {
           onPress={() => push("/pqrs")}
         />
         <TarjetaMenu
-          icono="code-slash-outline"
-          titulo="Conoce al desarrollador"
-          descripcion="Quién hizo la app y cómo contactarlo"
-          onPress={() => push("/desarrollador")}
-        />
-        <TarjetaMenu
           icono="information-circle-outline"
           titulo="Acerca de"
           descripcion="Versión de la app, Política de datos y Términos"
           onPress={() => push("/acerca-de")}
         />
+
+        {correoContacto ? (
+          <View style={[styles.contacto, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
+            <Text accessibilityRole="header" style={[styles.tituloContacto, { color: colors.primaryText }]}>
+              CONTACTO
+            </Text>
+            <Text selectable style={[styles.correo, { color: colors.textPrimary }]}>
+              {correoContacto}
+            </Text>
+            <Boton
+              titulo="ESCRIBIR AL CORREO"
+              ayuda="Abre tu aplicación de correo para escribirle al desarrollador"
+              onPress={escribirAlDesarrollador}
+            />
+          </View>
+        ) : null}
 
         {usuario ? (
           pidiendoClave ? (
@@ -171,6 +189,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 20,
   },
+  contacto: { borderWidth: 1, borderRadius: 12, padding: 16, marginTop: 8 },
+  tituloContacto: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 6 },
+  correo: { fontSize: 15, marginBottom: 8 },
   eliminar: { marginTop: 24 },
   cancelar: { marginTop: 10 },
 });

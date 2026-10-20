@@ -83,17 +83,21 @@ src/
     mis-citas.tsx      -> features/micuenta/MisCitasScreen (appointments booked with the client session)
     panel.tsx      -> features/panel/PanelScreen (staff panel, staff token; a member with role
                    admin gets features/admin/PanelAdministrador, an employee PanelNegocio)
+    superadmin.tsx -> WEB ONLY platform-owner panel (features/superadmin/SuperadminScreen). The import is guarded with
+                   `process.env.EXPO_OS === "web"`, which Metro resolves at build time: the Android/iOS bundles do not contain
+                   the panel (checked by exporting both and searching the text) and /superadmin there redirects to "/".
+                   A `superadmin.web.tsx` would NOT work: Expo Router bundles every file under src/app on every platform
     admin.tsx      -> features/admin/AdminPanelScreen (company account, account token) ->
                    features/admin/PanelAdministrador (PanelNegocio + subscription banner + "Mi negocio";
                    expired subscription: PanelVencido with only "Planes" and "Mi negocio")
-  config/app.ts    APP_NOMBRE (name shown in the intro animation, header and "Acerca de") and DESARROLLADOR (developer card data; an empty value hides its button, no photo shows initials)
+  config/app.ts    APP_NOMBRE (name shown in the intro animation, header, "Acerca de" and the superadmin panel; now the test name "AgendaYa") and CONTACTO (`correo` of the developer shown in Help > "Contacto"; an empty value hides the section)
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
                    department/municipality from GET /api/v1/ubicaciones, schedule as 7 rows with Abierto/Cerrado switch and
                    opening/closing dropdowns, "Copiar el horario del lunes a todos los días" = `copiarLunes`), validarEmpresa
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
                    context Provider for shared state and an api.ts with its backend calls
                    (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, legal, micuenta,
-                   negocio, panel, productos, reservas, servicios, sesion)
+                   negocio, panel, productos, reservas, servicios, sesion, superadmin)
   components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader: fixed 56 px bar, business name and a menu
                    icon that opens MenuCabecera, a bottom sheet with "Tema claro/oscuro" and, with `onSalir`, "Cerrar sesión")
   providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > RestaurarSesion > Agenda)
@@ -174,7 +178,7 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 ## Intro and help
 
 - `app/index.tsx` shows `inicio/AnimacionInicio` (logo + name, ~1.8 s, once per app launch) and then the role selection; with a saved session it redirects straight to the panel with no animation.
-- The header menu (`MenuCabecera`) has "Ayuda" -> `/ayuda` (`features/ayuda/AyudaScreen`): PQRS (`/pqrs`, `features/pqrs`: form as guest or with the account token, `POST /api/v1/pqrs`, plus "Mis solicitudes" from `GET /api/v1/pqrs/mias` with radicado and status, account sessions only), "Conoce al desarrollador" (`/desarrollador`), "Acerca de" (`/acerca-de`: version from app.json, Política de datos and Términos) and, with an account session, "Eliminar mi cuenta" (confirm, password, final confirm, `POST /api/v1/cuentas/eliminar`; a 409 asks whether to close the business too and retries with `eliminarNegocio: true`). A wrong password is a 401 there and must not close the session.
+- The header menu (`MenuCabecera`) has "Ayuda" -> `/ayuda` (`features/ayuda/AyudaScreen`): PQRS (`/pqrs`, `features/pqrs`: form as guest or with the account token, `POST /api/v1/pqrs`, plus "Mis solicitudes" from `GET /api/v1/pqrs/mias` with radicado and status, account sessions only), a simple "Contacto" section (`CONTACTO.correo` from `config/app.ts` and a button that opens `mailto:`; there is no developer screen any more), "Acerca de" (`/acerca-de`: version from app.json, Política de datos and Términos) and, with an account session, "Eliminar mi cuenta" (confirm, password, final confirm, `POST /api/v1/cuentas/eliminar`; a 409 asks whether to close the business too and retries with `eliminarNegocio: true`). A wrong password is a 401 there and must not close the session.
 - No payment texts in registration or login; in Planes the plan buttons read "PAGOS DISPONIBLES PRÓXIMAMENTE".
 
 ## Calendar
@@ -182,3 +186,11 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - Days come from `utils/fechas.ts` (`diasDelMes`, `crearDia`, `diaDeHoy`) for the real current date; `components/ui/SelectorDias.tsx` owns month navigation (`desde`/`hasta` hide days outside the range and disable the arrows) and, when it opens or the month changes, scrolls so today (or the selected day) is visible. Booking allows today through 14 days later in Colombia time (`hoyColombiaISO`, `DIAS_MAXIMOS_RESERVA`), like the backend.
 - Each day has its own schedule (`Empresa.horario`, 0 = Sunday … 6 = Saturday); `utils/disponibilidad.ts` `horarioDelDia()` offers no hours on closed days.
 - `features/bloqueos/BloqueoSemanal.tsx` shows real weeks (from the current one). Only the admin blocks: mode "Solo ese día" (`fecha`) or "Cada semana" (`diaSemana`); tapping an hour blocks/frees it, tapping a day header blocks the whole day (`todoElDia`). Closed days ("Cerrado" under the date) and hours outside that day's `horario` ("—") are disabled, because the backend rejects them; an older block already outside the schedule can still be freed. Backend 400 messages are shown as they come. Colors: free gray, one day red X, weekly orange ↻, appointment green ✓, with a legend. Staff only see their blocks. Booking reads the public blocks (`GET /api/v1/citas/bloqueos`) through `AgendaProvider.cargarOcupacion` and `utils/disponibilidad.ts` never offers those times.
+
+## Superadmin panel (web only, `/superadmin`)
+
+- `features/superadmin/`: `SuperadminScreen` (login or panel), `LoginSuperadmin` (correo, contraseña and the 6-digit authenticator code, `POST /api/v1/superadmin/login`), `PanelSuperadmin` (desktop side menu: Inicio, Negocios, PQRS, Actividad, theme toggle, "Cerrar sesión"; icons only under 900 px), one file per section (`InicioSuperadmin`, `NegociosSuperadmin` + `DetalleNegocio`, `PqrsSuperadmin` + `DetallePqrs`, `ActividadSuperadmin`), `api.ts` (all calls under `/api/v1/superadmin`), `useCargar.ts` (loads a list with the token; keeps the previous data while the next page loads) and `components/` (`Tabla`, `Paginacion`, `ModalAccion`, `AccionNegocioModal`, `Ficha`, `EstadoCarga`, `Encabezado`).
+- The superadmin token (1 hour) lives **only in memory** (`SuperadminProvider`): it is never saved with SecureStore or the browser storage, so reloading the page asks for the login again. A 401 closes the session (`cerrarSiVencio` / `avisarError`).
+- Business actions: Activar plan (periodo + optional team plan + optional motivo), Extender prueba (1-365 days; only shown while `suscripcion.estadoGuardado` is `trial`), Suspender / Reactivar (motivo required, plus a final `confirmar`). The backend writes each one in the audit log.
+- Never show customer names or phones here: the backend only returns counts for a business.
+- The panel has no account creation: the superadmin is created in the backend with `npm run dev:crear-superadmin -- correo`.
