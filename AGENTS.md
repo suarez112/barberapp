@@ -70,7 +70,10 @@ src/
     index.tsx      role selection: "Soy empresa", "Soy cliente", login link (redirects /?codigo=X to /cliente?codigo=X;
                    with a saved session it goes straight to /panel, /admin or /mis-negocios)
     registro.tsx   -> features/cuenta/RegistroEmpresaScreen (company registration; form in cuenta/formulario/)
-    login.tsx      -> single login: "Correo o usuario" + password (POST /api/v1/login)
+    login.tsx      -> single login: "Correo o usuario" + password (POST /api/v1/login), link "¿Olvidaste tu contraseña?"
+    recuperar-clave.tsx -> features/sesion/RecuperarClaveScreen (step 1: email -> POST /cuentas/solicitar-recuperacion,
+                   same message whether the account exists or not; step 2: 6-digit code + new password ->
+                   POST /cuentas/restablecer-contrasena, then /login). Staff without email ask their admin
     cliente.tsx    -> features/reservas/ClienteScreen (customer booking + public business profile). Without a business:
                    "Continuar como invitado" (code) or "Crear cuenta / Iniciar sesión"; a client with a session
                    is sent to /mis-negocios. /cliente?codigo=X (web link, QR, "Mis negocios") opens the business directly
@@ -83,12 +86,14 @@ src/
                    features/admin/PanelAdministrador (PanelNegocio + subscription banner + "Mi negocio";
                    expired subscription: PanelVencido with only "Planes" and "Mi negocio")
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
-                   department/municipality from GET /api/v1/ubicaciones, same-schedule checkbox or 7 days), validarEmpresa
+                   department/municipality from GET /api/v1/ubicaciones, schedule as 7 rows with Abierto/Cerrado switch and
+                   opening/closing dropdowns, "Copiar el horario del lunes a todos los días" = `copiarLunes`), validarEmpresa
   features/<name>/ one folder per business area: screen/tab components, components/, hooks, a React
                    context Provider for shared state and an api.ts with its backend calls
                    (admin, agenda, bloqueos, cartera, clientes, cuenta, equipo, inicio, legal, micuenta,
                    negocio, panel, productos, reservas, servicios, sesion)
-  components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader)
+  components/      shared UI: ui/ (buttons, inputs, selectors...), layout/ (Pantalla, AppHeader: fixed 56 px bar, business name and a menu
+                   icon that opens MenuCabecera, a bottom sheet with "Tema claro/oscuro" and, with `onSalir`, "Cerrar sesión")
   providers/       AppProviders.tsx: global context order (Negocio > Theme > Sesion > Cuenta > RestaurarSesion > Agenda)
   services/api/    config.ts (backend URL), http.ts (fetch wrapper), errores.ts (error -> clear message)
   data/            static data only (paises.ts: ISO codes + Spanish names for the phone country picker). No demo businesses or fake clients.
@@ -115,7 +120,7 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
   2. web: `http://localhost:4000`;
   3. the IP of the Expo dev server (`Constants.expoConfig.hostUri`) on port 4000, so a physical phone reaches the PC;
   4. fallback: `http://10.0.2.2:4000` on the Android emulator, `http://localhost:4000` elsewhere.
-- `src/services/api/http.ts` exports `request<T>(ruta, { method, body, token, signal })`: JSON body, `Authorization: Bearer <token>` when a token is passed, 15 s timeout.
+- `src/services/api/http.ts` exports `request<T>(ruta, { method, body, token, signal, tiempoLimiteMs })`: JSON body, `Authorization: Bearer <token>` when a token is passed, 15 s timeout by default. The timeout rejects the call itself (Promise.race), not only the abort: expo/fetch reads the body with the native `text()`, which ignores `abort()`, so a stalled read would otherwise wait forever.
   - `signal` cancels the request on purpose (e.g. leaving a screen): it throws `PeticionCancelada` (`esCancelada(e)`), which is **never shown** to the user. Screen loads get it from `hooks/useSenalDeSalida.ts` (aborts on unmount). expo/fetch reports both a timeout and a cancel as "fetch failed: Fetch request has been canceled"; `request()` tells them apart itself.
   - Server error (4xx/5xx) -> `ApiError` with the backend `{ error }` message and `status`.
   - Network failure, timeout or non-JSON response -> `ErrorDeConexion`.
@@ -133,7 +138,8 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
   - Validation returns one message per field that says what to fix (`cuenta/formulario/validarEmpresa.ts`: `Errores<K>`, `sinErrores`, `hayErrores`; `hooks/useFormularioEdicion.ts` has `errores`/`setErrores`). Changing a field clears its error. `utils/dialogos.ts` `avisarCamposConError()` only tells the user to look at the red fields.
   - `components/ui/Boton.tsx` requires `ayuda` (accessibilityHint); the label defaults to the title in sentence case so TalkBack does not spell capitals. `BotonIcono` needs `etiqueta`. Every touchable needs `accessibilityLabel` + `accessibilityHint` and at least 44 x 44 px.
   - Colors: `colors.primaryText` (business color adjusted to 4.5:1 on the background) for text/icons, `colors.onPrimary` (black or white) for text on a `colors.primary` background, `colors.inputBorder` and `colors.error` for fields. Never write text with `colors.primary` or a fixed `#000`.
-- `components/ui/CampoClave.tsx`: every password field (eye icon to show/hide).
+- `components/ui/CampoClave.tsx`: every password field (eye icon to show/hide, example placeholder by default). `requisitos` shows "De 8 a 64 caracteres" under a new password with a live green check; `confirmaDe={clave}` on "Confirma la contraseña" uses the placeholder "ej: repite tu contraseña" and shows "Coinciden / No coinciden" while typing.
+- `CampoTexto` `centrado`: centered text (business codes) with the cursor centered too (Android puts the cursor at the start of a centered placeholder, so the example hides while the empty field is focused).
 - `components/ui/CampoTelefono.tsx` + `hooks/useTelefono.ts`: every phone field. Flag + country picker (Colombia by default, searchable list from `data/paises.ts`), formats while typing (`316 278 1393`), typing or pasting "+52 …" switches the country. `validar()` returns `{ telefono, indicativo }` in E.164 or sets the field error; send that to the backend. Rules in `utils/telefonos.ts` (`libphonenumber-js/max`, same `normalizarTelefono` as the backend).
 - `components/ui/CampoPrecio.tsx` + `utils/formato.ts` `leerPrecio()`: prices show thousands dots while typing ("35.000") and are sent as whole pesos (35000). Never use `Number("35.000")` (that is 35).
 - `components/ui/Desplegable.tsx`: dropdown in a modal (`buscable` adds a search box; lists without search open scrolled to the chosen option). Used for service duration, employees, department, municipality and hours.
@@ -147,11 +153,11 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - **The session is persisted** with `expo-secure-store` (`features/sesion/sesionGuardada.ts`, key `sesion`): `iniciarSesion`/`iniciarCuenta` save it, `cerrarSesion`/`cerrarCuenta` delete it. On web there is no secure storage, so it stays in memory only.
 - `features/sesion/RestaurarSesionProvider.tsx` reads the saved session when the app opens; screens wait for `useSesionLista().lista` before redirecting. An expired token gets 401 on the first call and the session is closed.
 - `features/sesion/usePersonal.ts` gives one view of whoever uses the business panel (`token`, `esAdmin`, `barbero` or null for the account admin, `esCuentaAdmin`). The account admin token works on every staff endpoint as the business admin.
-- `features/sesion/useCerrarSesion.ts` closes both sessions, deletes the saved one and clears business and agenda data. The header button "Cerrar sesión" and Android back in a panel use it.
+- `features/sesion/useCerrarSesion.ts` closes both sessions, deletes the saved one and clears business and agenda data. "Cerrar sesión" in the header menu and Android back in a panel ask for confirmation first (`panel/useSalirDelPanel.ts`: `useConfirmarCerrarSesion`, `useSalirDelPanel`).
 - The panel (`features/panel/useCargarPanel.ts`) loads `GET /api/v1/empresas/actual` and `GET /api/v1/citas/agenda` with that token; login only stores the session.
 - Admins (`features/admin/PanelAdministrador.tsx`, account or team admin, `useMiEmpresa(token)`): `GET /api/v1/admin/empresa/suscripcion` (works even when expired) drives `AvisoSuscripcion` (banner when `mostrarRecordatorio`: always in the trial, last 7 days of a plan), the "Mi suscripción" section (`MiSuscripcion`: active plan shows "Plan mensual · Activo", payment date, due date, days left and "Incluye X días de prueba que te quedaban" from `diasPruebaSumados`; in the trial an "ACTIVAR PLAN AHORA" button opens the plans in a modal, `ElegirPlan.tsx` `ListaPlanes`, whose buttons only show "Pagos disponibles próximamente") and, with `estado = "vencida"`, `PanelVencido` ("Planes" with sample monthly/annual plans, no real payments, and "Mi negocio"). `hooks/useRefrescoDiario.ts` reloads the subscription when the app returns to the foreground and at Colombia midnight; a 402 from the panel load also reloads it. Employees of an expired business see "Negocio inactivo" (`useCargarPanel` `inactivo`).
 - Clients with an account (`features/micuenta/`, `/api/v1/mi-cuenta/...`): saved businesses and "Mis citas". Booking (`reservas/hooks/useReserva.ts`) sends the client token, shows the account name/phone instead of the fields, and hides the consent checkbox unless `debeAceptarDocumentos` is true (set at login, or when POST /citas answers 400 "Publicamos una nueva versión…"). Businesses with `recibiendoReservas: false` show "Este negocio no está recibiendo reservas por ahora".
-- Data consent (`features/legal/`): `CasillaAutorizacion` (unchecked by default) with links that open `DocumentoLegalModal` (GET /api/v1/legal/politica-datos and /terminos, markdown rendered by `components/ui/TextoMarkdown.tsx`). Required in company registration, client registration and guest booking; send `ACEPTACION` (`aceptaPoliticaDatos` + `aceptaTerminos` true).
+- Data consent (`features/legal/`): `CasillaAutorizacion` (unchecked by default) with links that open `DocumentoLegalModal` (GET /api/v1/legal/politica-datos and /terminos, markdown rendered by `components/ui/TextoMarkdown.tsx`; 10 s limit, error with "Reintentar"; the last downloaded text is saved in the phone by `legal/documentosGuardados.ts` with expo-file-system and shown when there is no connection). Required in company registration, client registration and guest booking; send `ACEPTACION` (`aceptaPoliticaDatos` + `aceptaTerminos` true).
 - Equipo (`features/equipo/EquipoAdmin.tsx`): role dropdown "Administrador / Empleado" (`rol`) and switch "Atiende clientes" (`atiendeClientes`). A 409 "Tu equipo ya tiene…" (team limit) shows the backend message with a button to the Mi negocio tab.
 - Cartera (`features/cartera/CarteraPanel.tsx`): admins get `TableroCartera` (`GET /api/v1/cartera/resumen?periodo=hoy|semana|mes|rango`, `useResumenCartera`): period filter Hoy/Semana/Mes/Rango (two `SelectorDias`, max 366 days), cards (ventas totales, ganancia del negocio, citas completadas), horizontal bars of appointments per professional drawn with plain Views (most to least) and, on tap, that professional's detail (citas, ventas, ganancia, para el negocio). Employees keep `MiCartera` (`GET /cartera`, Diario/Semanal/Mensual with arrows, only their own). Both show `ProyeccionCartera` (confirmed appointments of the current period).
 - Business card for clients (`reservas/components/InfoNegocio.tsx`): "Código del negocio: X" with Copiar (`expo-clipboard`) and Compartir (React Native `Share`), and "Cómo llegar" that opens the backend `googleMapsUrl` (hidden when null).
