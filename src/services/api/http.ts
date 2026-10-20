@@ -53,6 +53,8 @@ type Opciones = {
   token?: string;
   // Cancela la petición (ej. al salir de la pantalla); lanza PeticionCancelada
   signal?: AbortSignal;
+  // Cuánto esperar la respuesta completa antes de rendirse (por defecto 15 s)
+  tiempoLimiteMs?: number;
 };
 
 const TIEMPO_LIMITE_MS = 15_000;
@@ -68,7 +70,7 @@ const esFalloDeRed = (error: unknown) =>
 
 export async function request<T>(
   ruta: string,
-  { method = "GET", body, token, signal }: Opciones = {},
+  { method = "GET", body, token, signal, tiempoLimiteMs }: Opciones = {},
 ): Promise<T> {
   if (signal?.aborted) throw new PeticionCancelada();
   // Un FormData (ej. una foto) se envía tal cual: fetch arma su Content-Type
@@ -83,20 +85,28 @@ export async function request<T>(
   // canceled"), así que aquí se recuerda cuál fue.
   const controlador = new AbortController();
   let agotado = false;
+  // expo/fetch lee el cuerpo con text() nativo, que no se detiene con abort():
+  // si la lectura se atasca, solo este rechazo saca a la pantalla de la espera.
+  let rendirse: (motivo: Error) => void = () => {};
+  const limite = new Promise<never>((_, rechazar) => {
+    rendirse = rechazar;
+  });
   const temporizador = setTimeout(
     () => {
       agotado = true;
       controlador.abort();
+      rendirse(new Error("Tiempo agotado"));
     },
-    esFormulario ? TIEMPO_LIMITE_ARCHIVOS_MS : TIEMPO_LIMITE_MS,
+    tiempoLimiteMs ?? (esFormulario ? TIEMPO_LIMITE_ARCHIVOS_MS : TIEMPO_LIMITE_MS),
   );
-  const cancelar = () => controlador.abort();
+  const cancelar = () => {
+    controlador.abort();
+    rendirse(new Error("Cancelada"));
+  };
   signal?.addEventListener("abort", cancelar);
 
-  let response: Response;
-  let texto: string;
-  try {
-    response = await fetch(`${API_BASE_URL}${ruta}`, {
+  const descargar = async () => {
+    const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
       method,
       headers,
       body: esFormulario
@@ -106,7 +116,13 @@ export async function request<T>(
           : undefined,
       signal: controlador.signal,
     });
-    texto = await response.text();
+    return { respuesta, texto: await respuesta.text() };
+  };
+
+  let response: Response;
+  let texto: string;
+  try {
+    ({ respuesta: response, texto } = await Promise.race([descargar(), limite]));
   } catch (error) {
     if (agotado) throw new ErrorDeConexion(error, "tiempo-agotado");
     if (signal?.aborted) throw new PeticionCancelada();

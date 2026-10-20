@@ -17,5 +17,8 @@ export type Aceptacion = { aceptaPoliticaDatos: true; aceptaTerminos: true };
 
 export const ACEPTACION: Aceptacion = { aceptaPoliticaDatos: true, aceptaTerminos: true };
 
+// Si el servidor no contesta en 10 s se muestra el error con "Reintentar"
+const TIEMPO_LIMITE_MS = 10_000;
+
 export const obtenerDocumentoLegal = (tipo: TipoDocumento, signal?: AbortSignal) =>
-  request<DocumentoLegal>(`/api/v1/legal/${tipo}`, { signal });
+  request<DocumentoLegal>(`/api/v1/legal/${tipo}`, { signal, tiempoLimiteMs: TIEMPO_LIMITE_MS });
