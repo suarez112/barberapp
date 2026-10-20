@@ -9,7 +9,12 @@ export type Cliente = {
   telefono: string;
   indicativo: string | null;
   totalCitas: number;
-  fechaUltimaCita: string | null; // "2026-10-10"
+  citasCompletadas: number;
+  citasCanceladas: number;
+  // La fecha más lejana que reservó (puede ser futura): "2026-10-10"
+  fechaUltimaCita: string | null;
+  // Lo calcula el backend: cita no cancelada en los últimos 45 días o una próxima
+  estado: "activo" | "inactivo";
   enListaNegra: boolean;
   listaNegraId: string | null;
 };
@@ -40,9 +45,6 @@ export const obtenerHistorial = (token: string, clienteId: string) =>
     `/api/v1/clientes/${encodeURIComponent(clienteId)}/historial`,
     { token },
   );
-
-export const listarListaNegra = (token: string, signal?: AbortSignal) =>
-  request<Bloqueado[]>("/api/v1/clientes/lista-negra", { token, signal });
 
 export const agregarAListaNegra = (token: string, clienteId: string) =>
   request<Bloqueado & { mensaje: string }>("/api/v1/clientes/lista-negra", {

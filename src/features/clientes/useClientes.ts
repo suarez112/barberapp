@@ -5,29 +5,25 @@ import { avisar } from "@/utils/dialogos";
 import { useAvisarError } from "../sesion/useAvisarError";
 import {
   agregarAListaNegra,
-  Bloqueado,
   Cliente,
   listarClientes,
-  listarListaNegra,
   quitarDeListaNegra,
 } from "./api";
 
-// Clientes y lista negra del negocio, leídos del servidor
+// Clientes del negocio (con su bloqueo), leídos del servidor
 export function useClientes(token: string) {
   const avisarError = useAvisarError();
   const senal = useSenalDeSalida();
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [listaNegra, setListaNegra] = useState<Bloqueado[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // El estado cambia solo cuando responde el servidor
   const cargar = useCallback(
     () =>
-      Promise.all([listarClientes(token, senal()), listarListaNegra(token, senal())])
-        .then(([c, l]) => {
+      listarClientes(token, senal())
+        .then((c) => {
           setClientes(c);
-          setListaNegra(l);
           setError(null);
         })
         .catch((e) => {
@@ -75,7 +71,7 @@ export function useClientes(token: string) {
     }
   };
 
-  return { clientes, listaNegra, cargando, error, recargar, bloquear, desbloquear };
+  return { clientes, cargando, error, recargar, bloquear, desbloquear };
 }
 
 export type EstadoClientes = ReturnType<typeof useClientes>;
