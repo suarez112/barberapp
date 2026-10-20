@@ -6,6 +6,7 @@ import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
+import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useIniciarSesion } from "./useIniciarSesion";
@@ -14,7 +15,7 @@ import { useIniciarSesion } from "./useIniciarSesion";
 // con cuenta entran con su correo o usuario; el backend decide adónde va cada quien.
 export default function LoginScreen() {
   const { colors } = useAppTheme();
-  const { back, canGoBack, replace } = useRouter();
+  const { back, canGoBack, push, replace } = useRouter();
   const iniciarSesion = useIniciarSesion();
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
@@ -87,6 +88,17 @@ export default function LoginScreen() {
             onPress={ingresar}
             style={styles.boton}
           />
+          <Tocable
+            accessibilityRole="link"
+            accessibilityLabel="¿Olvidaste tu contraseña?"
+            accessibilityHint="Abre los pasos para cambiarla con un código enviado a tu correo"
+            style={styles.enlace}
+            onPress={() => push("/recuperar-clave")}
+          >
+            <Text style={[styles.textoEnlace, { color: colors.primaryText }]}>
+              ¿Olvidaste tu contraseña?
+            </Text>
+          </Tocable>
         </View>
       </View>
     </Pantalla>
@@ -97,4 +109,6 @@ const styles = StyleSheet.create({
   contenedor: { marginTop: 20 },
   formulario: { marginTop: 20 },
   boton: { marginTop: 10 },
+  enlace: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  textoEnlace: { fontSize: 14, fontWeight: "bold", textDecorationLine: "underline" },
 });

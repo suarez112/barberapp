@@ -23,3 +23,19 @@ export const loginUnico = (usuario: string, clave: string) =>
     method: "POST",
     body: { usuario, clave },
   });
+
+// Recuperar la contraseña (administradoras y clientes con correo). El personal
+// sin correo se la pide a su administrador.
+// Responde el mismo mensaje exista o no la cuenta.
+export const solicitarRecuperacion = (correo: string) =>
+  request<{ mensaje: string }>("/api/v1/cuentas/solicitar-recuperacion", {
+    method: "POST",
+    body: { correo },
+  });
+
+// Cambia la contraseña con el código de 6 dígitos y cierra las sesiones abiertas
+export const restablecerContrasena = (datos: { correo: string; codigo: string; clave: string }) =>
+  request<{ mensaje: string }>("/api/v1/cuentas/restablecer-contrasena", {
+    method: "POST",
+    body: datos,
+  });
