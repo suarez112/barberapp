@@ -43,6 +43,8 @@ export default function PanelTabBar({ pestanas, activa, onCambiar }: Props) {
             key={t.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activa === t.id }}
+            accessibilityLabel={t.label}
+            accessibilityHint={`Abre la pestaña ${t.label}`}
             style={styles.pestana}
             onPress={() => onCambiar(t.id)}
           >
@@ -63,6 +65,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     justifyContent: "space-around",
   },
-  pestana: { flex: 1, alignItems: "center", justifyContent: "center" },
-  label: { fontSize: 10, marginTop: 3, fontWeight: "600" },
+  pestana: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center" },
+  label: { fontSize: 11, marginTop: 3, fontWeight: "600" },
 });

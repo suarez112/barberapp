@@ -36,7 +36,7 @@ export default function CatalogoProductos({ codigo }: { codigo: string }) {
   if (error) {
     return <Text style={[styles.vacio, { color: colors.textSecondary }]}>{error}</Text>;
   }
-  if (!productos) return <ActivityIndicator color={colors.primary} style={styles.vacio} />;
+  if (!productos) return <ActivityIndicator color={colors.primaryText} style={styles.vacio} />;
   if (productos.length === 0) {
     return (
       <Text style={[styles.vacio, { color: colors.textSecondary }]}>
@@ -79,7 +79,7 @@ export default function CatalogoProductos({ codigo }: { codigo: string }) {
                 {p.descripcion}
               </Text>
             ) : null}
-            <Text style={[styles.precio, { color: colors.primary }]}>
+            <Text style={[styles.precio, { color: colors.primaryText }]}>
               ${formatearPesos(p.precio)}
             </Text>
           </View>

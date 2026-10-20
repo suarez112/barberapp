@@ -31,7 +31,7 @@ export default function MisCitasScreen() {
   if (sesion.estado === "cargando") {
     return (
       <Pantalla>
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       </Pantalla>
     );
   }
@@ -84,7 +84,7 @@ function MisCitas({ token }: { token: string }) {
         <Text style={[styles.negocio, { color: colors.textPrimary }]}>{c.negocio}</Text>
         <Insignia texto={ESTADOS[c.estado].texto} color={ESTADOS[c.estado].color} />
       </View>
-      <Text style={[styles.detalle, { color: colors.primary }]}>
+      <Text style={[styles.detalle, { color: colors.primaryText }]}>
         {fechaLarga(c.fecha)} · {c.hora}
       </Text>
       <Text style={[styles.detalle, { color: colors.textSecondary }]}>
@@ -96,15 +96,20 @@ function MisCitas({ token }: { token: string }) {
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.contenedor}>
-        <Text style={[styles.titulo, { color: colors.primary }]}>MIS CITAS</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>MIS CITAS</Text>
         {citas === null ? (
           errorCarga ? (
             <View>
               <TextoInfo>{errorCarga}</TextoInfo>
-              <Boton titulo="REINTENTAR" variante="neutro" onPress={cargar} />
+              <Boton
+                titulo="REINTENTAR"
+                ayuda="Vuelve a cargar tus citas"
+                variante="neutro"
+                onPress={cargar}
+              />
             </View>
           ) : (
-            <ActivityIndicator color={colors.primary} style={styles.cargando} />
+            <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
           )
         ) : citas.length === 0 ? (
           <Text style={[styles.vacio, { color: colors.textSecondary }]}>

@@ -20,34 +20,27 @@ const PLANES: Plan[] = [
   },
 ];
 
-// Pantalla del administrador cuando la prueba o el plan vencieron
-export default function ElegirPlan({ suscripcion }: { suscripcion: Suscripcion }) {
+// Tarjetas de los planes; elegir uno solo avisa que los pagos llegan pronto
+export function ListaPlanes() {
   const { colors } = useAppTheme();
-  // Sin plan anterior, lo que terminó fue la prueba gratuita
-  const titulo = suscripcion.plan
-    ? "Tu suscripción terminó, elige un plan"
-    : "Tu prueba terminó, elige un plan";
 
   const elegir = (nombre: string) =>
     avisar(
-      "Pagos próximamente",
+      "Pagos disponibles próximamente",
       `Todavía no se puede pagar desde la app. Comunícate con nosotros para activar el ${nombre.toLowerCase()}.`,
+      "aviso",
     );
 
   return (
     <View>
-      <PantallaAviso icono="time-outline" titulo={titulo} mensaje={suscripcion.mensaje} />
-      <Text style={[styles.nota, { color: colors.textSecondary }]}>
-        Tus datos siguen guardados. Mientras tanto puedes revisar y editar Mi negocio.
-      </Text>
-
       {PLANES.map((p) => (
         <View
           key={p.id}
+          accessible={false}
           style={[styles.plan, { backgroundColor: colors.cardBg, borderColor: colors.primary }]}
         >
           <Text style={[styles.nombre, { color: colors.textPrimary }]}>{p.nombre}</Text>
-          <Text style={[styles.precio, { color: colors.primary }]}>
+          <Text style={[styles.precio, { color: colors.primaryText }]}>
             ${formatearPesos(p.precio)}{" "}
             <Text style={[styles.periodo, { color: colors.textSecondary }]}>{p.periodo}</Text>
           </Text>
@@ -56,6 +49,7 @@ export default function ElegirPlan({ suscripcion }: { suscripcion: Suscripcion }
           ) : null}
           <Boton
             titulo={`ELEGIR ${p.nombre.toUpperCase()}`}
+            ayuda={`${p.nombre}: ${formatearPesos(p.precio)} pesos ${p.periodo}. Los pagos estarán disponibles próximamente`}
             onPress={() => elegir(p.nombre)}
             style={styles.boton}
           />
@@ -63,8 +57,27 @@ export default function ElegirPlan({ suscripcion }: { suscripcion: Suscripcion }
       ))}
 
       <Text style={[styles.muestra, { color: colors.textSecondary }]}>
-        Precios de muestra. Aún no hay pagos reales en la app.
+        Precios de muestra. Pagos disponibles próximamente.
       </Text>
+    </View>
+  );
+}
+
+// Pantalla del administrador cuando la prueba o el plan vencieron
+export default function ElegirPlan({ suscripcion }: { suscripcion: Suscripcion }) {
+  const { colors } = useAppTheme();
+  // Sin plan anterior, lo que terminó fue la prueba gratuita
+  const titulo = suscripcion.plan
+    ? "Tu suscripción terminó, elige un plan"
+    : "Tu prueba terminó, elige un plan";
+
+  return (
+    <View>
+      <PantallaAviso icono="time-outline" titulo={titulo} mensaje={suscripcion.mensaje} />
+      <Text style={[styles.nota, { color: colors.textSecondary }]}>
+        Tus datos siguen guardados. Mientras tanto puedes revisar y editar Mi negocio.
+      </Text>
+      <ListaPlanes />
     </View>
   );
 }
@@ -76,5 +89,5 @@ const styles = StyleSheet.create({
   precio: { fontSize: 24, fontWeight: "bold", marginTop: 6 },
   periodo: { fontSize: 13, fontWeight: "normal" },
   boton: { marginTop: 12 },
-  muestra: { fontSize: 11, textAlign: "center", marginTop: 14 },
+  muestra: { fontSize: 12, textAlign: "center", marginTop: 14 },
 });

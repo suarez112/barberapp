@@ -12,7 +12,7 @@ import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Servicio } from "@/types";
-import { avisar, confirmar } from "@/utils/dialogos";
+import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio, textoDuracion } from "@/utils/formato";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
@@ -35,18 +35,20 @@ export default function ServiciosAdmin({ token }: { token: string }) {
   const { colors } = useAppTheme();
   const { servicios, setServicios } = useNegocio();
   const avisarError = useAvisarError();
-  const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
+  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
 
   const guardar = async () => {
     const precio = leerPrecio(campos.precio);
     const duracionMin = campos.duracion;
-    if (!campos.nombre.trim() || isNaN(precio)) {
-      avisar("Datos incompletos", "Escribe el nombre y el precio del servicio.");
-      return;
-    }
-    if (!duracionMin) {
-      avisar("Falta la duración", "Elige cuánto dura el servicio.");
+    const nuevos = {
+      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del servicio, por ejemplo Corte clásico." } : {}),
+      ...(isNaN(precio) ? { precio: "Escribe el precio en pesos, por ejemplo 35.000." } : {}),
+      ...(!duracionMin ? { duracion: "Elige cuánto dura el servicio." } : {}),
+    };
+    setErrores(nuevos);
+    if (Object.keys(nuevos).length > 0 || !duracionMin) {
+      avisarCamposConError();
       return;
     }
     const datos = { nombre: campos.nombre.trim(), duracionMin, precio };
@@ -99,24 +101,38 @@ export default function ServiciosAdmin({ token }: { token: string }) {
         style={styles.acordeon}
       >
         <CampoTexto
-          placeholder="Nombre del Servicio"
+          etiqueta="Nombre del servicio"
+          obligatorio
+          error={errores.nombre}
+          ayuda="Así lo verán los clientes al reservar"
+          placeholder="ej: Corte clásico"
+          autoCapitalize="sentences"
+          maxLength={100}
           value={campos.nombre}
           onChangeText={cambiar("nombre")}
         />
         <CampoPrecio
-          placeholder="Precio (ej: 35.000)"
-          accessibilityLabel="Precio"
+          etiqueta="Precio"
+          obligatorio
+          error={errores.precio}
+          ayuda="En pesos, sin centavos"
+          placeholder="ej: 35.000"
           value={campos.precio}
           onChangeText={cambiar("precio")}
         />
         <Desplegable
-          placeholder="Duración del servicio"
+          etiqueta="Duración"
+          obligatorio
+          error={errores.duracion}
+          ayuda="Elige cuánto dura el servicio"
+          placeholder="Elige la duración del servicio"
           opciones={opcionesDuracion}
           valor={campos.duracion}
           onCambiar={cambiar("duracion")}
         />
         <BotonesFormulario
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR SERVICIO"}
+          ayudaGuardar={enEdicion ? "Guarda los cambios del servicio" : "Agrega el servicio al catálogo"}
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
@@ -139,14 +155,16 @@ export default function ServiciosAdmin({ token }: { token: string }) {
           <View style={styles.acciones}>
             <BotonIcono
               icono="create-outline"
-              color={colors.primary}
+              color={colors.primaryText}
               etiqueta={`Editar ${s.nombre}`}
+              ayuda="Abre el servicio en el formulario de arriba"
               onPress={() => editar(s)}
             />
             <BotonIcono
               icono="trash-outline"
               color={COLORES.peligro}
               etiqueta={`Eliminar ${s.nombre}`}
+              ayuda="Pide confirmación antes de eliminarlo"
               onPress={() => eliminar(s)}
             />
           </View>

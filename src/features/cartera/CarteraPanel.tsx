@@ -128,7 +128,7 @@ function MiCartera({ token }: { token: string }) {
 
   return (
     <View>
-      <Text style={[s.titulo, { color: colors.primary }]}>💰 MI CARTERA Y GANANCIAS</Text>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>💰 MI CARTERA Y GANANCIAS</Text>
 
       {/* Selector Diario / Semanal / Mensual */}
       <View
@@ -137,13 +137,17 @@ function MiCartera({ token }: { token: string }) {
         {PERIODOS.map((op) => (
           <TouchableOpacity
             key={op.valor}
+            accessibilityRole="button"
+            accessibilityState={{ selected: periodo === op.valor }}
+            accessibilityLabel={op.texto}
+            accessibilityHint="Cambia el periodo de la cartera"
             style={[s.btnSegmento, periodo === op.valor && { backgroundColor: colors.primary }]}
             onPress={() => cambiarPeriodo(op.valor)}
           >
             <Text
               style={[
                 s.textoSegmento,
-                { color: periodo === op.valor ? "#000" : colors.textSecondary },
+                { color: periodo === op.valor ? colors.onPrimary : colors.textSecondary },
               ]}
             >
               {op.texto}
@@ -157,7 +161,9 @@ function MiCartera({ token }: { token: string }) {
         style={[s.navegador, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
           accessibilityLabel="Periodo anterior"
+          accessibilityHint="Muestra el periodo anterior"
           onPress={() => setAtras(atras + 1)}
           style={s.flecha}
         >
@@ -167,7 +173,9 @@ function MiCartera({ token }: { token: string }) {
         <Text style={[s.etiquetaRango, { color: colors.textPrimary }]}>{rango.etiqueta}</Text>
 
         <TouchableOpacity
+          accessibilityRole="button"
           accessibilityLabel="Periodo siguiente"
+          accessibilityHint="Vuelve hacia el periodo actual"
           disabled={atras === 0}
           onPress={() => setAtras(atras - 1)}
           style={[s.flecha, { opacity: atras === 0 ? 0.25 : 1 }]}
@@ -178,7 +186,7 @@ function MiCartera({ token }: { token: string }) {
 
       {error ? <Text style={s.infoText}>{error}</Text> : null}
       {!cartera && !error ? (
-        <ActivityIndicator color={colors.primary} style={s.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={s.cargando} />
       ) : null}
 
       {cartera ? (
@@ -220,7 +228,8 @@ const s = StyleSheet.create({
   },
   btnSegmento: {
     flex: 1,
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 6,
     alignItems: "center",
   },
@@ -235,7 +244,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 6,
     marginBottom: 12,
   },
-  flecha: { paddingHorizontal: 12, paddingVertical: 4 },
+  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   etiquetaRango: { fontSize: 16, fontWeight: "bold" },
   cargando: { marginVertical: 20 },
   filaTarjetas: { flexDirection: "row", gap: 10, marginTop: 4 },

@@ -62,15 +62,17 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
 
       {pendiente ? (
         <>
-          <Text style={[styles.aviso, { color: colors.primary }]}>
+          <Text style={[styles.aviso, { color: colors.primaryText }]}>
             Vista previa: la foto aún no se ha guardado.
           </Text>
           <Boton
             titulo={guardando ? "GUARDANDO…" : "GUARDAR FOTO"}
+            ayuda="Sube la foto elegida como foto del negocio"
             onPress={guardar}
           />
           <Boton
             titulo="CANCELAR"
+            ayuda="Descarta la foto elegida"
             variante="neutro"
             onPress={() => setPendiente(null)}
           />
@@ -78,6 +80,7 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
       ) : (
         <Boton
           titulo={fotoUrl ? "CAMBIAR FOTO" : "SUBIR FOTO"}
+          ayuda="Abre tu galería para elegir la foto del negocio"
           variante="neutro"
           onPress={elegir}
         />

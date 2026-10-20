@@ -302,7 +302,7 @@ export default function BloqueoSemanal({
 
   return (
     <View style={s.contenedor}>
-      <Text style={[s.titulo, { color: colors.primary }]}>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>
         HORARIO DE {profesional.nombre.toUpperCase()}
       </Text>
 
@@ -325,31 +325,37 @@ export default function BloqueoSemanal({
       )}
 
       {!bloqueos ? (
-        <ActivityIndicator color={colors.primary} style={s.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={s.cargando} />
       ) : (
         <View
           style={[s.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
         >
           <View style={s.navSemana}>
             <TouchableOpacity
+              accessibilityRole="button"
               accessibilityLabel="Semana anterior"
+              accessibilityHint="Muestra la semana anterior"
+              accessibilityState={{ disabled: semanas <= 0 }}
               disabled={semanas <= 0}
               onPress={() => setSemanas(semanas - 1)}
-              style={{ opacity: semanas <= 0 ? 0.3 : 1 }}
+              style={[s.flecha, { opacity: semanas <= 0 ? 0.3 : 1 }]}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.primary} />
+              <Ionicons name="chevron-back" size={22} color={colors.primaryText} />
             </TouchableOpacity>
             <View style={s.centro}>
               <Text style={[s.textoSemana, { color: colors.textPrimary }]}>
                 {etiquetaSemana}
               </Text>
-              {ocupado ? <ActivityIndicator size="small" color={colors.primary} /> : null}
+              {ocupado ? <ActivityIndicator size="small" color={colors.primaryText} /> : null}
             </View>
             <TouchableOpacity
+              accessibilityRole="button"
               accessibilityLabel="Semana siguiente"
+              accessibilityHint="Muestra la semana siguiente"
               onPress={() => setSemanas(semanas + 1)}
+              style={s.flecha}
             >
-              <Ionicons name="chevron-forward" size={22} color={colors.primary} />
+              <Ionicons name="chevron-forward" size={22} color={colors.primaryText} />
             </TouchableOpacity>
           </View>
 
@@ -362,7 +368,9 @@ export default function BloqueoSemanal({
                 <TouchableOpacity
                   key={d.fecha}
                   disabled={!esAdmin}
-                  accessibilityLabel={`Bloquear o liberar el ${DIAS_LARGOS[d.diaSemana]} ${d.num} completo`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}${estilo ? ", bloqueado" : ""}`}
+                  accessibilityHint="Bloquea o libera el día completo"
                   onPress={() => tocarDia(d)}
                   style={[
                     s.cabDia,
@@ -397,7 +405,9 @@ export default function BloqueoSemanal({
                   <TouchableOpacity
                     key={d.fecha + ini}
                     disabled={!esAdmin}
-                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}${estilo ? ", ocupado o bloqueado" : ", libre"}`}
+                    accessibilityHint="Bloquea o libera esta hora"
                     onPress={() => tocarCelda(d, ini)}
                     style={[
                       s.celda,
@@ -434,7 +444,7 @@ export default function BloqueoSemanal({
         ))}
       </View>
 
-      <Text style={[s.titulo, s.tituloLista, { color: colors.primary }]}>
+      <Text style={[s.titulo, s.tituloLista, { color: colors.primaryText }]}>
         BLOQUEOS ACTIVOS ({ordenados.length})
       </Text>
       {bloqueos && ordenados.length === 0 ? (
@@ -493,6 +503,7 @@ const s = StyleSheet.create({
   ayuda: { fontSize: 11, lineHeight: 15, marginVertical: 10 },
   cargando: { marginVertical: 20 },
   tarjeta: { borderRadius: 10, borderWidth: 1, padding: 8 },
+  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   navSemana: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -508,6 +519,8 @@ const s = StyleSheet.create({
   cabDia: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
     paddingVertical: 5,
     borderRadius: 6,
     borderWidth: 1,
@@ -518,7 +531,7 @@ const s = StyleSheet.create({
   diaNum: { fontSize: 14, fontWeight: "bold" },
   celda: {
     flex: 1,
-    height: 28,
+    height: 44,
     borderRadius: 4,
     borderWidth: 1,
     marginHorizontal: 1.5,

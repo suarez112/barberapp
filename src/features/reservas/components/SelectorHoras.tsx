@@ -1,20 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import type { Paleta } from "@/theme/paleta";
 import { horaAMinutos } from "@/utils/disponibilidad";
 
 type Props = {
   horarios: string[];
   horaSel: string;
   onSeleccionar: (hora: string) => void;
-  colors: {
-    primary: string;
-    cardBg: string;
-    cardBorder: string;
-    cardSelectedBg: string;
-    textPrimary: string;
-    textSecondary: string;
-  };
+  colors: Paleta;
 };
 
 // Las horas se reparten en tres momentos del día (en minutos desde la medianoche)
@@ -93,6 +87,8 @@ export default function SelectorHoras({
               onPress={() => alternarGrupo(grupo.nombre)}
               accessibilityRole="button"
               accessibilityState={{ expanded: abierto }}
+              accessibilityLabel={`${grupo.nombre}, ${horasDelGrupo.length} horas disponibles`}
+              accessibilityHint={abierto ? "Oculta estas horas" : "Muestra estas horas"}
             >
               <Text style={[s.tituloGrupo, { color: colors.textSecondary }]}>
                 {grupo.icono} {grupo.nombre.toUpperCase()} (
@@ -123,13 +119,17 @@ export default function SelectorHoras({
                           backgroundColor: colors.cardSelectedBg,
                         },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: esSel }}
+                      accessibilityLabel={h}
+                      accessibilityHint="Elige esta hora para la cita"
                       onPress={() => onSeleccionar(h)}
                     >
                       <Text
                         style={[
                           s.textoChip,
                           { color: colors.textPrimary },
-                          esSel && { color: colors.primary },
+                          esSel && { color: colors.primaryText },
                         ]}
                       >
                         {h}
@@ -151,7 +151,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    minHeight: 44,
     paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: 1,
@@ -164,10 +164,11 @@ const s = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     width: "31%",
-    paddingVertical: 10,
+    minHeight: 44,
     borderRadius: 6,
     borderWidth: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
   textoChip: { fontSize: 12, fontWeight: "bold" },
   sinHoras: { color: "#EF4444", fontSize: 13, marginVertical: 10 },

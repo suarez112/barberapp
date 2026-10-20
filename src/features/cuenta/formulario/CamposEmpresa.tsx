@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, StyleSheet, Switch, Text, TextInputProps, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
-import CampoTexto from "@/components/ui/CampoTexto";
+import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
 import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -10,7 +10,13 @@ import { COLORES } from "@/theme/paleta";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
 import { EstadoCodigo, useCodigoDisponible } from "./useCodigoDisponible";
 import { useUbicaciones } from "./useUbicaciones";
-import { DiaFormulario, limpiarCodigo, ValoresEmpresa } from "./validarEmpresa";
+import {
+  CampoEmpresa,
+  DiaFormulario,
+  Errores,
+  limpiarCodigo,
+  ValoresEmpresa,
+} from "./validarEmpresa";
 
 // 0 = domingo … 6 = sábado (como en el backend), mostrados de lunes a domingo
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
@@ -46,10 +52,12 @@ type Props = {
   onCambiar: (cambios: Partial<ValoresEmpresa>) => void;
   // En "Mi negocio": el código que ya tiene el negocio
   codigoActual?: string;
+  // Qué corregir en cada campo (se muestra debajo)
+  errores?: Errores<CampoEmpresa>;
 };
 
 // Campos de la empresa: los usan el registro y la edición de "Mi negocio"
-export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Props) {
+export default function CamposEmpresa({ valores, onCambiar, codigoActual, errores = {} }: Props) {
   const { colors } = useAppTheme();
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
   const estadoCodigo = useCodigoDisponible(valores.codigoAcceso, codigoActual);
@@ -61,17 +69,16 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
   const campo = (
     clave: "nombre" | "categoria" | "nombreAdministradora" | "direccion",
     texto: string,
-    props: TextInputProps = {},
+    props: Omit<PropsCampo, "etiqueta">,
   ) => (
-    <View>
-      {etiqueta(texto)}
-      <CampoTexto
-        accessibilityLabel={texto}
-        value={valores[clave]}
-        onChangeText={(t) => onCambiar({ [clave]: t })}
-        {...props}
-      />
-    </View>
+    <CampoTexto
+      etiqueta={texto}
+      obligatorio
+      error={errores[clave]}
+      value={valores[clave]}
+      onChangeText={(t) => onCambiar({ [clave]: t })}
+      {...props}
+    />
   );
 
   const departamento = departamentos?.find((d) => d.nombre === valores.departamento);
@@ -122,37 +129,59 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
     nombre = "",
   ) => (
     <View style={styles.fila}>
-      <View style={styles.columna}>
-        {etiqueta("Abre")}
-        <Desplegable
-          titulo={`Hora de apertura${nombre}`}
-          placeholder="Abre"
-          opciones={opcionesHora(apertura)}
-          valor={apertura}
-          onCambiar={(h) => onCambio({ apertura: h })}
-        />
-      </View>
-      <View style={styles.columna}>
-        {etiqueta("Cierra")}
-        <Desplegable
-          titulo={`Hora de cierre${nombre}`}
-          placeholder="Cierra"
-          opciones={opcionesHora(cierre)}
-          valor={cierre}
-          onCambiar={(h) => onCambio({ cierre: h })}
-        />
-      </View>
+      <Desplegable
+        etiqueta="Abre"
+        titulo={`Hora de apertura${nombre}`}
+        ayuda={`Elige la hora de apertura${nombre}`}
+        placeholder="Abre"
+        opciones={opcionesHora(apertura)}
+        valor={apertura}
+        onCambiar={(h) => onCambio({ apertura: h })}
+        style={styles.columna}
+      />
+      <Desplegable
+        etiqueta="Cierra"
+        titulo={`Hora de cierre${nombre}`}
+        ayuda={`Elige la hora de cierre${nombre}`}
+        placeholder="Cierra"
+        opciones={opcionesHora(cierre)}
+        valor={cierre}
+        onCambiar={(h) => onCambio({ cierre: h })}
+        style={styles.columna}
+      />
     </View>
   );
 
   return (
     <View>
       <TituloSeccion>DATOS DEL NEGOCIO</TituloSeccion>
-      {campo("nombre", "Nombre del negocio *", { maxLength: 100 })}
-      {campo("categoria", "Categoría * (ej. Barbería, Salón de belleza)", { maxLength: 60 })}
-      {campo("nombreAdministradora", "Nombre de quien administra *", { maxLength: 120 })}
-      {etiqueta("Número de empleados *")}
+      {campo("nombre", "Nombre del negocio", {
+        maxLength: 100,
+        placeholder: "ej: Barbería Central",
+        ayuda: "Así verán tu negocio los clientes",
+        autoCapitalize: "words",
+        autoComplete: "organization",
+        textContentType: "organizationName",
+      })}
+      {campo("categoria", "Categoría", {
+        maxLength: 60,
+        placeholder: "ej: Barbería o Salón de belleza",
+        ayuda: "Qué tipo de negocio es",
+        autoCapitalize: "sentences",
+      })}
+      {campo("nombreAdministradora", "Nombre de quien administra", {
+        maxLength: 120,
+        placeholder: "ej: Ana Pérez",
+        ayuda: "Nombre de la persona a cargo del negocio",
+        autoCapitalize: "words",
+        autoComplete: "name",
+        textContentType: "name",
+      })}
       <Desplegable
+        etiqueta="Número de empleados"
+        obligatorio
+        error={errores.numeroEmpleados}
+        ayuda="Elige cuántas personas trabajan en el negocio"
         placeholder="Elige el número de empleados"
         opciones={EMPLEADOS}
         valor={valores.numeroEmpleados}
@@ -164,14 +193,19 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
         Tus clientes lo escriben en &quot;Soy cliente&quot; para ver tu negocio y reservar.
       </Text>
       <CampoTexto
-        accessibilityLabel="Código del negocio"
-        placeholder="Ej: CENTRAL10"
+        etiqueta="Código del negocio"
+        obligatorio
+        error={errores.codigoAcceso}
+        ayuda="Letras y números, sin espacios, máximo 10. Debajo se indica si está disponible"
+        placeholder="ej: CENTRAL10"
         autoCapitalize="characters"
         autoCorrect={false}
+        autoComplete="off"
         maxLength={10}
         value={valores.codigoAcceso}
         onChangeText={(t) => onCambiar({ codigoAcceso: limpiarCodigo(t) })}
-        style={styles.codigo}
+        estiloTexto={styles.codigo}
+        style={styles.campoCodigo}
       />
       <View style={styles.estadoCodigo}>
         {estadoCodigo === "verificando" ? (
@@ -198,15 +232,23 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
       <TituloSeccion>UBICACIÓN</TituloSeccion>
       {errorUbicaciones ? (
         <View>
-          <Text style={[styles.ayuda, { color: COLORES.peligro }]}>{errorUbicaciones}</Text>
-          <Boton titulo="REINTENTAR" variante="neutro" onPress={reintentar} />
+          <Text style={[styles.ayuda, { color: colors.error }]}>{errorUbicaciones}</Text>
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar los departamentos y municipios"
+            variante="neutro"
+            onPress={reintentar}
+          />
         </View>
       ) : !departamentos ? (
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       ) : (
         <>
-          {etiqueta("Departamento *")}
           <Desplegable
+            etiqueta="Departamento"
+            obligatorio
+            error={errores.departamento}
+            ayuda="Abre la lista de departamentos de Colombia"
             placeholder="Elige el departamento"
             buscable
             opciones={departamentos.map((d) => ({ valor: d.nombre, etiqueta: d.nombre }))}
@@ -217,8 +259,11 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
               onCambiar({ departamento: nombre, ciudad: null })
             }
           />
-          {etiqueta("Municipio *")}
           <Desplegable
+            etiqueta="Municipio"
+            obligatorio
+            error={errores.ciudad}
+            ayuda={departamento ? "Abre la lista de municipios" : "Primero elige el departamento"}
             placeholder={departamento ? "Elige el municipio" : "Primero elige el departamento"}
             buscable
             deshabilitado={!departamento}
@@ -231,19 +276,27 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
           />
         </>
       )}
-      {campo("direccion", "Dirección *", { maxLength: 200, placeholder: "Ej: Calle 10 # 20-30" })}
+      {campo("direccion", "Dirección", {
+        maxLength: 200,
+        placeholder: "ej: Calle 10 # 20-30",
+        ayuda: "Dirección del local, sin el municipio",
+        autoComplete: "street-address",
+        textContentType: "fullStreetAddress",
+      })}
 
       <TituloSeccion>HORARIO DE ATENCIÓN</TituloSeccion>
       <Tocable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: valores.mismoHorario }}
+        accessibilityLabel="Mismo horario todos los días"
+        accessibilityHint="Desmárcala para poner un horario distinto a cada día"
         onPress={alternarMismoHorario}
         style={styles.casilla}
       >
         <Ionicons
           name={valores.mismoHorario ? "checkbox" : "square-outline"}
           size={22}
-          color={colors.primary}
+          color={colors.primaryText}
         />
         <Text style={[styles.textoCasilla, { color: colors.textPrimary }]}>
           Mismo horario todos los días
@@ -253,6 +306,11 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
       {valores.mismoHorario ? (
         <>
           {etiqueta("Días que abre *")}
+          {errores.horario ? (
+            <Text accessibilityLiveRegion="polite" style={[styles.ayuda, { color: colors.error }]}>
+              {errores.horario}
+            </Text>
+          ) : null}
           <View style={styles.dias}>
             {ORDEN_DIAS.map((dia) => {
               const activo = valores.diasAbiertos.includes(dia);
@@ -262,6 +320,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: activo }}
                   accessibilityLabel={DIAS_LARGOS[dia]}
+                  accessibilityHint={activo ? "Toca para marcarlo cerrado" : "Toca para marcarlo abierto"}
                   onPress={() => alternarDiaAbierto(dia)}
                   style={[
                     styles.dia,
@@ -272,7 +331,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
                   <Text
                     style={[
                       styles.textoDia,
-                      { color: activo ? COLORES.textoSobrePrimario : colors.textSecondary },
+                      { color: activo ? colors.onPrimary : colors.textSecondary },
                     ]}
                   >
                     {DIAS_CORTOS[dia]}
@@ -284,7 +343,13 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
           {horas(valores.apertura, valores.cierre, (c) => onCambiar(c))}
         </>
       ) : (
-        ORDEN_DIAS.map((dia) => {
+        <>
+          {errores.horario ? (
+            <Text accessibilityLiveRegion="polite" style={[styles.ayuda, { color: colors.error }]}>
+              {errores.horario}
+            </Text>
+          ) : null}
+          {ORDEN_DIAS.map((dia) => {
           const d = valores.dias.find((x) => x.dia === dia);
           if (!d) return null;
           return (
@@ -301,6 +366,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
                 </Text>
                 <Switch
                   accessibilityLabel={`${DIAS_LARGOS[dia]} abierto`}
+                  accessibilityHint="Activa o desactiva la atención de este día"
                   value={d.abierto}
                   onValueChange={(abierto) => cambiarDia(dia, { abierto })}
                   trackColor={{ true: colors.primary, false: colors.cardBorder }}
@@ -312,24 +378,34 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual }: Prop
                 : null}
             </View>
           );
-        })
+          })}
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  etiqueta: { fontSize: 12, marginBottom: 4 },
+  etiqueta: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   ayuda: { fontSize: 12, marginBottom: 8 },
   cargando: { marginVertical: 12 },
-  codigo: { fontSize: 18, fontWeight: "bold", letterSpacing: 3, marginBottom: 4 },
+  codigo: { fontSize: 18, fontWeight: "bold", letterSpacing: 3 },
+  campoCodigo: { marginBottom: 4 },
   estadoCodigo: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 22, marginBottom: 6 },
   textoCodigo: { fontSize: 12 },
   negrita: { fontWeight: "bold", fontSize: 13 },
-  casilla: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, marginBottom: 10 },
+  casilla: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, marginBottom: 10 },
   textoCasilla: { fontSize: 14, fontWeight: "600" },
   dias: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  dia: { borderWidth: 1, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
+  dia: {
+    borderWidth: 1,
+    borderRadius: 22,
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   textoDia: { fontSize: 12, fontWeight: "bold" },
   fila: { flexDirection: "row", gap: 10 },
   columna: { flex: 1 },

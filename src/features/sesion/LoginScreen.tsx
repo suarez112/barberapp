@@ -19,6 +19,8 @@ export default function LoginScreen() {
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [errorUsuario, setErrorUsuario] = useState<string | null>(null);
+  const [errorClave, setErrorClave] = useState<string | null>(null);
 
   const volver = () => {
     if (canGoBack()) back();
@@ -27,6 +29,10 @@ export default function LoginScreen() {
 
   const ingresar = async () => {
     if (enviando) return;
+    const faltaUsuario = !usuario.trim();
+    setErrorUsuario(faltaUsuario ? "Escribe tu correo o tu nombre de usuario." : null);
+    setErrorClave(!clave ? "Escribe tu contraseña." : null);
+    if (faltaUsuario || !clave) return;
     setEnviando(true);
     const destino = await iniciarSesion(usuario, clave);
     setEnviando(false);
@@ -46,25 +52,38 @@ export default function LoginScreen() {
 
         <View style={styles.formulario}>
           <CampoTexto
-            placeholder="Correo o usuario"
-            accessibilityLabel="Correo o usuario"
+            etiqueta="Correo o usuario"
+            error={errorUsuario}
+            ayuda="El correo o el nombre de usuario de tu cuenta"
+            placeholder="ej: ejemplo@gmail.com"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="username"
+            textContentType="username"
             value={usuario}
-            onChangeText={setUsuario}
+            onChangeText={(t) => {
+              setUsuario(t);
+              setErrorUsuario(null);
+            }}
           />
           <CampoClave
-            placeholder="Contraseña"
-            accessibilityLabel="Contraseña"
+            etiqueta="Contraseña"
+            error={errorClave}
+            ayuda="La contraseña de tu cuenta"
             autoComplete="current-password"
+            textContentType="password"
             value={clave}
-            onChangeText={setClave}
+            onChangeText={(t) => {
+              setClave(t);
+              setErrorClave(null);
+            }}
             onSubmitEditing={ingresar}
           />
           <Boton
             titulo={enviando ? "INGRESANDO…" : "INGRESAR"}
+            ayuda="Entra a tu panel o a tu cuenta de cliente"
+            deshabilitado={enviando}
             onPress={ingresar}
             style={styles.boton}
           />

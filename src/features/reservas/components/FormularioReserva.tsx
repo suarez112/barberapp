@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import Boton from "@/components/ui/Boton";
+import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto from "@/components/ui/CampoTexto";
 import SelectorDias from "@/components/ui/SelectorDias";
 import TextoInfo from "@/components/ui/TextoInfo";
@@ -11,9 +12,8 @@ import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
 import { crearDia, mesCorto } from "@/utils/fechas";
-import { telefonoVisible } from "@/utils/formato";
+import { telefonoConBandera } from "@/utils/telefonos";
 import { EstadoReserva } from "../hooks/useReserva";
-import CampoTelefono from "./CampoTelefono";
 import SelectorHoras from "./SelectorHoras";
 import SelectorProfesional from "./SelectorProfesional";
 import SelectorServicio from "./SelectorServicio";
@@ -33,11 +33,12 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     dia,
     hora,
     nombre,
-    celular,
-    indicativo,
+    errorNombre,
+    telefono,
     datosCuenta,
     pedirAutorizacion,
     aceptaDatos,
+    errorAutorizacion,
     primerDia,
     ultimoDia,
     horariosDisponibles,
@@ -45,10 +46,8 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
     elegirServicio,
     elegirDia,
     elegirHora,
-    setNombre,
-    cambiarTelefono,
-    elegirPais,
-    setAceptaDatos,
+    cambiarNombre,
+    cambiarAceptaDatos,
     agendar,
   } = reserva;
 
@@ -59,7 +58,13 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
           PASO 1 · SELECCIONA PROFESIONAL
         </TituloSeccion>
         {onCambiarCodigo ? (
-          <Tocable accessibilityRole="button" onPress={onCambiarCodigo}>
+          <Tocable
+            accessibilityRole="button"
+            accessibilityLabel="Cambiar código"
+            accessibilityHint="Vuelve a la pantalla para escribir el código de otro negocio"
+            onPress={onCambiarCodigo}
+            style={styles.botonEnlace}
+          >
             <Text style={[styles.enlace, { color: colors.textSecondary }]}>
               Cambiar Código
             </Text>
@@ -111,15 +116,20 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
       {datosCuenta ? (
         // Cliente con sesión: sus datos se llenan solos
         <View
+          accessible
+          accessibilityLabel={`Reservas con tu cuenta: ${datosCuenta.nombre}, ${telefonoConBandera(
+            datosCuenta.telefono,
+            datosCuenta.indicativo,
+          )}`}
           style={[styles.cuenta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
         >
-          <Ionicons name="person-circle-outline" size={28} color={colors.primary} />
+          <Ionicons name="person-circle-outline" size={28} color={colors.primaryText} />
           <View style={styles.textosCuenta}>
             <Text style={[styles.nombreCuenta, { color: colors.textPrimary }]}>
               {datosCuenta.nombre}
             </Text>
             <Text style={[styles.detalleCuenta, { color: colors.textSecondary }]}>
-              {telefonoVisible(datosCuenta.telefono, datosCuenta.indicativo)} · Reservas con tu
+              {telefonoConBandera(datosCuenta.telefono, datosCuenta.indicativo)} · Reservas con tu
               cuenta
             </Text>
           </View>
@@ -127,24 +137,40 @@ export default function FormularioReserva({ reserva, onCambiarCodigo }: Props) {
       ) : (
         <>
           <CampoTelefono
-            telefono={celular}
-            indicativo={indicativo}
-            onCambiarTelefono={cambiarTelefono}
-            onElegirPais={elegirPais}
+            telefono={telefono}
+            etiqueta="Celular"
+            obligatorio
+            ayuda="El negocio te contactará a este número. Para otro país, toca la bandera."
           />
           <CampoTexto
-            placeholder="Nombre Completo"
+            etiqueta="Nombre completo"
+            obligatorio
+            error={errorNombre}
+            ayuda="Así te verá el negocio en su agenda"
+            placeholder="ej: Ana Pérez"
+            autoCapitalize="words"
+            autoComplete="name"
+            textContentType="name"
+            maxLength={100}
             value={nombre}
-            onChangeText={setNombre}
+            onChangeText={cambiarNombre}
           />
         </>
       )}
 
       {pedirAutorizacion ? (
-        <CasillaAutorizacion aceptada={aceptaDatos} onCambiar={setAceptaDatos} />
+        <CasillaAutorizacion
+          aceptada={aceptaDatos}
+          error={errorAutorizacion}
+          onCambiar={cambiarAceptaDatos}
+        />
       ) : null}
 
-      <Boton titulo="CONFIRMAR RESERVA" onPress={agendar} />
+      <Boton
+        titulo="CONFIRMAR RESERVA"
+        ayuda="Envía la reserva con el profesional, servicio, día y hora elegidos"
+        onPress={agendar}
+      />
     </View>
   );
 }
@@ -158,7 +184,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sinMargen: { marginTop: 0 },
-  enlace: { fontSize: 11, textDecorationLine: "underline" },
+  enlace: { fontSize: 12, textDecorationLine: "underline" },
+  botonEnlace: { minHeight: 44, justifyContent: "center", paddingHorizontal: 4 },
   cuenta: {
     flexDirection: "row",
     alignItems: "center",

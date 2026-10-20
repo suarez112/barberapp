@@ -80,6 +80,8 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
               <Text style={[styles.error, { color: COLORES.peligro }]}>{error}</Text>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel="Reintentar"
+                accessibilityHint="Vuelve a cargar el documento"
                 style={[styles.botonSecundario, { borderColor: colors.cardBorder }]}
                 onPress={() => setIntento((n) => n + 1)}
               >
@@ -89,11 +91,13 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
               </Pressable>
             </View>
           ) : (
-            <ActivityIndicator color={colors.primary} style={styles.estado} />
+            <ActivityIndicator color={colors.primaryText} style={styles.estado} />
           )}
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Cerrar"
+            accessibilityHint="Cierra el documento"
             style={({ pressed }) => [
               styles.boton,
               { backgroundColor: colors.primary },
@@ -101,7 +105,7 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
             ]}
             onPress={onCerrar}
           >
-            <Text style={styles.textoBoton}>CERRAR</Text>
+            <Text style={[styles.textoBoton, { color: colors.onPrimary }]}>CERRAR</Text>
           </Pressable>
         </View>
       </View>
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  textoBoton: { color: COLORES.textoSobrePrimario, fontWeight: "bold", fontSize: 14, letterSpacing: 1 },
+  textoBoton: { fontWeight: "bold", fontSize: 14, letterSpacing: 1 },
   botonSecundario: {
     alignSelf: "stretch",
     paddingVertical: 13,

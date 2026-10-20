@@ -31,7 +31,7 @@ export default function PerfilBadge({
       ]}
     >
       <Text style={[styles.nombre, { color: colors.textPrimary }]}>👤 {nombre}</Text>
-      <Text style={[styles.rol, { color: colors.primary }]}>{rol}</Text>
+      <Text style={[styles.rol, { color: colors.primaryText }]}>{rol}</Text>
     </View>
   );
 }

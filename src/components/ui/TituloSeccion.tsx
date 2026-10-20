@@ -6,7 +6,7 @@ type Props = { children: React.ReactNode; style?: StyleProp<TextStyle> };
 export default function TituloSeccion({ children, style }: Props) {
   const { colors } = useAppTheme();
   return (
-    <Text style={[styles.titulo, { color: colors.primary }, style]}>
+    <Text style={[styles.titulo, { color: colors.primaryText }, style]}>
       {children}
     </Text>
   );

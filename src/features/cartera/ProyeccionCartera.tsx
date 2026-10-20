@@ -65,7 +65,7 @@ export default function ProyeccionCartera({ periodo }: { periodo: PeriodoActual 
 
   return (
     <View>
-      <Text style={[s.titulo, { color: colors.primary }]}>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>
         📈 PROYECCIÓN · {ETIQUETAS[periodo]}
       </Text>
       <View style={s.fila}>

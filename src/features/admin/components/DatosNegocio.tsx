@@ -3,11 +3,15 @@ import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { avisar, confirmar } from "@/utils/dialogos";
+import { avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
 import { DatosEmpresa, PerfilEmpresa } from "../../cuenta/api";
 import CamposEmpresa from "../../cuenta/formulario/CamposEmpresa";
 import {
+  CampoEmpresa,
+  camposCambiados,
+  Errores,
+  sinErrores,
   ValoresEmpresa,
   validarEmpresa,
   valoresDesdePerfil,
@@ -52,17 +56,24 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
   const { colors } = useAppTheme();
   const [edicion, setEdicion] = useState<ValoresEmpresa | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [errores, setErrores] = useState<Errores<CampoEmpresa>>({});
+
+  const editar = (valores: ValoresEmpresa | null) => {
+    setErrores({});
+    setEdicion(valores);
+  };
 
   const guardar = async () => {
     if (!edicion || guardando) return;
     const resultado = validarEmpresa(edicion);
     if (!resultado.ok) {
-      avisar("Revisa el formulario", resultado.error);
+      setErrores(resultado.errores);
+      avisarCamposConError();
       return;
     }
     const cambios = cambiosEntre(perfil, resultado.datos);
     if (Object.keys(cambios).length === 0) {
-      setEdicion(null);
+      editar(null);
       return;
     }
     if (cambios.codigoAcceso) {
@@ -75,7 +86,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
     setGuardando(true);
     const ok = await onGuardar(cambios);
     setGuardando(false);
-    if (ok) setEdicion(null);
+    if (ok) editar(null);
   };
 
   if (edicion) {
@@ -84,10 +95,24 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
         <CamposEmpresa
           valores={edicion}
           codigoActual={perfil.codigoAcceso}
-          onCambiar={(c) => setEdicion((v) => (v ? { ...v, ...c } : v))}
+          errores={errores}
+          onCambiar={(c) => {
+            setEdicion((v) => (v ? { ...v, ...c } : v));
+            setErrores((e) => sinErrores(e, camposCambiados(c)));
+          }}
         />
-        <Boton titulo={guardando ? "GUARDANDO…" : "GUARDAR CAMBIOS"} onPress={guardar} />
-        <Boton titulo="CANCELAR" variante="neutro" onPress={() => setEdicion(null)} />
+        <Boton
+          titulo={guardando ? "GUARDANDO…" : "GUARDAR CAMBIOS"}
+          ayuda="Guarda los datos del negocio"
+          deshabilitado={guardando}
+          onPress={guardar}
+        />
+        <Boton
+          titulo="CANCELAR"
+          ayuda="Descarta los cambios"
+          variante="neutro"
+          onPress={() => editar(null)}
+        />
       </View>
     );
   }
@@ -132,11 +157,15 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
       </View>
 
       {!perfil.departamento ? (
-        <Text style={[styles.nota, { color: colors.primary }]}>
+        <Text style={[styles.nota, { color: colors.primaryText }]}>
           Completa el departamento y el municipio de tu negocio en &quot;Editar datos&quot;.
         </Text>
       ) : null}
-      <Boton titulo="EDITAR DATOS" onPress={() => setEdicion(valoresDesdePerfil(perfil))} />
+      <Boton
+        titulo="EDITAR DATOS"
+        ayuda="Abre el formulario para cambiar los datos y el horario del negocio"
+        onPress={() => editar(valoresDesdePerfil(perfil))}
+      />
     </View>
   );
 }

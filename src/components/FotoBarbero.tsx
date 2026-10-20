@@ -104,6 +104,9 @@ export default function FotoBarbero({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={`Foto de ${nombre}`}
+      accessibilityHint="Abre tu galería para cambiar la foto"
       onPress={elegirFoto}
       activeOpacity={0.8}
       style={{ width: size, height: size, marginBottom: 8 }}

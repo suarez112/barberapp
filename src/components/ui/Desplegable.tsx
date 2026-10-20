@@ -7,10 +7,11 @@ import {
   StyleProp,
   StyleSheet,
   Text,
-  TextInput,
+  View,
   ViewStyle,
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
+import CampoTexto from "./CampoTexto";
 import Tocable from "./Tocable";
 
 export type OpcionDesplegable<T extends string | number> = { valor: T; etiqueta: string };
@@ -19,6 +20,13 @@ type Props<T extends string | number> = {
   opciones: readonly OpcionDesplegable<T>[];
   valor: T | null;
   onCambiar: (valor: T) => void;
+  // Etiqueta visible arriba del campo
+  etiqueta: string;
+  // Qué se elige, para el lector de pantalla
+  ayuda?: string;
+  // Qué corregir; se muestra debajo
+  error?: string | null;
+  obligatorio?: boolean;
   // Texto cuando no hay nada elegido
   placeholder: string;
   // Título de la lista (por defecto el placeholder)
@@ -42,6 +50,10 @@ export default function Desplegable<T extends string | number>({
   opciones,
   valor,
   onCambiar,
+  etiqueta,
+  ayuda,
+  error,
+  obligatorio = false,
   placeholder,
   titulo,
   buscable = false,
@@ -67,28 +79,46 @@ export default function Desplegable<T extends string | number>({
 
   return (
     <>
-      <Tocable
-        accessibilityRole="button"
-        accessibilityLabel={titulo ?? placeholder}
-        accessibilityHint={elegida ? `Elegido: ${elegida.etiqueta}` : undefined}
-        accessibilityState={{ disabled: deshabilitado }}
-        disabled={deshabilitado}
-        onPress={() => setAbierto(true)}
-        style={[
-          styles.campo,
-          { backgroundColor: colors.inputBg, borderColor: colors.cardBorder },
-          deshabilitado && styles.deshabilitado,
-          style,
-        ]}
-      >
-        <Text
-          numberOfLines={1}
-          style={[styles.texto, { color: elegida ? colors.textPrimary : colors.textSecondary }]}
-        >
-          {elegida?.etiqueta ?? placeholder}
+      <View style={[styles.contenedor, style]}>
+        <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>
+          {etiqueta}
+          {obligatorio ? " *" : ""}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
-      </Tocable>
+        <Tocable
+          accessibilityRole="button"
+          accessibilityLabel={`${etiqueta}${obligatorio ? ", obligatorio" : ""}: ${
+            elegida?.etiqueta ?? "sin elegir"
+          }`}
+          accessibilityHint={[error ? `Error: ${error}` : null, ayuda ?? "Abre la lista de opciones"]
+            .filter(Boolean)
+            .join(". ")}
+          accessibilityState={{ disabled: deshabilitado }}
+          disabled={deshabilitado}
+          onPress={() => setAbierto(true)}
+          style={[
+            styles.campo,
+            {
+              backgroundColor: colors.inputBg,
+              borderColor: error ? colors.error : colors.inputBorder,
+            },
+            error ? styles.campoConError : null,
+            deshabilitado && styles.deshabilitado,
+          ]}
+        >
+          <Text
+            numberOfLines={1}
+            style={[styles.texto, { color: elegida ? colors.textPrimary : colors.textSecondary }]}
+          >
+            {elegida?.etiqueta ?? placeholder}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+        </Tocable>
+        {error ? (
+          <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.error }]}>
+            {error}
+          </Text>
+        ) : null}
+      </View>
 
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={cerrar}>
         <Pressable style={styles.overlay} onPress={cerrar}>
@@ -96,22 +126,15 @@ export default function Desplegable<T extends string | number>({
           <Pressable
             style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
           >
-            <Text style={[styles.titulo, { color: colors.primary }]}>{titulo ?? placeholder}</Text>
+            <Text style={[styles.titulo, { color: colors.primaryText }]}>{titulo ?? etiqueta}</Text>
             {buscable ? (
-              <TextInput
-                placeholder="Buscar…"
-                placeholderTextColor={colors.textSecondary}
+              <CampoTexto
+                etiqueta="Buscar"
+                ayuda="Filtra la lista mientras escribes"
+                placeholder="ej: escribe parte del nombre"
                 value={busqueda}
                 onChangeText={setBusqueda}
                 autoCorrect={false}
-                style={[
-                  styles.buscador,
-                  {
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.cardBorder,
-                    color: colors.textPrimary,
-                  },
-                ]}
               />
             ) : null}
             <FlatList
@@ -138,6 +161,8 @@ export default function Desplegable<T extends string | number>({
                   <Tocable
                     accessibilityRole="button"
                     accessibilityState={{ selected: activa }}
+                    accessibilityLabel={item.etiqueta}
+                    accessibilityHint={`Elige esta opción para ${etiqueta.toLowerCase()}`}
                     onPress={() => {
                       onCambiar(item.valor);
                       cerrar();
@@ -157,7 +182,7 @@ export default function Desplegable<T extends string | number>({
                     >
                       {item.etiqueta}
                     </Text>
-                    {activa ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
+                    {activa ? <Ionicons name="checkmark" size={18} color={colors.primaryText} /> : null}
                   </Tocable>
                 );
               }}
@@ -170,16 +195,20 @@ export default function Desplegable<T extends string | number>({
 }
 
 const styles = StyleSheet.create({
+  contenedor: { marginBottom: 12 },
+  etiqueta: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   campo: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 14,
+    minHeight: 48,
+    paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 10,
     gap: 8,
   },
+  campoConError: { borderWidth: 2 },
+  error: { fontSize: 12, marginTop: 4, lineHeight: 16 },
   deshabilitado: { opacity: 0.5 },
   texto: { flex: 1, fontSize: 14 },
   // Anclado arriba: si estuviera centrado, al esconderse el teclado la lista se
@@ -193,7 +222,6 @@ const styles = StyleSheet.create({
   },
   tarjeta: { borderRadius: 20, borderWidth: 1, padding: 16, maxHeight: "100%" },
   titulo: { fontSize: 13, fontWeight: "bold", letterSpacing: 1, marginBottom: 10 },
-  buscador: { padding: 12, borderRadius: 8, borderWidth: 1, marginBottom: 8 },
   opcion: {
     flexDirection: "row",
     alignItems: "center",

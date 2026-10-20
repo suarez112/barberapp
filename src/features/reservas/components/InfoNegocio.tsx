@@ -9,6 +9,13 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar } from "@/utils/dialogos";
 import { resumenHorario, textoDiasAtencion } from "@/utils/formato";
 
+// Qué hace cada botón, para el lector de pantalla
+const AYUDAS: Record<string, string> = {
+  Copiar: "Copia el código del negocio",
+  Compartir: "Comparte el código del negocio por otra app",
+  "Cómo llegar": "Abre el mapa con la ubicación del negocio",
+};
+
 // Tarjeta con la foto y los datos del negocio que ve el cliente
 export default function InfoNegocio({ codigo }: { codigo: string }) {
   const { colors } = useAppTheme();
@@ -74,6 +81,8 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
   ) => (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={texto}
+      accessibilityHint={AYUDAS[texto]}
       onPress={onPress}
       style={({ pressed }) => [
         styles.boton,
@@ -81,15 +90,15 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
         pressed && styles.presionado,
       ]}
     >
-      <Ionicons name={icono} size={16} color={colors.primary} />
-      <Text style={[styles.textoBoton, { color: colors.primary }]}>{texto}</Text>
+      <Ionicons name={icono} size={16} color={colors.primaryText} />
+      <Text style={[styles.textoBoton, { color: colors.primaryText }]}>{texto}</Text>
     </Pressable>
   );
 
   const dato = (icono: ComponentProps<typeof Ionicons>["name"], texto: string | null) =>
     texto ? (
       <View style={styles.dato}>
-        <Ionicons name={icono} size={14} color={colors.primary} />
+        <Ionicons name={icono} size={14} color={colors.primaryText} />
         <Text style={[styles.textoDato, { color: colors.textSecondary }]}>{texto}</Text>
       </View>
     ) : null;
@@ -114,7 +123,7 @@ export default function InfoNegocio({ codigo }: { codigo: string }) {
           {perfil.nombre}
         </Text>
         {perfil.categoria ? (
-          <Text style={[styles.categoria, { color: colors.primary }]}>
+          <Text style={[styles.categoria, { color: colors.primaryText }]}>
             {perfil.categoria}
           </Text>
         ) : null}
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderRadius: 8,
-    paddingVertical: 9,
+    minHeight: 44,
     marginTop: 2,
   },
   presionado: { opacity: 0.7 },

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { INDICATIVO_POR_DEFECTO } from "@/data/paises";
 import { crearCita } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
 import { ACEPTACION } from "@/features/legal/api";
+import { MENSAJE_AUTORIZACION } from "@/features/legal/CasillaAutorizacion";
+import { useTelefono } from "@/hooks/useTelefono";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { describirError, esEstado, registrarCausa } from "@/services/api/errores";
 import { ApiError, mensajeDeError } from "@/services/api/http";
@@ -19,8 +20,8 @@ import {
   hoyColombiaISO,
   sumarDias,
 } from "@/utils/fechas";
+import { indicativoDe, PAIS_POR_DEFECTO } from "@/utils/telefonos";
 import { DatosConfirmacion } from "../components/ConfirmacionCita";
-import { useTelefono } from "./useTelefono";
 
 // 400 de POST /citas cuando falta aceptar los documentos: un cliente con cuenta
 // después de publicarse una versión nueva (o con la sesión vencida, que el
@@ -46,7 +47,7 @@ export function useReserva() {
       ? {
           nombre: cliente.nombre,
           telefono: cliente.telefono,
-          indicativo: cliente.indicativo ?? INDICATIVO_POR_DEFECTO,
+          indicativo: cliente.indicativo ?? indicativoDe(PAIS_POR_DEFECTO),
         }
       : null;
   // Un cliente que ya aceptó no ve la casilla, salvo que haya una versión nueva
@@ -60,6 +61,9 @@ export function useReserva() {
   const tel = useTelefono();
   // La casilla de autorización empieza sin marcar
   const [aceptaDatos, setAceptaDatos] = useState(false);
+  // Qué corregir, debajo de cada campo
+  const [errorNombre, setErrorNombre] = useState<string | null>(null);
+  const [errorAutorizacion, setErrorAutorizacion] = useState<string | null>(null);
   const [confirmacion, setConfirmacion] = useState<DatosConfirmacion | null>(
     null,
   );
@@ -104,25 +108,41 @@ export function useReserva() {
     setNombre("");
     tel.limpiar();
     setAceptaDatos(false);
+    setErrorNombre(null);
+    setErrorAutorizacion(null);
+  };
+
+  const cambiarNombre = (texto: string) => {
+    setNombre(texto);
+    setErrorNombre(null);
+  };
+
+  const cambiarAceptaDatos = (acepta: boolean) => {
+    setAceptaDatos(acepta);
+    if (acepta) setErrorAutorizacion(null);
   };
 
   const agendar = async () => {
-    const datos = datosCuenta ?? {
-      nombre: nombre.trim(),
-      telefono: tel.telefono.trim(),
-      indicativo: tel.indicativo,
-    };
-
     const faltantes: string[] = [];
     if (!barbero) faltantes.push("Seleccionar Profesional");
     if (!servicio) faltantes.push("Seleccionar un Servicio");
     if (!hora) faltantes.push("Seleccionar la Hora de la cita");
-    if (!datos.telefono) faltantes.push("Escribir tu Teléfono / Celular");
-    if (!datos.nombre) faltantes.push("Escribir tu Nombre Completo");
-    if (pedirAutorizacion && !aceptaDatos)
+
+    // Invitado: el teléfono se envía en E.164, validado como en el backend
+    let datos = datosCuenta;
+    if (!datosCuenta) {
+      const telefono = tel.validar();
+      const nombreLimpio = nombre.trim();
+      setErrorNombre(nombreLimpio ? null : "Escribe tu nombre completo.");
+      if (telefono && nombreLimpio) datos = { nombre: nombreLimpio, ...telefono };
+      else faltantes.push("Corregir tus datos (marcados en rojo)");
+    }
+    const faltaAutorizacion = pedirAutorizacion && !aceptaDatos;
+    setErrorAutorizacion(faltaAutorizacion ? MENSAJE_AUTORIZACION : null);
+    if (faltaAutorizacion)
       faltantes.push("Autorizar el tratamiento de tus datos y aceptar los Términos y Condiciones");
 
-    if (faltantes.length > 0 || !barbero || !servicio || !empresa) {
+    if (faltantes.length > 0 || !barbero || !servicio || !empresa || !datos) {
       avisar(
         "Paso Incompleto",
         `Para completar tu reserva te falta:\n\n• ${faltantes.join("\n• ")}`,
@@ -206,11 +226,12 @@ export function useReserva() {
     dia,
     hora,
     nombre,
-    celular: tel.telefono,
-    indicativo: tel.indicativo,
+    errorNombre,
+    telefono: tel,
     datosCuenta,
     pedirAutorizacion,
     aceptaDatos,
+    errorAutorizacion,
     confirmacion,
     primerDia,
     ultimoDia,
@@ -219,10 +240,8 @@ export function useReserva() {
     elegirServicio,
     elegirDia,
     elegirHora: setHora,
-    setNombre,
-    cambiarTelefono: tel.cambiarTelefono,
-    elegirPais: tel.elegirPais,
-    setAceptaDatos,
+    cambiarNombre,
+    cambiarAceptaDatos,
     cerrarConfirmacion: () => setConfirmacion(null),
     agendar,
   };

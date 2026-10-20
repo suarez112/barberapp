@@ -18,7 +18,7 @@ export default function AdminPanelScreen() {
   if (!lista) {
     return (
       <Pantalla>
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       </Pantalla>
     );
   }

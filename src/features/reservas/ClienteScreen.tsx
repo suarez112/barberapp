@@ -72,7 +72,7 @@ export default function ClienteScreen() {
     if (modoEnlace) {
       // Desde "Mis negocios" (o mientras se vuelve a esa pantalla) se espera el negocio
       return conCuenta ? (
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       ) : (
         <IngresoCodigo />
       );
@@ -115,6 +115,7 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
           {onCambiarCodigo ? (
             <Boton
               titulo="CAMBIAR CÓDIGO"
+              ayuda="Vuelve a escribir el código de otro negocio"
               variante="neutro"
               onPress={onCambiarCodigo}
               style={styles.botonAviso}

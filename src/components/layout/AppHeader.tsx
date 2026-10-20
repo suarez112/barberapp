@@ -29,14 +29,15 @@ export default function AppHeader({
         <Tocable
           accessibilityRole="button"
           accessibilityLabel="Volver"
+          accessibilityHint="Regresa a la pantalla anterior"
           style={styles.volver}
           onPress={onVolver}
         >
-          <Ionicons name="arrow-back-outline" size={24} color={colors.primary} />
+          <Ionicons name="arrow-back-outline" size={24} color={colors.primaryText} />
         </Tocable>
       ) : null}
 
-      <Text style={[styles.titulo, { color: colors.primary }]}>
+      <Text style={[styles.titulo, { color: colors.primaryText }]}>
         {empresa ? `✨ ${empresa.nombre}` : "✂️ AGENDAMIENTOS"}
       </Text>
 
@@ -51,6 +52,7 @@ export default function AppHeader({
           <Tocable
             accessibilityRole="button"
             accessibilityLabel="Cerrar sesión"
+            accessibilityHint="Sale de tu cuenta en este celular"
             style={styles.salir}
             onPress={onSalir}
           >
@@ -72,17 +74,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  volver: { paddingRight: 10, paddingVertical: 4 },
+  volver: { minWidth: 44, minHeight: 44, justifyContent: "center" },
   titulo: { fontSize: 16, fontWeight: "bold", letterSpacing: 1 },
   acciones: { flexDirection: "row", alignItems: "center", gap: 10 },
   salir: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     backgroundColor: COLORES.peligroOscuro,
   },
-  salirTexto: { fontSize: 12, fontWeight: "bold", color: COLORES.peligroSuave },
+  salirTexto: { fontSize: 13, fontWeight: "bold", color: COLORES.peligroSuave },
 });

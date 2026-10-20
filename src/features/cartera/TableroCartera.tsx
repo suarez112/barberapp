@@ -74,7 +74,8 @@ export default function TableroCartera({ token }: { token: string }) {
         key={p.barberoId}
         accessibilityRole="button"
         accessibilityState={{ selected: activa }}
-        accessibilityLabel={`${p.nombre}: ${p.citas} citas. Toca para ver el detalle`}
+        accessibilityLabel={`${p.nombre}: ${p.citas} citas`}
+        accessibilityHint={activa ? "Oculta el detalle" : "Muestra ventas y ganancia de este profesional"}
         onPress={() => setElegidoId(activa ? null : p.barberoId)}
         style={({ pressed }) => [s.filaBarra, pressed && s.presionado]}
       >
@@ -106,8 +107,14 @@ export default function TableroCartera({ token }: { token: string }) {
     <View style={[s.detalle, { backgroundColor: colors.cardBg, borderColor: colors.primary }]}>
       <View style={s.cabeceraDetalle}>
         <Text style={[s.tituloDetalle, { color: colors.textPrimary }]}>{p.nombre}</Text>
-        <Pressable accessibilityRole="button" onPress={() => setElegidoId(null)} hitSlop={10}>
-          <Text style={[s.cerrar, { color: colors.primary }]}>Cerrar</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar detalle"
+          accessibilityHint={`Oculta el detalle de ${p.nombre}`}
+          onPress={() => setElegidoId(null)}
+          style={s.botonCerrar}
+        >
+          <Text style={[s.cerrar, { color: colors.primaryText }]}>Cerrar</Text>
         </Pressable>
       </View>
       {(
@@ -128,7 +135,7 @@ export default function TableroCartera({ token }: { token: string }) {
 
   return (
     <View>
-      <Text style={[s.titulo, { color: colors.primary }]}>💰 CARTERA DEL NEGOCIO</Text>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>💰 CARTERA DEL NEGOCIO</Text>
 
       <View style={[s.segmento, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
         {PERIODOS.map((op) => (
@@ -136,11 +143,13 @@ export default function TableroCartera({ token }: { token: string }) {
             key={op.valor}
             accessibilityRole="button"
             accessibilityState={{ selected: periodo === op.valor }}
+            accessibilityLabel={op.texto}
+            accessibilityHint="Cambia el periodo del tablero"
             style={[s.btnSegmento, periodo === op.valor && { backgroundColor: colors.primary }]}
             onPress={() => setPeriodo(op.valor)}
           >
             <Text
-              style={[s.textoSegmento, { color: periodo === op.valor ? "#000" : colors.textSecondary }]}
+              style={[s.textoSegmento, { color: periodo === op.valor ? colors.onPrimary : colors.textSecondary }]}
             >
               {op.texto}
             </Text>
@@ -173,7 +182,7 @@ export default function TableroCartera({ token }: { token: string }) {
       ) : null}
 
       {error ? <Text style={s.error}>{error}</Text> : null}
-      {!resumen && !error ? <ActivityIndicator color={colors.primary} style={s.cargando} /> : null}
+      {!resumen && !error ? <ActivityIndicator color={colors.primaryText} style={s.cargando} /> : null}
 
       {resumen ? (
         <>
@@ -183,7 +192,7 @@ export default function TableroCartera({ token }: { token: string }) {
             {tarjeta(String(resumen.citasCompletadas), "Citas completadas")}
           </View>
 
-          <Text style={[s.titulo, s.tituloSeparado, { color: colors.primary }]}>
+          <Text style={[s.titulo, s.tituloSeparado, { color: colors.primaryText }]}>
             CITAS POR PROFESIONAL
           </Text>
           {profesionales.length === 0 ? (
@@ -215,7 +224,8 @@ const s = StyleSheet.create({
   titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginTop: 15, marginBottom: 10 },
   tituloSeparado: { marginTop: 22 },
   segmento: { flexDirection: "row", borderRadius: 8, borderWidth: 1, padding: 4, marginBottom: 12 },
-  btnSegmento: { flex: 1, paddingVertical: 8, borderRadius: 6, alignItems: "center" },
+  btnSegmento: { flex: 1, minHeight: 44, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  botonCerrar: { minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" },
   textoSegmento: { fontSize: 12, fontWeight: "bold" },
   etiquetaRango: { fontSize: 12, fontWeight: "bold", marginTop: 6 },
   fechas: { fontSize: 13, textAlign: "center", marginBottom: 10 },
@@ -227,7 +237,7 @@ const s = StyleSheet.create({
   textoTarjeta: { fontSize: 11, marginTop: 4, textAlign: "center" },
   ayuda: { fontSize: 11, marginBottom: 8 },
   vacio: { fontSize: 13, marginVertical: 6 },
-  filaBarra: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 },
+  filaBarra: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   presionado: { opacity: 0.6 },
   nombreBarra: { width: 96, fontSize: 13, fontWeight: "600" },
   pista: { flex: 1, height: 18, borderRadius: 5, borderWidth: 1, overflow: "hidden" },

@@ -25,12 +25,17 @@ export default function ClientesTab({ token }: { token: string }) {
     <View>
       <Selector opciones={SECCIONES} valor={seccion} onCambiar={setSeccion} />
       {estado.cargando && estado.clientes.length === 0 ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+        <ActivityIndicator color={colors.primaryText} style={{ marginTop: 20 }} />
       ) : null}
       {estado.error ? (
         <View>
           <TextoInfo>{estado.error}</TextoInfo>
-          <Boton titulo="REINTENTAR" variante="neutro" onPress={estado.recargar} />
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar los clientes"
+            variante="neutro"
+            onPress={estado.recargar}
+          />
         </View>
       ) : null}
       {seccion === "HISTORIAL" ? (

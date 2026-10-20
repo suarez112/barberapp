@@ -1,7 +1,6 @@
 import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
-import { COLORES } from "../../theme/paleta";
 
 export type OpcionSelector<T extends string> = { id: T; label: string };
 
@@ -31,6 +30,8 @@ export default function Selector<T extends string>({
             key={o.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
+            accessibilityLabel={o.label}
+            accessibilityHint={`Muestra ${o.label.toLowerCase()}`}
             onPress={() => onCambiar(o.id)}
             style={[
               styles.opcion,
@@ -42,7 +43,7 @@ export default function Selector<T extends string>({
                 styles.texto,
                 {
                   color: activo
-                    ? COLORES.textoSobrePrimario
+                    ? colors.onPrimary
                     : colors.textSecondary,
                 },
                 textStyle,
@@ -66,6 +67,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
-  opcion: { flex: 1, paddingVertical: 10, alignItems: "center" },
+  opcion: { flex: 1, minHeight: 44, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   texto: { fontWeight: "bold", fontSize: 12 },
 });

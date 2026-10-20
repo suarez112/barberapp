@@ -30,6 +30,8 @@ export default function SelectorSupervision({
               key={emp.id}
               accessibilityRole="button"
               accessibilityState={{ selected: esSel }}
+              accessibilityLabel={emp.nombre}
+              accessibilityHint="Muestra la agenda y la cartera de esta persona"
               style={[
                 styles.opcion,
                 { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
@@ -63,7 +65,8 @@ const styles = StyleSheet.create({
   contenedor: { marginTop: 15 },
   titulo: { marginTop: 0 },
   opcion: {
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: 1,

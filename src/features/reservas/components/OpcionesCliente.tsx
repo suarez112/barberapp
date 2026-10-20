@@ -9,7 +9,7 @@ export default function OpcionesCliente({ onInvitado }: { onInvitado: () => void
   const { push } = useRouter();
   return (
     <View style={styles.contenedor}>
-      <Text style={[styles.titulo, { color: colors.primary }]}>¿CÓMO QUIERES RESERVAR?</Text>
+      <Text style={[styles.titulo, { color: colors.primaryText }]}>¿CÓMO QUIERES RESERVAR?</Text>
       <Text style={[styles.subtitulo, { color: colors.textSecondary }]}>
         La cuenta es opcional: puedes reservar solo con el código del negocio.
       </Text>

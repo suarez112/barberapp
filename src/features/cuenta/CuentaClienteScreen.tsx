@@ -1,24 +1,32 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TextInputProps, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
-import CampoTexto from "@/components/ui/CampoTexto";
+import CampoTelefono from "@/components/ui/CampoTelefono";
+import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import Selector from "@/components/ui/Selector";
+import { useTelefono } from "@/hooks/useTelefono";
 import { describirError, registrarCausa } from "@/services/api/errores";
+import { ApiError } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { avisar } from "@/utils/dialogos";
+import { avisar, avisarCamposConError } from "@/utils/dialogos";
 import { ACEPTACION } from "../legal/api";
 import CasillaAutorizacion, { MENSAJE_AUTORIZACION } from "../legal/CasillaAutorizacion";
-import CampoTelefono from "../reservas/components/CampoTelefono";
-import { useTelefono } from "../reservas/hooks/useTelefono";
 import { useSesion } from "../sesion/SesionProvider";
 import { Destino, useIniciarSesion } from "../sesion/useIniciarSesion";
 import { registrarCliente } from "./api";
 import { useCuenta } from "./CuentaProvider";
-import { CLIENTE_VACIO, ValoresCliente, validarCliente } from "./formulario/validarEmpresa";
+import {
+  CLIENTE_VACIO,
+  Errores,
+  hayErrores,
+  sinErrores,
+  ValoresCliente,
+  validarCliente,
+} from "./formulario/validarEmpresa";
 
 type Modo = "ENTRAR" | "CREAR";
 
@@ -42,7 +50,7 @@ export default function CuentaClienteScreen() {
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.contenedor}>
-        <Text style={[styles.titulo, { color: colors.primary }]}>TU CUENTA DE CLIENTE</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>TU CUENTA DE CLIENTE</Text>
         <Text style={[estilosTexto.subtitulo, styles.centrado, { color: colors.textSecondary }]}>
           Guarda tus negocios favoritos, reserva sin volver a escribir tus datos y mira tus citas.
         </Text>
@@ -62,9 +70,15 @@ function FormularioEntrar({ onListo }: { onListo: (destino: Destino) => void }) 
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [errorUsuario, setErrorUsuario] = useState<string | null>(null);
+  const [errorClave, setErrorClave] = useState<string | null>(null);
 
   const ingresar = async () => {
     if (enviando) return;
+    const faltaUsuario = !usuario.trim();
+    setErrorUsuario(faltaUsuario ? "Escribe tu correo o tu nombre de usuario." : null);
+    setErrorClave(!clave ? "Escribe tu contraseña." : null);
+    if (faltaUsuario || !clave) return;
     setEnviando(true);
     const destino = await iniciarSesion(usuario, clave);
     setEnviando(false);
@@ -75,25 +89,38 @@ function FormularioEntrar({ onListo }: { onListo: (destino: Destino) => void }) 
   return (
     <View>
       <CampoTexto
-        placeholder="Correo o usuario"
-        accessibilityLabel="Correo o usuario"
+        etiqueta="Correo o usuario"
+        error={errorUsuario}
+        ayuda="El correo o el nombre de usuario con el que creaste tu cuenta"
+        placeholder="ej: ejemplo@gmail.com"
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="username"
+        textContentType="username"
         value={usuario}
-        onChangeText={setUsuario}
+        onChangeText={(t) => {
+          setUsuario(t);
+          setErrorUsuario(null);
+        }}
       />
       <CampoClave
-        placeholder="Contraseña"
-        accessibilityLabel="Contraseña"
+        etiqueta="Contraseña"
+        error={errorClave}
+        ayuda="Tu contraseña de la cuenta de cliente"
         autoComplete="current-password"
+        textContentType="password"
         value={clave}
-        onChangeText={setClave}
+        onChangeText={(t) => {
+          setClave(t);
+          setErrorClave(null);
+        }}
         onSubmitEditing={ingresar}
       />
       <Boton
         titulo={enviando ? "INGRESANDO…" : "INGRESAR"}
+        ayuda="Inicia sesión con tu cuenta de cliente"
+        deshabilitado={enviando}
         onPress={ingresar}
         style={styles.boton}
       />
@@ -109,19 +136,23 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
   const [valores, setValores] = useState<ValoresCliente>(CLIENTE_VACIO);
   const [aceptaDatos, setAceptaDatos] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [errores, setErrores] = useState<Errores<keyof ValoresCliente>>({});
+  const [errorAutorizacion, setErrorAutorizacion] = useState<string | null>(null);
 
-  const cambiar = (clave: keyof ValoresCliente) => (texto: string) =>
+  const cambiar = (clave: keyof ValoresCliente) => (texto: string) => {
     setValores((v) => ({ ...v, [clave]: texto }));
+    // Correo y usuario se piden juntos ("uno de los dos"): escribir en uno quita ese aviso
+    setErrores((e) => sinErrores(e, clave === "usuario" ? ["usuario", "correo"] : [clave]));
+  };
 
   const crear = async () => {
     if (enviando) return;
-    const error = validarCliente({ ...valores, telefono: tel.telefono });
-    if (error) {
-      avisar("Revisa el formulario", error);
-      return;
-    }
-    if (!aceptaDatos) {
-      avisar("Autorización requerida", MENSAJE_AUTORIZACION);
+    const nuevosErrores = validarCliente(valores);
+    const telefono = tel.validar();
+    setErrores(nuevosErrores);
+    setErrorAutorizacion(aceptaDatos ? null : MENSAJE_AUTORIZACION);
+    if (hayErrores(nuevosErrores) || !telefono || !aceptaDatos) {
+      avisarCamposConError();
       return;
     }
 
@@ -131,8 +162,8 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
     try {
       const respuesta = await registrarCliente({
         nombre: valores.nombre.trim(),
-        telefono: tel.telefono.trim(),
-        indicativo: tel.indicativo,
+        // E.164 ("+573162781393") y su indicativo
+        ...telefono,
         ...(correo ? { correo } : {}),
         ...(usuario ? { usuario } : {}),
         clave: valores.clave,
@@ -149,6 +180,8 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
       onListo();
     } catch (e) {
       registrarCausa("Registro de cliente", e);
+      // Teléfono inválido (400) o ya usado por otra cuenta (409): el aviso va bajo el campo
+      if (e instanceof ApiError && /teléfono/i.test(e.message)) tel.setError(e.message);
       const aviso = describirError(e, {
         titulo: "No se pudo crear la cuenta",
         porDefecto: "Intenta de nuevo en unos minutos.",
@@ -159,68 +192,93 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
     }
   };
 
-  const campo = (clave: keyof ValoresCliente, etiqueta: string, props: TextInputProps = {}) => (
-    <View>
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{etiqueta}</Text>
-      <CampoTexto
-        accessibilityLabel={etiqueta}
-        value={valores[clave]}
-        onChangeText={cambiar(clave)}
-        {...props}
-      />
-    </View>
+  const campo = (
+    clave: "nombre" | "correo" | "usuario",
+    etiqueta: string,
+    props: Omit<PropsCampo, "etiqueta">,
+  ) => (
+    <CampoTexto
+      etiqueta={etiqueta}
+      error={errores[clave]}
+      value={valores[clave]}
+      onChangeText={cambiar(clave)}
+      {...props}
+    />
   );
 
   return (
     <View>
-      {campo("nombre", "Nombre completo *", { autoComplete: "name", maxLength: 100 })}
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Celular *</Text>
-      <CampoTelefono
-        telefono={tel.telefono}
-        indicativo={tel.indicativo}
-        onCambiarTelefono={tel.cambiarTelefono}
-        onElegirPais={tel.elegirPais}
-      />
+      {campo("nombre", "Nombre completo", {
+        obligatorio: true,
+        placeholder: "ej: Ana Pérez",
+        ayuda: "Así te verán los negocios donde reserves",
+        autoCapitalize: "words",
+        autoComplete: "name",
+        textContentType: "name",
+        maxLength: 100,
+      })}
+      <CampoTelefono telefono={tel} etiqueta="Celular" obligatorio />
       <Text style={[estilosTexto.subtitulo, styles.ayuda, { color: colors.textSecondary }]}>
         Para iniciar sesión escribe tu correo, un nombre de usuario o los dos.
       </Text>
       {campo("correo", "Correo", {
+        placeholder: "ej: ejemplo@gmail.com",
+        ayuda: "Opcional si escribes un nombre de usuario",
         keyboardType: "email-address",
         autoCapitalize: "none",
         autoCorrect: false,
         autoComplete: "email",
+        textContentType: "emailAddress",
         maxLength: 254,
       })}
-      {campo("usuario", "Nombre de usuario (4 a 20: letras, números, punto o _)", {
+      {campo("usuario", "Nombre de usuario", {
+        placeholder: "ej: ana.perez",
+        ayuda: "Opcional si escribes un correo. De 4 a 20 caracteres: letras, números, punto o guion bajo",
         autoCapitalize: "none",
         autoCorrect: false,
-        autoComplete: "username",
+        autoComplete: "username-new",
+        textContentType: "username",
         maxLength: 20,
       })}
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
-        Contraseña * (8 a 64 caracteres)
-      </Text>
       <CampoClave
-        accessibilityLabel="Contraseña"
+        etiqueta="Contraseña"
+        obligatorio
+        error={errores.clave}
+        ayuda="De 8 a 64 caracteres"
+        placeholder="ej: mínimo 8 caracteres"
         autoComplete="new-password"
+        textContentType="newPassword"
         maxLength={64}
         value={valores.clave}
         onChangeText={cambiar("clave")}
       />
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
-        Confirma la contraseña *
-      </Text>
       <CampoClave
-        accessibilityLabel="Confirma la contraseña"
+        etiqueta="Confirma la contraseña"
+        obligatorio
+        error={errores.confirmacion}
+        ayuda="Escribe otra vez la misma contraseña"
         autoComplete="new-password"
+        textContentType="newPassword"
         maxLength={64}
         value={valores.confirmacion}
         onChangeText={cambiar("confirmacion")}
       />
 
-      <CasillaAutorizacion aceptada={aceptaDatos} onCambiar={setAceptaDatos} />
+      <CasillaAutorizacion
+        aceptada={aceptaDatos}
+        error={errorAutorizacion}
+        onCambiar={(a) => {
+          setAceptaDatos(a);
+          if (a) setErrorAutorizacion(null);
+        }}
+      />
 
-      <Boton titulo={enviando ? "CREANDO…" : "CREAR CUENTA"} onPress={crear} />
+      <Boton
+        titulo={enviando ? "CREANDO…" : "CREAR CUENTA"}
+        ayuda="Crea tu cuenta de cliente e inicia sesión"
+        deshabilitado={enviando}
+        onPress={crear}
+      />
     </View>
   );
 }
@@ -230,6 +288,5 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 18, fontWeight: "bold", textAlign: "center", letterSpacing: 1 },
   centrado: { textAlign: "center" },
   ayuda: { marginTop: 0, marginBottom: 8 },
-  etiqueta: { fontSize: 12, marginBottom: 4 },
   boton: { marginTop: 10 },
 });

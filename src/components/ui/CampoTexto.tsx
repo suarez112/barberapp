@@ -1,26 +1,108 @@
-import { StyleSheet, TextInput, TextInputProps } from "react-native";
+import { ReactNode } from "react";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
 
-// TextInput con los colores del tema. Acepta todas las props de TextInput.
-export default function CampoTexto({ style, ...props }: TextInputProps) {
+export type PropsCampo = Omit<TextInputProps, "style"> & {
+  // Etiqueta visible arriba del campo (el placeholder es solo un ejemplo)
+  etiqueta: string;
+  // Qué escribir o qué pasa, para TalkBack / VoiceOver
+  ayuda?: string;
+  // Qué corregir; se muestra debajo del campo y se anuncia
+  error?: string | null;
+  // Agrega " *" a la etiqueta y "obligatorio" para el lector de pantalla
+  obligatorio?: boolean;
+  // Estilo del contenedor (márgenes, ancho)
+  style?: StyleProp<ViewStyle>;
+  // Estilo del texto escrito
+  estiloTexto?: StyleProp<TextStyle>;
+  // Contenido dentro del recuadro, a los lados del texto (ej. "$", un ojo, una bandera)
+  izquierda?: ReactNode;
+  derecha?: ReactNode;
+};
+
+// Campo de texto accesible: etiqueta arriba, recuadro de al menos 48 px y el error debajo
+export default function CampoTexto({
+  etiqueta,
+  ayuda,
+  error,
+  obligatorio = false,
+  style,
+  estiloTexto,
+  izquierda,
+  derecha,
+  editable = true,
+  multiline,
+  ...props
+}: PropsCampo) {
   const { colors } = useAppTheme();
+  const hint = [error ? `Error: ${error}` : null, ayuda].filter(Boolean).join(". ");
+
   return (
-    <TextInput
-      placeholderTextColor={colors.textSecondary}
-      {...props}
-      style={[
-        styles.campo,
-        {
-          backgroundColor: colors.inputBg,
-          borderColor: colors.cardBorder,
-          color: colors.textPrimary,
-        },
-        style,
-      ]}
-    />
+    <View style={[styles.contenedor, style]}>
+      <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>
+        {etiqueta}
+        {obligatorio ? " *" : ""}
+      </Text>
+      <View
+        style={[
+          styles.caja,
+          {
+            backgroundColor: colors.inputBg,
+            borderColor: error ? colors.error : colors.inputBorder,
+          },
+          error ? styles.cajaConError : null,
+          !editable && styles.bloqueado,
+        ]}
+      >
+        {izquierda}
+        <TextInput
+          accessibilityLabel={obligatorio ? `${etiqueta}, obligatorio` : etiqueta}
+          accessibilityHint={hint || undefined}
+          accessibilityState={{ disabled: !editable }}
+          placeholderTextColor={colors.textSecondary}
+          editable={editable}
+          multiline={multiline}
+          {...props}
+          style={[
+            styles.texto,
+            { color: colors.textPrimary },
+            multiline && styles.multilinea,
+            estiloTexto,
+          ]}
+        />
+        {derecha}
+      </View>
+      {error ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.error }]}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  campo: { padding: 14, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
+  contenedor: { marginBottom: 12 },
+  etiqueta: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
+  caja: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  cajaConError: { borderWidth: 2 },
+  bloqueado: { opacity: 0.7 },
+  texto: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
+  multilinea: { minHeight: 90, textAlignVertical: "top" },
+  error: { fontSize: 12, marginTop: 4, lineHeight: 16 },
 });

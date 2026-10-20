@@ -44,7 +44,7 @@ export default function HistorialCitas({
   }, [token, clienteId]);
 
   if (error) return <TextoInfo>{error}</TextoInfo>;
-  if (!citas) return <ActivityIndicator color={colors.primary} style={styles.margen} />;
+  if (!citas) return <ActivityIndicator color={colors.primaryText} style={styles.margen} />;
   if (citas.length === 0) return <TextoInfo>Este cliente aún no tiene citas.</TextoInfo>;
 
   return (
@@ -59,7 +59,7 @@ export default function HistorialCitas({
               {c.servicio} con {c.barberoNombre} · ${formatearPesos(c.precio)}
             </Text>
           </View>
-          <Text style={[styles.estado, { color: colors.primary }]}>
+          <Text style={[styles.estado, { color: colors.primaryText }]}>
             {ETIQUETA_ESTADO[c.estado] ?? c.estado}
           </Text>
         </View>

@@ -8,7 +8,8 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Cita, EstadoCita } from "@/types";
 import { fechaHoraCita, formatearHora } from "@/utils/fechas";
-import { formatearPesos, telefonoVisible } from "@/utils/formato";
+import { formatearPesos } from "@/utils/formato";
+import { telefonoConBandera } from "@/utils/telefonos";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
 
 const COLOR_ESTADO: Record<EstadoCita, string> = {
@@ -53,7 +54,7 @@ export default function TarjetaCita({
       ]}
     >
       <View style={styles.filaEntre}>
-        <Text style={[styles.hora, { color: colors.primary }]}>⏰ {c.hora}</Text>
+        <Text style={[styles.hora, { color: colors.primaryText }]}>⏰ {c.hora}</Text>
         <Insignia texto={c.estado} color={COLOR_ESTADO[c.estado]} />
       </View>
       <Text
@@ -63,14 +64,14 @@ export default function TarjetaCita({
       </Text>
       <View style={styles.filaEntre}>
         <Text style={subtitulo}>
-          📞 {telefonoVisible(c.telefono, c.indicativo)}
+          📞 {telefonoConBandera(c.telefono, c.indicativo)}
         </Text>
         <Tocable
           onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}
           accessibilityRole="button"
           accessibilityLabel={`Escribir por WhatsApp a ${c.cliente}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ opacity: tieneWhatsApp ? 1 : 0.35 }}
+          accessibilityHint="Abre WhatsApp con el número del cliente"
+          style={[styles.whatsapp, { opacity: tieneWhatsApp ? 1 : 0.35 }]}
         >
           <Ionicons
             name="logo-whatsapp"
@@ -137,6 +138,8 @@ function BotonEstado({
   return (
     <Tocable
       accessibilityRole="button"
+      accessibilityLabel={texto.charAt(0) + texto.slice(1).toLowerCase()}
+      accessibilityHint="Cambia el estado de esta cita"
       style={[styles.botonEstado, { backgroundColor: color }]}
       onPress={onPress}
     >
@@ -169,4 +172,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   botonEstadoTexto: { color: COLORES.blanco, fontWeight: "bold", fontSize: 12 },
+  whatsapp: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
 });

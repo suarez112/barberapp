@@ -35,7 +35,7 @@ export default function MisNegociosScreen() {
   if (sesion.estado === "cargando") {
     return (
       <Pantalla>
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       </Pantalla>
     );
   }
@@ -61,6 +61,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
   const [negocios, setNegocios] = useState<NegocioGuardado[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [codigo, setCodigo] = useState("");
+  const [errorCodigo, setErrorCodigo] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(() => {
@@ -90,7 +91,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
   const agregar = async () => {
     const limpio = codigo.trim().toUpperCase();
     if (!limpio) {
-      avisar("Código requerido", "Escribe el código que te dio el negocio.");
+      setErrorCodigo("Escribe el código que te dio el negocio, por ejemplo CENTRAL10.");
       return;
     }
     if (guardando) return;
@@ -133,40 +134,51 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
         </Text>
         <Boton
           titulo="MIS CITAS"
+          ayuda="Muestra las citas que reservaste con tu cuenta"
           variante="neutro"
           onPress={() => push("/mis-citas")}
           style={styles.botonCitas}
         />
 
         <TituloSeccion>AGREGAR UN NEGOCIO</TituloSeccion>
-        <View style={styles.filaCodigo}>
-          <CampoTexto
-            style={styles.campoCodigo}
-            placeholder="Código del negocio"
-            accessibilityLabel="Código del negocio"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={10}
-            value={codigo}
-            onChangeText={setCodigo}
-            onSubmitEditing={agregar}
-          />
-          <Boton
-            titulo={guardando ? "…" : "AGREGAR"}
-            onPress={agregar}
-            style={styles.botonAgregar}
-          />
-        </View>
+        <CampoTexto
+          etiqueta="Código del negocio"
+          error={errorCodigo}
+          ayuda="El código que te dio tu barbería o salón"
+          placeholder="ej: CENTRAL10"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          autoComplete="off"
+          maxLength={10}
+          value={codigo}
+          onChangeText={(t) => {
+            setCodigo(t);
+            setErrorCodigo(null);
+          }}
+          onSubmitEditing={agregar}
+          estiloTexto={styles.campoCodigo}
+        />
+        <Boton
+          titulo={guardando ? "AGREGANDO…" : "AGREGAR"}
+          ayuda="Guarda el negocio en tu lista para reservar desde aquí"
+          deshabilitado={guardando}
+          onPress={agregar}
+        />
 
         <TituloSeccion>MIS NEGOCIOS</TituloSeccion>
         {negocios === null ? (
           errorCarga ? (
             <View>
               <TextoInfo>{errorCarga}</TextoInfo>
-              <Boton titulo="REINTENTAR" variante="neutro" onPress={cargar} />
+              <Boton
+                titulo="REINTENTAR"
+                ayuda="Vuelve a cargar tus negocios guardados"
+                variante="neutro"
+                onPress={cargar}
+              />
             </View>
           ) : (
-            <ActivityIndicator color={colors.primary} style={styles.cargando} />
+            <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
           )
         ) : negocios.length === 0 ? (
           <Text style={[styles.vacio, { color: colors.textSecondary }]}>
@@ -179,6 +191,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
               key={n.id}
               accessibilityRole="button"
               accessibilityLabel={`Reservar en ${n.nombre}`}
+              accessibilityHint="Abre el negocio para elegir profesional, servicio y hora"
               style={[
                 styles.tarjeta,
                 { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
@@ -189,7 +202,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 <Image source={{ uri: n.fotoUrl }} style={styles.foto} contentFit="cover" />
               ) : (
                 <View style={[styles.foto, styles.sinFoto, { borderColor: colors.cardBorder }]}>
-                  <Ionicons name="storefront-outline" size={24} color={colors.primary} />
+                  <Ionicons name="storefront-outline" size={24} color={colors.primaryText} />
                 </View>
               )}
               <View style={styles.textos}>
@@ -207,6 +220,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 icono="trash-outline"
                 color={COLORES.peligro}
                 etiqueta={`Quitar ${n.nombre}`}
+                ayuda="Lo quita de tu lista, pide confirmación"
                 onPress={() => quitar(n)}
               />
             </Tocable>
@@ -222,9 +236,7 @@ const styles = StyleSheet.create({
   cargando: { marginTop: 30 },
   saludo: { fontSize: 20, fontWeight: "bold" },
   botonCitas: { marginTop: 12 },
-  filaCodigo: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
-  campoCodigo: { flex: 1, fontWeight: "bold", letterSpacing: 2 },
-  botonAgregar: { marginTop: 0, paddingHorizontal: 18 },
+  campoCodigo: { fontWeight: "bold", letterSpacing: 2 },
   vacio: { fontSize: 13, lineHeight: 19 },
   tarjeta: {
     flexDirection: "row",

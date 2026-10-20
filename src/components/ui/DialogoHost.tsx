@@ -23,7 +23,7 @@ export default function DialogoHost() {
 
   const { icono, color = colors.primary } = ESTILO[dialogo.tipo];
   const esConfirmacion = dialogo.tipo === "confirmacion";
-  const colorAceptar = dialogo.destructivo ? COLORES.peligro : colors.primary;
+  const colorAceptar = dialogo.destructivo ? COLORES.peligroOscuro : colors.primary;
 
   return (
     <Modal
@@ -51,6 +51,7 @@ export default function DialogoHost() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityHint={esConfirmacion ? "Confirma y continúa" : "Cierra este aviso"}
             style={({ pressed }) => [
               s.boton,
               { backgroundColor: colorAceptar },
@@ -58,7 +59,7 @@ export default function DialogoHost() {
             ]}
             onPress={() => dialogo.responder(true)}
           >
-            <Text style={[s.textoBoton, dialogo.destructivo && { color: COLORES.blanco }]}>
+            <Text style={[s.textoBoton, { color: dialogo.destructivo ? COLORES.blanco : colors.onPrimary }]}>
               {(esConfirmacion && dialogo.textoAceptar) || "ACEPTAR"}
             </Text>
           </Pressable>
@@ -66,6 +67,7 @@ export default function DialogoHost() {
           {esConfirmacion && (
             <Pressable
               accessibilityRole="button"
+              accessibilityHint="Cierra sin hacer cambios"
               style={({ pressed }) => [
                 s.botonSecundario,
                 { borderColor: colors.cardBorder },
@@ -124,7 +126,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-  textoBoton: { color: "#000", fontWeight: "bold", fontSize: 14, letterSpacing: 1 },
+  textoBoton: { fontWeight: "bold", fontSize: 14, letterSpacing: 1 },
   botonSecundario: {
     width: "100%",
     paddingVertical: 13,

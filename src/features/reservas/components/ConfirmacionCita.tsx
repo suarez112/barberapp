@@ -3,6 +3,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { agregarAlCalendario } from "@/utils/calendario";
 import { horaAMinutos, minutosAHora } from "@/utils/disponibilidad";
 import FotoBarbero from "@/components/FotoBarbero";
+import type { Paleta } from "@/theme/paleta";
 
 export type DatosConfirmacion = {
   negocio: string;
@@ -18,13 +19,7 @@ export type DatosConfirmacion = {
 type Props = {
   visible: boolean;
   datos: DatosConfirmacion | null;
-  colors: {
-    primary: string;
-    cardBg: string;
-    cardBorder: string;
-    textPrimary: string;
-    textSecondary: string;
-  };
+  colors: Paleta;
   onCerrar: () => void;
 };
 
@@ -103,7 +98,7 @@ export default function ConfirmacionCita({
             <Text style={[s.fecha, { color: colors.textSecondary }]}>
               {fechaBonita(datos.fecha)}
             </Text>
-            <Text style={[s.hora, { color: colors.primary }]}>
+            <Text style={[s.hora, { color: colors.primaryText }]}>
               {datos.hora}
             </Text>
             <Text style={[s.horaFin, { color: colors.textSecondary }]}>
@@ -117,7 +112,7 @@ export default function ConfirmacionCita({
               <FotoBarbero
                 nombre={datos.profesional}
                 foto={datos.foto}
-                color={colors.primary}
+                color={colors.primaryText}
                 size={40}
               />
               <View style={{ marginLeft: 12, flex: 1, marginTop: -8 }}>
@@ -139,7 +134,7 @@ export default function ConfirmacionCita({
                   { backgroundColor: `${colors.primary}22` },
                 ]}
               >
-                <Ionicons name="cut-outline" size={20} color={colors.primary} />
+                <Ionicons name="cut-outline" size={20} color={colors.primaryText} />
               </View>
               <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={[s.etiqueta, { color: colors.textSecondary }]}>
@@ -149,7 +144,7 @@ export default function ConfirmacionCita({
                   {datos.servicio}
                 </Text>
               </View>
-              <Text style={[s.precio, { color: colors.primary }]}>
+              <Text style={[s.precio, { color: colors.primaryText }]}>
                 ${datos.precio.toLocaleString("es-CO")}
               </Text>
             </View>
@@ -168,24 +163,30 @@ export default function ConfirmacionCita({
           </View>
 
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Agregar a mi calendario"
+            accessibilityHint="Abre tu calendario con la cita ya llena"
             style={[s.botonCalendario, { borderColor: colors.primary }]}
             onPress={() => agregarAlCalendario(datos)}
           >
             <Ionicons
               name="calendar-outline"
               size={18}
-              color={colors.primary}
+              color={colors.primaryText}
             />
-            <Text style={[s.textoCalendario, { color: colors.primary }]}>
+            <Text style={[s.textoCalendario, { color: colors.primaryText }]}>
               AGREGAR A MI CALENDARIO
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Entendido"
+            accessibilityHint="Cierra la confirmación de la cita"
             style={[s.boton, { backgroundColor: colors.primary }]}
             onPress={onCerrar}
           >
-            <Text style={s.textoBoton}>ENTENDIDO</Text>
+            <Text style={[s.textoBoton, { color: colors.onPrimary }]}>ENTENDIDO</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -288,7 +289,6 @@ const s = StyleSheet.create({
     marginTop: 10,
   },
   textoBoton: {
-    color: "#000",
     fontWeight: "bold",
     fontSize: 14,
     letterSpacing: 1,

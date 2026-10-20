@@ -46,26 +46,31 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
   if (cargando && !suscripcion) {
     return (
       <Pantalla cabecera={{ onSalir: cerrarSesion }}>
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       </Pantalla>
     );
   }
 
   const miNegocio = (
     <View>
-      <Text style={[styles.titulo, { color: colors.primary }]}>MI NEGOCIO</Text>
+      <Text style={[styles.titulo, { color: colors.primaryText }]}>MI NEGOCIO</Text>
       <Text style={[styles.correo, { color: colors.textSecondary }]}>
         Sesión: {conNombre.nombre}
       </Text>
 
       {cargando && !perfil ? (
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       ) : null}
 
       {errorCarga ? (
         <View>
           <TextoInfo>{errorCarga}</TextoInfo>
-          <Boton titulo="REINTENTAR" variante="neutro" onPress={recargar} />
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar los datos del negocio"
+            variante="neutro"
+            onPress={recargar}
+          />
         </View>
       ) : null}
 
@@ -80,7 +85,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
             <Text style={[styles.codigoEtiqueta, { color: colors.textSecondary }]}>
               Código para tus clientes
             </Text>
-            <Text selectable style={[styles.codigoValor, { color: colors.primary }]}>
+            <Text selectable style={[styles.codigoValor, { color: colors.primaryText }]}>
               {perfil.codigoAcceso}
             </Text>
             <Text style={[styles.codigoEtiqueta, { color: colors.textSecondary }]}>
@@ -97,6 +102,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
 
       <Boton
         titulo="CERRAR SESIÓN"
+        ayuda="Sale de tu cuenta en este celular"
         variante="peligro"
         onPress={cerrarSesion}
         style={styles.salir}

@@ -16,7 +16,7 @@ export default function PanelScreen() {
   if (!lista) {
     return (
       <Pantalla>
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={colors.primaryText} style={{ marginTop: 40 }} />
       </Pantalla>
     );
   }

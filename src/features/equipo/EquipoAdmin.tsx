@@ -14,7 +14,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { ApiError } from "@/services/api/http";
 import { Barbero, RolEquipo } from "@/types";
-import { avisar, confirmar } from "@/utils/dialogos";
+import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useSesion } from "../sesion/SesionProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
@@ -83,7 +83,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
   const avisarError = useAvisarError();
-  const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
+  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
   const token = personal.token;
   const soyYo = (id: string) => personal.barbero?.id === id;
@@ -96,22 +96,22 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
 
   const guardar = async () => {
     const clave = campos.clave.trim();
-    if (!campos.nombre.trim() || !campos.usuario.trim() || (!enEdicion && !clave)) {
-      avisar(
-        "Datos Incompletos",
-        enEdicion
-          ? "Completa Nombre y Usuario del integrante."
-          : "Completa Nombre, Usuario y Contraseña para el integrante.",
-      );
-      return;
-    }
-    if (clave && (clave.length < 8 || clave.length > 64)) {
-      avisar("Contraseña inválida", "La contraseña debe tener entre 8 y 64 caracteres.");
-      return;
-    }
     const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
-    if (isNaN(pct) || pct < 0 || pct > 100) {
-      avisar("Comisión inválida", "La comisión debe ser un número de 0 a 100.");
+    const nuevos = {
+      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del integrante." } : {}),
+      ...(!campos.usuario.trim() ? { usuario: "Escribe el usuario con el que entrará a la app." } : {}),
+      ...(!enEdicion && !clave
+        ? { clave: "Escribe una contraseña de 8 a 64 caracteres." }
+        : clave && (clave.length < 8 || clave.length > 64)
+          ? { clave: "La contraseña debe tener de 8 a 64 caracteres." }
+          : {}),
+      ...(isNaN(pct) || pct < 0 || pct > 100
+        ? { porcentaje: "Escribe un número de 0 a 100, por ejemplo 50." }
+        : {}),
+    };
+    setErrores(nuevos);
+    if (Object.keys(nuevos).length > 0) {
+      avisarCamposConError();
       return;
     }
 
@@ -200,22 +200,49 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
         style={styles.acordeon}
       >
         <CampoTexto
-          placeholder="Nombre Completo"
+          etiqueta="Nombre completo"
+          obligatorio
+          error={errores.nombre}
+          ayuda="Nombre del integrante como lo verán los clientes"
+          placeholder="ej: Carlos Gómez"
+          autoCapitalize="words"
+          autoComplete="off"
+          maxLength={100}
           value={campos.nombre}
           onChangeText={cambiar("nombre")}
         />
         <CampoTexto
-          placeholder="Usuario para ingresar"
+          etiqueta="Usuario para ingresar"
+          obligatorio
+          error={errores.usuario}
+          ayuda="Con este usuario y su contraseña entrará a la app"
+          placeholder="ej: carlos.gomez"
           autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          maxLength={50}
           value={campos.usuario}
           onChangeText={cambiar("usuario")}
         />
         <CampoClave
-          placeholder={enEdicion ? "Nueva contraseña (vacía = no cambiar)" : "Contraseña (mínimo 8)"}
+          etiqueta={enEdicion ? "Nueva contraseña" : "Contraseña"}
+          obligatorio={!enEdicion}
+          error={errores.clave}
+          ayuda={
+            enEdicion
+              ? "Déjala vacía para no cambiarla. De 8 a 64 caracteres"
+              : "De 8 a 64 caracteres"
+          }
+          placeholder={enEdicion ? "ej: vacía = no cambiar" : "ej: mínimo 8 caracteres"}
+          autoComplete="off"
+          textContentType="newPassword"
+          maxLength={64}
           value={campos.clave}
           onChangeText={cambiar("clave")}
         />
         <Desplegable
+          etiqueta="Rol"
+          ayuda="Administrador maneja todo el negocio; Empleado solo su agenda y su cartera"
           titulo="Rol"
           placeholder="Rol"
           opciones={ROLES}
@@ -248,6 +275,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
           </View>
           <Switch
             accessibilityLabel="Atiende clientes"
+            accessibilityHint="Si está activo, aparece al reservar y recibe citas"
             value={campos.atiendeClientes}
             onValueChange={cambiar("atiendeClientes")}
             trackColor={{ true: colors.primary, false: colors.cardBorder }}
@@ -255,18 +283,27 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
           />
         </View>
         <CampoTexto
-          placeholder="Especialidad (ej: Colorimetría · Manicure)"
+          etiqueta="Especialidad (opcional)"
+          ayuda="Lo que mejor hace, se muestra a los clientes"
+          placeholder="ej: Colorimetría · Manicure"
+          autoCapitalize="sentences"
+          maxLength={100}
           value={campos.especialidad}
           onChangeText={cambiar("especialidad")}
         />
         <CampoTexto
-          placeholder="Porcentaje de Comisión % (Ej: 50)"
+          etiqueta="Comisión (%)"
+          error={errores.porcentaje}
+          ayuda="Porcentaje de cada servicio que gana el integrante, de 0 a 100. Vacío = 50"
+          placeholder="ej: 50"
           keyboardType="numeric"
+          maxLength={3}
           value={campos.porcentaje}
           onChangeText={cambiar("porcentaje")}
         />
         <BotonesFormulario
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "REGISTRAR INTEGRANTE"}
+          ayudaGuardar={enEdicion ? "Guarda los cambios del integrante" : "Agrega al integrante al equipo"}
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
@@ -281,7 +318,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
             <FotoBarbero
               nombre={b.nombre}
               foto={b.foto}
-              color={colors.primary}
+              color={colors.primaryText}
               editable
               onCambiar={(foto) => cambiarFoto(b, foto)}
             />
@@ -303,8 +340,9 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
           <View style={styles.acciones}>
             <BotonIcono
               icono="create-outline"
-              color={colors.primary}
+              color={colors.primaryText}
               etiqueta={`Editar a ${b.nombre}`}
+              ayuda="Abre sus datos en el formulario de arriba"
               onPress={() => editar(b)}
             />
             {!soyYo(b.id) ? (
@@ -312,6 +350,7 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
                 icono="trash-outline"
                 color={COLORES.peligro}
                 etiqueta={`Retirar a ${b.nombre}`}
+                ayuda="Pide confirmación antes de retirarlo del equipo"
                 onPress={() => eliminar(b)}
               />
             ) : null}

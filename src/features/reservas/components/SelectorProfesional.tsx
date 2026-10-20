@@ -24,12 +24,14 @@ export default function SelectorProfesional({
         <TarjetaOpcion
           key={b.id}
           seleccionada={seleccionado?.id === b.id}
+          etiqueta={[b.nombre, b.especialidad].filter(Boolean).join(", ")}
+          ayuda="Elige este profesional para tu cita"
           onPress={() => onSeleccionar(b)}
         >
           <FotoBarbero
             nombre={b.nombre}
             foto={b.foto}
-            color={colors.primary}
+            color={colors.primaryText}
             forma="rectangulo"
           />
           <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>

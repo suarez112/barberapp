@@ -1,15 +1,15 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TextInputProps, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
-import CampoTexto from "@/components/ui/CampoTexto";
+import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { avisar } from "@/utils/dialogos";
+import { avisar, avisarCamposConError } from "@/utils/dialogos";
 import { ACEPTACION } from "../legal/api";
 import CasillaAutorizacion, { MENSAJE_AUTORIZACION } from "../legal/CasillaAutorizacion";
 import { consultarCodigoDisponible, registrarEmpresa } from "./api";
@@ -18,6 +18,11 @@ import { useCuenta } from "./CuentaProvider";
 import CamposEmpresa from "./formulario/CamposEmpresa";
 import {
   ACCESO_VACIO,
+  CampoEmpresa,
+  camposCambiados,
+  Errores,
+  hayErrores,
+  sinErrores,
   VALORES_VACIOS,
   ValoresAcceso,
   ValoresEmpresa,
@@ -35,29 +40,29 @@ export default function RegistroEmpresaScreen() {
   const [acceso, setAcceso] = useState<ValoresAcceso>(ACCESO_VACIO);
   const [aceptaDatos, setAceptaDatos] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [errores, setErrores] = useState<Errores<CampoEmpresa>>({});
+  const [erroresAcceso, setErroresAcceso] = useState<Errores<keyof ValoresAcceso>>({});
+  const [errorAutorizacion, setErrorAutorizacion] = useState<string | null>(null);
 
   const volver = () => {
     if (canGoBack()) back();
     else replace("/");
   };
 
-  const cambiarAcceso = (clave: keyof ValoresAcceso) => (texto: string) =>
+  const cambiarAcceso = (clave: keyof ValoresAcceso) => (texto: string) => {
     setAcceso((a) => ({ ...a, [clave]: texto }));
+    setErroresAcceso((e) => sinErrores(e, [clave]));
+  };
 
   const registrar = async () => {
     if (enviando) return;
     const resultado = validarEmpresa(valores);
-    if (!resultado.ok) {
-      avisar("Revisa el formulario", resultado.error);
-      return;
-    }
-    const errorAcceso = validarAcceso(acceso);
-    if (errorAcceso) {
-      avisar("Revisa el formulario", errorAcceso);
-      return;
-    }
-    if (!aceptaDatos) {
-      avisar("Autorización requerida", MENSAJE_AUTORIZACION);
+    const nuevosErroresAcceso = validarAcceso(acceso);
+    setErrores(resultado.ok ? {} : resultado.errores);
+    setErroresAcceso(nuevosErroresAcceso);
+    setErrorAutorizacion(aceptaDatos ? null : MENSAJE_AUTORIZACION);
+    if (!resultado.ok || hayErrores(nuevosErroresAcceso) || !aceptaDatos) {
+      avisarCamposConError();
       return;
     }
 
@@ -66,6 +71,7 @@ export default function RegistroEmpresaScreen() {
       // El código se vuelve a revisar justo antes de enviar
       const { disponible } = await consultarCodigoDisponible(resultado.datos.codigoAcceso);
       if (!disponible) {
+        setErrores({ codigoAcceso: "Ese código ya lo usa otro negocio: escribe otro." });
         avisar("Código en uso", "Ese código ya lo usa otro negocio. Elige otro.", "error");
         return;
       }
@@ -96,72 +102,97 @@ export default function RegistroEmpresaScreen() {
     }
   };
 
-  const campoAcceso = (clave: "correo" | "usuario", texto: string, props: TextInputProps) => (
-    <View>
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{texto}</Text>
-      <CampoTexto
-        accessibilityLabel={texto}
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={acceso[clave]}
-        onChangeText={cambiarAcceso(clave)}
-        {...props}
-      />
-    </View>
+  const campoAcceso = (
+    clave: "correo" | "usuario",
+    texto: string,
+    props: Omit<PropsCampo, "etiqueta">,
+  ) => (
+    <CampoTexto
+      etiqueta={texto}
+      obligatorio
+      error={erroresAcceso[clave]}
+      autoCapitalize="none"
+      autoCorrect={false}
+      value={acceso[clave]}
+      onChangeText={cambiarAcceso(clave)}
+      {...props}
+    />
   );
 
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.contenedor}>
-        <Text style={[styles.titulo, { color: colors.primary }]}>REGISTRA TU NEGOCIO</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>REGISTRA TU NEGOCIO</Text>
         <Text style={[estilosTexto.subtitulo, styles.centrado, { color: colors.textSecondary }]}>
           Empieza hoy tu prueba gratuita de 15 días. Los campos con * son obligatorios.
         </Text>
 
         <CamposEmpresa
           valores={valores}
-          onCambiar={(cambios) => setValores((v) => ({ ...v, ...cambios }))}
+          errores={errores}
+          onCambiar={(cambios) => {
+            setValores((v) => ({ ...v, ...cambios }));
+            setErrores((e) => sinErrores(e, camposCambiados(cambios)));
+          }}
         />
 
         <TituloSeccion>ACCESO DEL ADMINISTRADOR</TituloSeccion>
         <Text style={[estilosTexto.subtitulo, styles.ayuda, { color: colors.textSecondary }]}>
           Con tu correo o tu usuario y esta contraseña entrarás a tu panel.
         </Text>
-        {campoAcceso("correo", "Correo *", {
+        {campoAcceso("correo", "Correo", {
+          placeholder: "ej: ejemplo@gmail.com",
+          ayuda: "Con este correo inicias sesión",
           keyboardType: "email-address",
           autoComplete: "email",
+          textContentType: "emailAddress",
           maxLength: 254,
         })}
-        {campoAcceso("usuario", "Nombre de usuario * (4 a 20: letras, números, punto o _)", {
-          autoComplete: "username",
+        {campoAcceso("usuario", "Nombre de usuario", {
+          placeholder: "ej: barberia.central",
+          ayuda: "De 4 a 20 caracteres: letras, números, punto o guion bajo",
+          autoComplete: "username-new",
+          textContentType: "username",
           maxLength: 20,
         })}
-        <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
-          Contraseña * (8 a 64 caracteres)
-        </Text>
         <CampoClave
-          accessibilityLabel="Contraseña"
+          etiqueta="Contraseña"
+          obligatorio
+          error={erroresAcceso.clave}
+          ayuda="De 8 a 64 caracteres"
+          placeholder="ej: mínimo 8 caracteres"
           autoComplete="new-password"
+          textContentType="newPassword"
           maxLength={64}
           value={acceso.clave}
           onChangeText={cambiarAcceso("clave")}
         />
-        <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
-          Confirma la contraseña *
-        </Text>
         <CampoClave
-          accessibilityLabel="Confirma la contraseña"
+          etiqueta="Confirma la contraseña"
+          obligatorio
+          error={erroresAcceso.confirmacion}
+          ayuda="Escribe otra vez la misma contraseña"
           autoComplete="new-password"
+          textContentType="newPassword"
           maxLength={64}
           value={acceso.confirmacion}
           onChangeText={cambiarAcceso("confirmacion")}
           onSubmitEditing={registrar}
         />
 
-        <CasillaAutorizacion aceptada={aceptaDatos} onCambiar={setAceptaDatos} />
+        <CasillaAutorizacion
+          aceptada={aceptaDatos}
+          error={errorAutorizacion}
+          onCambiar={(a) => {
+            setAceptaDatos(a);
+            if (a) setErrorAutorizacion(null);
+          }}
+        />
 
         <Boton
           titulo={enviando ? "REGISTRANDO…" : "REGISTRAR EMPRESA"}
+          ayuda="Crea tu negocio y empieza la prueba gratuita de 15 días"
+          deshabilitado={enviando}
           onPress={registrar}
           style={styles.boton}
         />
@@ -175,6 +206,5 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 18, fontWeight: "bold", textAlign: "center", letterSpacing: 1 },
   centrado: { textAlign: "center", marginBottom: 6 },
   ayuda: { marginTop: 0, marginBottom: 8 },
-  etiqueta: { fontSize: 12, marginBottom: 4 },
   boton: { marginTop: 10 },
 });

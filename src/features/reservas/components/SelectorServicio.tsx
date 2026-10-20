@@ -23,12 +23,14 @@ export default function SelectorServicio({
         <TarjetaOpcion
           key={s.id}
           seleccionada={seleccionado?.id === s.id}
+          etiqueta={`${s.nombre}, ${s.duracion}, ${formatearPesos(s.precio)} pesos`}
+          ayuda="Elige este servicio para tu cita"
           onPress={() => onSeleccionar(s)}
         >
           <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
             {s.nombre}
           </Text>
-          <Text style={[styles.precio, { color: colors.primary }]}>
+          <Text style={[styles.precio, { color: colors.primaryText }]}>
             {s.duracion} · ${formatearPesos(s.precio)}
           </Text>
         </TarjetaOpcion>

@@ -10,6 +10,7 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { confirmar } from "@/utils/dialogos";
+import { telefonoConBandera } from "@/utils/telefonos";
 import { EstadoClientes } from "../useClientes";
 import HistorialCitas from "./HistorialCitas";
 import {
@@ -78,6 +79,8 @@ export default function HistorialClientes({ token, estado }: Props) {
               key={f.id}
               accessibilityRole="tab"
               accessibilityState={{ selected: activo }}
+              accessibilityLabel={f.label}
+              accessibilityHint="Filtra la lista de clientes"
               style={[styles.segmento, activo && { backgroundColor: colors.primary }]}
               onPress={() => setFiltro(f.id)}
             >
@@ -86,7 +89,7 @@ export default function HistorialClientes({ token, estado }: Props) {
                   styles.segmentoTexto,
                   {
                     color: activo
-                      ? COLORES.textoSobrePrimario
+                      ? colors.onPrimary
                       : colors.textSecondary,
                   },
                 ]}
@@ -114,6 +117,8 @@ export default function HistorialClientes({ token, estado }: Props) {
               key={o.id}
               accessibilityRole="button"
               accessibilityState={{ selected: activo }}
+              accessibilityLabel={`Ordenar por ${o.label.toLowerCase()}`}
+              accessibilityHint="Cambia el orden de la lista"
               style={[
                 styles.pildora,
                 { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
@@ -147,7 +152,7 @@ export default function HistorialClientes({ token, estado }: Props) {
                 <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
                   👤 {cli.nombre}
                 </Text>
-                <Text style={subtitulo}>📞 Teléfono: {cli.telefono}</Text>
+                <Text style={subtitulo}>📞 {telefonoConBandera(cli.telefono, cli.indicativo)}</Text>
                 <Text style={subtitulo}>
                   📅 Última visita:{" "}
                   {cli.fechaUltimaCita
@@ -172,11 +177,15 @@ export default function HistorialClientes({ token, estado }: Props) {
                   }
                 />
                 <View style={styles.filaAcciones}>
-                  <Text style={[styles.totalCitas, { color: colors.primary }]}>
+                  <Text style={[styles.totalCitas, { color: colors.primaryText }]}>
                     {cli.totalCitas} Citas
                   </Text>
                   <Tocable
                       accessibilityRole="button"
+                      accessibilityLabel={bloqueado ? `Desbloquear a ${cli.nombre}` : `Bloquear a ${cli.nombre}`}
+                      accessibilityHint={
+                        bloqueado ? "Le permite volver a reservar" : "Ya no podrá reservar en tu negocio"
+                      }
                       style={[
                         styles.botonBloqueo,
                         {
@@ -194,9 +203,13 @@ export default function HistorialClientes({ token, estado }: Props) {
                 </View>
                 <Tocable
                   accessibilityRole="button"
+                  accessibilityLabel={abiertoId === cli.id ? "Ocultar citas" : "Ver citas"}
+                  accessibilityHint={`Historial de citas de ${cli.nombre}`}
+                  accessibilityState={{ expanded: abiertoId === cli.id }}
                   onPress={() => setAbiertoId(abiertoId === cli.id ? null : cli.id)}
+                  style={styles.botonVerCitas}
                 >
-                  <Text style={[styles.verCitas, { color: colors.primary }]}>
+                  <Text style={[styles.verCitas, { color: colors.primaryText }]}>
                     {abiertoId === cli.id ? "Ocultar citas ▲" : "Ver citas ▼"}
                   </Text>
                 </Tocable>
@@ -223,7 +236,8 @@ const styles = StyleSheet.create({
   },
   segmento: {
     flex: 1,
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 6,
     alignItems: "center",
   },
@@ -234,8 +248,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    minHeight: 44,
+    paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
     marginRight: 8,
@@ -245,7 +259,8 @@ const styles = StyleSheet.create({
   columnaDerecha: { alignItems: "flex-end", gap: 6 },
   filaAcciones: { flexDirection: "row", alignItems: "center", gap: 8 },
   totalCitas: { fontSize: 10, fontWeight: "bold" },
-  verCitas: { fontSize: 11, fontWeight: "bold" },
-  botonBloqueo: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  verCitas: { fontSize: 12, fontWeight: "bold" },
+  botonVerCitas: { minHeight: 44, justifyContent: "center" },
+  botonBloqueo: { paddingHorizontal: 10, minHeight: 44, justifyContent: "center", borderRadius: 6 },
   botonBloqueoTexto: { color: COLORES.blanco, fontSize: 9, fontWeight: "bold" },
 });

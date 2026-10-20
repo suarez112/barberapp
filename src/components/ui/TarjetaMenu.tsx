@@ -18,10 +18,12 @@ export default function TarjetaMenu({ icono, titulo, descripcion, onPress }: Pro
   return (
     <Tocable
       accessibilityRole="button"
+      accessibilityLabel={titulo}
+      accessibilityHint={descripcion}
       style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={32} color={colors.primary} />
+      <Ionicons name={icono} size={32} color={colors.primaryText} />
       <View style={styles.textos}>
         <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
         <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>

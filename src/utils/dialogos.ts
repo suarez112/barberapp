@@ -71,3 +71,7 @@ type OpcionesConfirmar = {
 // Pregunta con "Aceptar" y "Cancelar" (o los textos dados). true si la persona acepta.
 export const confirmar = ({ titulo, mensaje, destructivo = false, ...textos }: OpcionesConfirmar) =>
   mostrar({ tipo: "confirmacion", titulo, mensaje, destructivo, ...textos });
+
+// Formulario con errores: cada campo muestra debajo qué corregir
+export const avisarCamposConError = () =>
+  avisar("Revisa el formulario", "Corrige los campos marcados en rojo: debajo de cada uno dice qué falta.");

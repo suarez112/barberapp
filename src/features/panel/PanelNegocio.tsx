@@ -96,11 +96,16 @@ export default function PanelNegocio({
   const contenido = () => {
     if (!empresa) {
       return cargando ? (
-        <ActivityIndicator color={colors.primary} style={styles.cargando} />
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       ) : (
         <View>
           <TextoInfo>{error ?? "No se pudieron cargar los datos del negocio."}</TextoInfo>
-          <Boton titulo="REINTENTAR" variante="neutro" onPress={recargar} />
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar el panel"
+            variante="neutro"
+            onPress={recargar}
+          />
         </View>
       );
     }
@@ -155,6 +160,7 @@ export default function PanelNegocio({
         <PantallaAviso icono="storefront-outline" titulo="Negocio inactivo" mensaje={inactivo}>
           <Boton
             titulo="CERRAR SESIÓN"
+            ayuda="Sale de tu cuenta en este celular"
             variante="neutro"
             onPress={cerrarSesion}
             style={styles.botonAviso}

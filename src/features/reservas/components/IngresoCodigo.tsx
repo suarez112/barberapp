@@ -11,8 +11,13 @@ export default function IngresoCodigo() {
   const { colors } = useAppTheme();
   const abrirNegocio = useAbrirNegocio();
   const [codigo, setCodigo] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const entrar = async () => {
+    if (!codigo.trim()) {
+      setError("Escribe el código que te dio el negocio, por ejemplo INFINITY.");
+      return;
+    }
     if (await abrirNegocio(codigo)) setCodigo("");
   };
 
@@ -30,15 +35,29 @@ export default function IngresoCodigo() {
       </Text>
 
       <CampoTexto
-        style={styles.campo}
-        placeholder="Escribir Código (ej: INFINITY)"
+        etiqueta="Código del negocio"
+        error={error}
+        ayuda="Letras y números que te dio el negocio"
+        placeholder="ej: INFINITY"
         autoCapitalize="characters"
+        autoCorrect={false}
+        autoComplete="off"
+        maxLength={10}
         value={codigo}
-        onChangeText={setCodigo}
+        onChangeText={(t) => {
+          setCodigo(t);
+          setError(null);
+        }}
         onSubmitEditing={entrar}
+        estiloTexto={styles.campo}
       />
 
-      <Boton titulo="ENTRAR AL NEGOCIO" onPress={entrar} style={styles.boton} />
+      <Boton
+        titulo="ENTRAR AL NEGOCIO"
+        ayuda="Abre el negocio para ver sus servicios y reservar"
+        onPress={entrar}
+        style={styles.boton}
+      />
     </View>
   );
 }

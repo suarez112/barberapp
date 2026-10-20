@@ -41,7 +41,7 @@ export default function SeleccionRolScreen() {
   return (
     <Pantalla>
       <View style={styles.contenedor}>
-        <Text style={[styles.titulo, { color: colors.primary }]}>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>
           ¿CÓMO DESEAS INGRESAR?
         </Text>
         <Text style={[styles.subtitulo, { color: colors.textSecondary }]}>
@@ -60,12 +60,14 @@ export default function SeleccionRolScreen() {
 
         <Tocable
           accessibilityRole="link"
+          accessibilityLabel="¿Ya tienes cuenta? Inicia sesión"
+          accessibilityHint="Abre la pantalla para entrar con tu correo o usuario"
           style={styles.enlace}
           onPress={() => push("/login")}
         >
           <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>
             ¿Ya tienes cuenta?{" "}
-            <Text style={{ color: colors.primary }}>Inicia sesión</Text>
+            <Text style={{ color: colors.primaryText }}>Inicia sesión</Text>
           </Text>
         </Tocable>
       </View>

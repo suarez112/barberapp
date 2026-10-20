@@ -3,15 +3,24 @@ import { StyleSheet } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
-type Props = { seleccionada: boolean; onPress: () => void; children: ReactNode };
+type Props = {
+  seleccionada: boolean;
+  onPress: () => void;
+  // Lo que lee TalkBack / VoiceOver
+  etiqueta: string;
+  ayuda: string;
+  children: ReactNode;
+};
 
 // Tarjeta de la cuadrícula de 2 columnas (profesionales y servicios)
-export default function TarjetaOpcion({ seleccionada, onPress, children }: Props) {
+export default function TarjetaOpcion({ seleccionada, onPress, etiqueta, ayuda, children }: Props) {
   const { colors } = useAppTheme();
   return (
     <Tocable
       accessibilityRole="button"
       accessibilityState={{ selected: seleccionada }}
+      accessibilityLabel={etiqueta}
+      accessibilityHint={ayuda}
       style={[
         styles.tarjeta,
         { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },

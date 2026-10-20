@@ -80,16 +80,23 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
           {guardada ? "" : " Mientras tanto, el mapa usa la dirección escrita."}
         </Text>
         {guardada && perfil.googleMapsUrl ? (
-          <Pressable accessibilityRole="link" onPress={verEnMapa}>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Ver en el mapa"
+            accessibilityHint="Abre Google Maps con la ubicación guardada"
+            onPress={verEnMapa}
+            style={styles.botonEnlace}
+          >
             <View style={styles.enlace}>
-              <Ionicons name="map-outline" size={14} color={colors.primary} />
-              <Text style={[styles.textoEnlace, { color: colors.primary }]}>Ver en el mapa</Text>
+              <Ionicons name="map-outline" size={14} color={colors.primaryText} />
+              <Text style={[styles.textoEnlace, { color: colors.primaryText }]}>Ver en el mapa</Text>
             </View>
           </Pressable>
         ) : null}
       </View>
       <Boton
         titulo={buscando ? "BUSCANDO UBICACIÓN…" : "USAR MI UBICACIÓN ACTUAL"}
+        ayuda="Guarda la ubicación del GPS como ubicación del negocio. Úsalo dentro del local"
         onPress={usarUbicacionActual}
       />
     </View>
@@ -101,5 +108,6 @@ const styles = StyleSheet.create({
   estado: { fontSize: 13, fontWeight: "bold" },
   nota: { fontSize: 12 },
   enlace: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  botonEnlace: { minHeight: 44, justifyContent: "center" },
   textoEnlace: { fontSize: 13, fontWeight: "bold" },
 });

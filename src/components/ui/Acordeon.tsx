@@ -27,14 +27,16 @@ export default function Acordeon({
       <Tocable
         accessibilityRole="button"
         accessibilityState={{ expanded: abierto }}
+        accessibilityLabel={titulo.replace(/^\W+\s*/u, "")}
+        accessibilityHint={abierto ? "Oculta el formulario" : "Muestra el formulario"}
         style={[styles.cabecera, bordes, style]}
         onPress={onAlternar}
       >
-        <Text style={[styles.titulo, { color: colors.primary }]}>{titulo}</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>{titulo}</Text>
         <Ionicons
           name={abierto ? "chevron-up" : "chevron-down"}
           size={20}
-          color={colors.primary}
+          color={colors.primaryText}
         />
       </Tocable>
       {abierto ? <View style={[styles.cuerpo, bordes]}>{children}</View> : null}
@@ -47,7 +49,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 14,
+    minHeight: 48,
+    paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
   },

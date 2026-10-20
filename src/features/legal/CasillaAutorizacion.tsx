@@ -6,18 +6,23 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { TipoDocumento } from "./api";
 import DocumentoLegalModal from "./DocumentoLegalModal";
 
-type Props = { aceptada: boolean; onCambiar: (aceptada: boolean) => void };
+type Props = {
+  aceptada: boolean;
+  onCambiar: (aceptada: boolean) => void;
+  // Qué falta; se muestra debajo de la casilla
+  error?: string | null;
+};
 
 // Casilla obligatoria (empieza sin marcar) para autorizar el tratamiento de datos
 // y aceptar los Términos. Cada enlace abre su documento en un modal.
-export default function CasillaAutorizacion({ aceptada, onCambiar }: Props) {
+export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Props) {
   const { colors } = useAppTheme();
   const [abierto, setAbierto] = useState<TipoDocumento | null>(null);
 
   const enlace = (texto: string, tipo: TipoDocumento) => (
     <Text
       accessibilityRole="link"
-      style={[styles.enlace, { color: colors.primary }]}
+      style={[styles.enlace, { color: colors.primaryText }]}
       onPress={() => setAbierto(tipo)}
     >
       {texto}
@@ -29,19 +34,38 @@ export default function CasillaAutorizacion({ aceptada, onCambiar }: Props) {
       <Tocable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: aceptada }}
+        accessibilityLabel="Autorizo el tratamiento de mis datos personales y acepto los Términos y Condiciones"
+        accessibilityHint={[
+          error ? `Error: ${error}` : null,
+          "Toca para marcar o desmarcar. Usa las acciones para leer cada documento",
+        ]
+          .filter(Boolean)
+          .join(". ")}
+        accessibilityActions={[
+          { name: "politica", label: "Leer la política de tratamiento de datos" },
+          { name: "terminos", label: "Leer los Términos y Condiciones" },
+        ]}
+        onAccessibilityAction={(e) =>
+          setAbierto(e.nativeEvent.actionName === "politica" ? "politica-datos" : "terminos")
+        }
         style={styles.fila}
         onPress={() => onCambiar(!aceptada)}
       >
         <Ionicons
           name={aceptada ? "checkbox" : "square-outline"}
-          size={22}
-          color={colors.primary}
+          size={26}
+          color={error ? colors.error : colors.primaryText}
         />
-        <Text style={[styles.texto, { color: colors.textSecondary }]}>
+        <Text style={[styles.texto, { color: colors.textPrimary }]}>
           Autorizo el {enlace("tratamiento de mis datos personales", "politica-datos")} y
           acepto los {enlace("Términos y Condiciones", "terminos")}
         </Text>
       </Tocable>
+      {error ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.error }]}>
+          {error}
+        </Text>
+      ) : null}
       <DocumentoLegalModal tipo={abierto} onCerrar={() => setAbierto(null)} />
     </>
   );
@@ -58,7 +82,9 @@ const styles = StyleSheet.create({
     gap: 10,
     marginVertical: 10,
     paddingHorizontal: 4,
+    minHeight: 44,
   },
-  texto: { flex: 1, fontSize: 12, lineHeight: 17 },
+  texto: { flex: 1, fontSize: 13, lineHeight: 18 },
+  error: { fontSize: 12, marginTop: -6, marginBottom: 8, lineHeight: 16 },
   enlace: { fontWeight: "bold", textDecorationLine: "underline" },
 });

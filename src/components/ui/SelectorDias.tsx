@@ -71,12 +71,13 @@ export default function SelectorDias({
     <Tocable
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
+      accessibilityHint={`Muestra los días del ${etiqueta.toLowerCase()}`}
       accessibilityState={{ disabled: !habilitada }}
       disabled={!habilitada}
       style={[styles.flecha, !habilitada && styles.deshabilitada]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={20} color={colors.primary} />
+      <Ionicons name={icono} size={20} color={colors.primaryText} />
     </Tocable>
   );
 
@@ -110,6 +111,8 @@ export default function SelectorDias({
               key={d.id}
               accessibilityRole="button"
               accessibilityState={{ selected: esSel }}
+              accessibilityLabel={`${d.diaNom} ${d.num}`}
+              accessibilityHint="Elige este día"
               style={[
                 styles.dia,
                 { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
@@ -120,7 +123,7 @@ export default function SelectorDias({
               ]}
               onPress={() => onSeleccionar(d)}
             >
-              <Text style={[styles.nombre, esSel && { color: colors.primary }]}>
+              <Text style={[styles.nombre, esSel && { color: colors.primaryText }]}>
                 {d.diaNom}
               </Text>
               <Text
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tituloMes: { fontSize: 15, fontWeight: "bold" },
-  flecha: { padding: 6 },
+  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   deshabilitada: { opacity: 0.3 },
   dia: {
     width: 60,

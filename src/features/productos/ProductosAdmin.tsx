@@ -16,7 +16,7 @@ import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { Producto } from "@/types";
-import { avisar, confirmar } from "@/utils/dialogos";
+import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio } from "@/utils/formato";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 import { useAvisarError } from "../sesion/useAvisarError";
@@ -63,7 +63,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const { abierto, alternar, enEdicion, campos, cambiar, editar, reiniciar } =
+  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
 
   const cargar = useCallback(
@@ -96,8 +96,13 @@ export default function ProductosAdmin({ token }: { token: string }) {
 
   const guardar = async () => {
     const precio = leerPrecio(campos.precio);
-    if (!campos.nombre.trim() || isNaN(precio)) {
-      avisar("Faltan datos", "Escribe el nombre y el precio del producto.");
+    const nuevos = {
+      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del producto, por ejemplo Cera para cabello." } : {}),
+      ...(isNaN(precio) ? { precio: "Escribe el precio en pesos, por ejemplo 25.000." } : {}),
+    };
+    setErrores(nuevos);
+    if (Object.keys(nuevos).length > 0) {
+      avisarCamposConError();
       return;
     }
     if (guardando) return;
@@ -162,6 +167,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
         <Tocable
           accessibilityRole="button"
           accessibilityLabel="Elegir foto del producto"
+          accessibilityHint="Abre tu galería para elegir una foto (opcional)"
           onPress={elegir}
           style={[styles.foto, { borderColor: colors.cardBorder }]}
         >
@@ -177,23 +183,42 @@ export default function ProductosAdmin({ token }: { token: string }) {
           )}
         </Tocable>
         {fotoMostrada ? (
-          <Tocable accessibilityRole="button" onPress={quitarFoto}>
+          <Tocable
+            accessibilityRole="button"
+            accessibilityLabel="Quitar foto"
+            accessibilityHint="El producto quedará sin foto al guardar"
+            onPress={quitarFoto}
+            style={styles.botonQuitar}
+          >
             <Text style={[styles.quitarFoto, { color: COLORES.peligro }]}>Quitar foto</Text>
           </Tocable>
         ) : null}
         <CampoTexto
-          placeholder="Nombre del Producto"
+          etiqueta="Nombre del producto"
+          obligatorio
+          error={errores.nombre}
+          ayuda="Así lo verán los clientes en el catálogo"
+          placeholder="ej: Cera para cabello"
+          autoCapitalize="sentences"
+          maxLength={100}
           value={campos.nombre}
           onChangeText={cambiar("nombre")}
         />
         <CampoPrecio
-          placeholder="Precio (ej: 25.000)"
-          accessibilityLabel="Precio"
+          etiqueta="Precio"
+          obligatorio
+          error={errores.precio}
+          ayuda="En pesos, sin centavos"
+          placeholder="ej: 25.000"
           value={campos.precio}
           onChangeText={cambiar("precio")}
         />
         <CampoTexto
-          placeholder="Descripción (opcional)"
+          etiqueta="Descripción (opcional)"
+          ayuda="Detalles del producto para los clientes"
+          placeholder="ej: Fijación fuerte, 100 g"
+          autoCapitalize="sentences"
+          maxLength={300}
           value={campos.descripcion}
           onChangeText={cambiar("descripcion")}
           multiline
@@ -202,6 +227,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
           tituloGuardar={
             guardando ? "GUARDANDO…" : enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR PRODUCTO"
           }
+          ayudaGuardar={enEdicion ? "Guarda los cambios del producto" : "Agrega el producto al catálogo"}
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
@@ -210,7 +236,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
       <TituloSeccion style={styles.tituloLista}>
         PRODUCTOS ACTIVOS ({productos.length})
       </TituloSeccion>
-      {cargando ? <ActivityIndicator color={colors.primary} /> : null}
+      {cargando ? <ActivityIndicator color={colors.primaryText} /> : null}
       {!cargando && productos.length === 0 ? (
         <TextoInfo>Aún no has agregado productos.</TextoInfo>
       ) : null}
@@ -235,14 +261,16 @@ export default function ProductosAdmin({ token }: { token: string }) {
           <View style={styles.acciones}>
             <BotonIcono
               icono="create-outline"
-              color={colors.primary}
+              color={colors.primaryText}
               etiqueta={`Editar ${p.nombre}`}
+              ayuda="Abre el producto en el formulario de arriba"
               onPress={() => editar(p)}
             />
             <BotonIcono
               icono="trash-outline"
               color={COLORES.peligro}
               etiqueta={`Eliminar ${p.nombre}`}
+              ayuda="Pide confirmación antes de eliminarlo"
               onPress={() => eliminar(p)}
             />
           </View>
@@ -254,6 +282,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
 
 const styles = StyleSheet.create({
   acordeon: { marginTop: 15 },
+  botonQuitar: { minHeight: 44, justifyContent: "center" },
   tituloLista: { marginTop: 20 },
   foto: {
     height: 120,
