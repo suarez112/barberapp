@@ -107,7 +107,7 @@ export default function TarjetaCita({
         <Text style={nota}>
           Completada por {c.completadaPor} a las {formatearHora(c.completadaEn)}
           {esAdmin && retraso > MINUTOS_ALERTA_COMPLETADA_TARDE ? (
-            <Text style={styles.alerta}>
+            <Text style={[styles.alerta, { color: colors.avisoTexto }]}>
               {"  "}⚠️ {Math.round(retraso / 60)} h después
             </Text>
           ) : null}
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   servicio: { fontSize: 13 },
   precio: { fontSize: 13, fontWeight: "bold" },
   nota: { fontSize: 11, marginTop: 8 },
-  alerta: { color: COLORES.advertencia, fontWeight: "bold" },
+  alerta: { fontWeight: "bold" },
   acciones: { flexDirection: "row", gap: 10, marginTop: 10 },
   botonEstado: {
     flex: 1,

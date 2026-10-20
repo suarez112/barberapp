@@ -34,7 +34,7 @@ export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscrip
       <Ionicons
         name="hourglass-outline"
         size={26}
-        color={urgente ? COLORES.advertencia : colors.primary}
+        color={urgente ? colors.avisoTexto : colors.primaryText}
       />
       <View style={styles.textos}>
         <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>

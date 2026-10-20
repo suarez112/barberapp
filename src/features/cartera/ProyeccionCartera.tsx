@@ -54,10 +54,10 @@ export default function ProyeccionCartera({ periodo }: { periodo: PeriodoActual 
         },
       ]}
     >
-      <Text style={[s.numero, { color: destacada ? colors.primary : colors.textPrimary }]}>
+      <Text style={[s.numero, { color: destacada ? colors.primaryText : colors.textPrimary }]}>
         {valor}
       </Text>
-      <Text style={[s.texto, { color: destacada ? colors.primary : colors.textSecondary }]}>
+      <Text style={[s.texto, { color: destacada ? colors.primaryText : colors.textSecondary }]}>
         {texto}
       </Text>
     </View>

@@ -50,7 +50,7 @@ export default function SelectorHoras({
 
   if (horarios.length === 0) {
     return (
-      <Text style={s.sinHoras}>
+      <Text style={[s.sinHoras, { color: colors.peligroTexto }]}>
         No hay horas disponibles para este día. Prueba con otro día u otro
         profesional.
       </Text>
@@ -171,5 +171,5 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   textoChip: { fontSize: 12, fontWeight: "bold" },
-  sinHoras: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
+  sinHoras: { fontSize: 13, marginVertical: 10 },
 });

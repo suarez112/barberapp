@@ -176,7 +176,7 @@ export default function Desplegable<T extends string | number>({
                     <Text
                       style={[
                         styles.textoOpcion,
-                        { color: activa ? colors.primary : colors.textPrimary },
+                        { color: activa ? colors.primaryText : colors.textPrimary },
                         activa && styles.activa,
                       ]}
                     >

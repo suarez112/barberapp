@@ -11,8 +11,9 @@ export default function Ficha({ titulo, filas }: Props) {
       <Text accessibilityRole="header" style={[styles.titulo, { color: colors.primaryText }]}>
         {titulo.toUpperCase()}
       </Text>
-      {filas.map(([dato, valor]) => (
-        <View key={dato} style={styles.fila}>
+      {filas.map(([dato, valor], i) => (
+        // Dos filas pueden tener el mismo texto (p. ej. dos acciones el mismo minuto)
+        <View key={`${dato}-${i}`} style={styles.fila}>
           <Text style={[styles.dato, { color: colors.textSecondary }]}>{dato}</Text>
           <Text selectable style={[styles.valor, { color: colors.textPrimary }]}>
             {valor}

@@ -6,7 +6,6 @@ import Boton from "@/components/ui/Boton";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { avisar } from "@/utils/dialogos";
 import { Coordenadas, PerfilEmpresa } from "../../cuenta/api";
 import MapaUbicacion from "./MapaUbicacion";
@@ -171,10 +170,10 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
     precision === null
       ? colors.textSecondary
       : precision <= PRECISION_BUSCADA_M
-        ? COLORES.exitoClaro
+        ? colors.exitoTexto
         : precision <= PRECISION_MALA_M
-          ? COLORES.advertencia
-          : COLORES.peligro;
+          ? colors.avisoTexto
+          : colors.peligroTexto;
 
   return (
     <View>

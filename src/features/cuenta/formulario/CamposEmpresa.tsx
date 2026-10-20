@@ -86,9 +86,9 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
   const departamento = departamentos?.find((d) => d.nombre === valores.departamento);
   const colorCodigo =
     estadoCodigo === "disponible"
-      ? COLORES.exitoClaro
+      ? colors.exitoTexto
       : estadoCodigo === "en-uso"
-        ? COLORES.peligro
+        ? colors.peligroTexto
         : colors.textSecondary;
 
   const cambiarDia = (dia: number, cambios: Partial<DiaFormulario>) =>

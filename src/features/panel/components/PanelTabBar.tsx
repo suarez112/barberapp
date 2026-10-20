@@ -37,7 +37,7 @@ export default function PanelTabBar({ pestanas, activa, onCambiar }: Props) {
       ]}
     >
       {pestanas.map((t) => {
-        const color = activa === t.id ? colors.primary : colors.textSecondary;
+        const color = activa === t.id ? colors.primaryText : colors.textSecondary;
         return (
           <Tocable
             key={t.id}

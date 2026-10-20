@@ -111,13 +111,13 @@ function MiCartera({ token }: { token: string }) {
         },
       ]}
     >
-      <Text style={[s.numero, { color: destacada ? colors.primary : colors.textPrimary }]}>
+      <Text style={[s.numero, { color: destacada ? colors.primaryText : colors.textPrimary }]}>
         {valor}
       </Text>
       <Text
         style={[
           s.textoTarjeta,
-          { color: destacada ? colors.primary : colors.textSecondary },
+          { color: destacada ? colors.primaryText : colors.textSecondary },
           destacada && s.negrita,
         ]}
       >
@@ -184,7 +184,7 @@ function MiCartera({ token }: { token: string }) {
         </TouchableOpacity>
       </View>
 
-      {error ? <Text style={s.infoText}>{error}</Text> : null}
+      {error ? <Text style={[s.infoText, { color: colors.peligroTexto }]}>{error}</Text> : null}
       {!cartera && !error ? (
         <ActivityIndicator color={colors.primaryText} style={s.cargando} />
       ) : null}
@@ -258,6 +258,6 @@ const s = StyleSheet.create({
   numero: { fontSize: 20, fontWeight: "bold" },
   textoTarjeta: { fontSize: 11, marginTop: 4, textAlign: "center" },
   negrita: { fontWeight: "bold" },
-  infoText: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
+  infoText: { fontSize: 13, marginVertical: 10 },
   nota: { fontSize: 11, marginTop: 8 },
 });

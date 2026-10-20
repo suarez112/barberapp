@@ -45,7 +45,7 @@ export default function SelectorSupervision({
               <Text
                 style={[
                   styles.nombre,
-                  { color: esSel ? colors.primary : colors.textPrimary },
+                  { color: esSel ? colors.primaryText : colors.textPrimary },
                 ]}
               >
                 {emp.nombre} {emp.esAdmin ? "👑" : null}

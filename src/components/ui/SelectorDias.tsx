@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
-import { COLORES } from "../../theme/paleta";
 import { Dia } from "../../types";
 import {
   MESES_LARGOS,
@@ -123,13 +122,13 @@ export default function SelectorDias({
               ]}
               onPress={() => onSeleccionar(d)}
             >
-              <Text style={[styles.nombre, esSel && { color: colors.primaryText }]}>
+              <Text style={[styles.nombre, { color: colors.apagadoTexto }, esSel && { color: colors.primaryText }]}>
                 {d.diaNom}
               </Text>
               <Text
                 style={[
                   styles.numero,
-                  { color: esSel ? colors.primary : colors.textPrimary },
+                  { color: esSel ? colors.primaryText : colors.textPrimary },
                 ]}
               >
                 {d.num}
@@ -165,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 8,
   },
-  nombre: { color: COLORES.apagado, fontSize: 10, fontWeight: "bold" },
+  nombre: { fontSize: 10, fontWeight: "bold" },
   numero: { fontSize: 20, fontWeight: "bold", marginVertical: 2 },
   mes: { fontSize: 9 },
 });

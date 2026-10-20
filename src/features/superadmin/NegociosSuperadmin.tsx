@@ -20,8 +20,9 @@ const ESPERA_BUSQUEDA_MS = 400;
 type Filtro = FiltroEstado | "todos";
 
 // Negocios: tabla con búsqueda y filtros; al tocar uno se abre su detalle
-export default function NegociosSuperadmin() {
-  const [abierto, setAbierto] = useState<string | null>(null);
+export default function NegociosSuperadmin({ idInicial = null }: { idInicial?: string | null }) {
+  // idInicial: abre directo el detalle de un negocio (viene del Inicio)
+  const [abierto, setAbierto] = useState<string | null>(idInicial);
 
   if (abierto) return <DetalleNegocio id={abierto} onVolver={() => setAbierto(null)} />;
   return <ListaNegocios onAbrir={setAbierto} />;

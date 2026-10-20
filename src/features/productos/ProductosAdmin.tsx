@@ -190,7 +190,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
             onPress={quitarFoto}
             style={styles.botonQuitar}
           >
-            <Text style={[styles.quitarFoto, { color: COLORES.peligro }]}>Quitar foto</Text>
+            <Text style={[styles.quitarFoto, { color: colors.peligroTexto }]}>Quitar foto</Text>
           </Tocable>
         ) : null}
         <CampoTexto

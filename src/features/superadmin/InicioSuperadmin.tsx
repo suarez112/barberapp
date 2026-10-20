@@ -6,6 +6,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { obtenerResumen, ResumenPlataforma } from "./api";
 import Encabezado from "./components/Encabezado";
 import EstadoCarga from "./components/EstadoCarga";
+import EstadisticasSuperadmin from "./EstadisticasSuperadmin";
 import { formatearNumero } from "./formato";
 import { useCargar } from "./useCargar";
 
@@ -28,8 +29,10 @@ const TARJETAS: Tarjeta[] = [
   { clave: "citas", titulo: "Citas de hoy", icono: "calendar-outline", color: COLORES.info, valor: (d) => d.citasHoy },
 ];
 
-// Inicio: los contadores de toda la plataforma
-export default function InicioSuperadmin() {
+type Props = { onVerNegocio: (id: string) => void };
+
+// Inicio: los contadores de toda la plataforma y, debajo, sus gráficos
+export default function InicioSuperadmin({ onVerNegocio }: Props) {
   const { colors } = useAppTheme();
   const { datos, cargando, error, recargar } = useCargar(obtenerResumen, "resumen");
 
@@ -56,6 +59,7 @@ export default function InicioSuperadmin() {
           </View>
         ) : null}
       </EstadoCarga>
+      <EstadisticasSuperadmin onVerNegocio={onVerNegocio} />
     </View>
   );
 }

@@ -13,6 +13,8 @@ export type Pagina<T> = { total: number; pagina: number; limite: number; datos: 
 export type SesionSuperadmin = {
   token: string;
   expiraEnSegundos: number;
+  // Minutos sin actividad tras los que el servidor cierra la sesión
+  inactividadMinutos?: number;
   superadmin: { id: string; correo: string };
 };
 
@@ -25,6 +27,33 @@ export type ResumenPlataforma = {
   nuevosEsteMes: number;
   porVencerEn7Dias: number;
   citasHoy: number;
+};
+
+export type NegocioPorVencer = {
+  id: string;
+  nombre: string;
+  codigoAcceso: string;
+  estado: EstadoNegocio;
+  diasRestantes: number;
+  fechaFin: string | null;
+};
+
+// Cifras agregadas para los gráficos del Inicio (nunca datos de clientes)
+export type EstadisticasPlataforma = {
+  negociosNuevosPorMes: { mes: string; total: number }[];
+  negociosPorEstado: { estado: EstadoNegocio; total: number }[];
+  negociosPorPlan: { plan: PlanEquipoId; nombre: string; total: number; activos: number }[];
+  citasPorDia: { dia: string; total: number }[];
+  topDepartamentos: { departamento: string; total: number }[];
+  conversionPruebaAPlan: { pruebasTerminadas: number; convertidos: number; tasaPorcentaje: number | null };
+  vencenEn7Dias: { total: number; negocios: NegocioPorVencer[] };
+  ingresoMensualEstimado: {
+    estimado: boolean;
+    moneda: string;
+    total: number;
+    detalle: { plan: PlanEquipoId; periodo: Periodo; negocios: number; ingreso: number }[];
+    nota: string;
+  };
 };
 
 export type NegocioResumen = {
@@ -119,6 +148,13 @@ export const iniciarSesionSuperadmin = (correo: string, clave: string, codigo: s
 
 export const obtenerResumen = (token: string, signal?: AbortSignal) =>
   request<ResumenPlataforma>(`${BASE}/resumen`, { token, signal });
+
+export const obtenerEstadisticas = (token: string, signal?: AbortSignal) =>
+  request<EstadisticasPlataforma>(`${BASE}/estadisticas`, { token, signal });
+
+// Cierra la sesión también en el servidor: el token deja de servir
+export const cerrarSesionSuperadmin = (token: string) =>
+  request<{ mensaje: string }>(`${BASE}/logout`, { method: "POST", token, tiempoLimiteMs: 5000 });
 
 export const listarNegocios = (
   token: string,

@@ -3,10 +3,12 @@ import { describirError, esEstado, registrarCausa } from "@/services/api/errores
 import { esCancelada } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import { crearContexto } from "@/utils/crearContexto";
+import { cerrarSesionSuperadmin } from "./api";
 
 type ValorSuperadmin = {
   token: string;
   correo: string;
+  // Cierra la sesión en el servidor (sin esperar la respuesta) y vuelve al login
   salir: () => void;
   // Muestra el error de una acción; si la sesión venció (401) la cierra
   avisarError: (contexto: string, error: unknown, titulo: string) => void;
@@ -29,6 +31,12 @@ export function SuperadminProvider({ token, correo, onSalir, children }: Props) 
     return true;
   };
 
+  const salir = () => {
+    // Si el servidor no responde, igual se cierra aquí: el token solo vive en memoria
+    cerrarSesionSuperadmin(token).catch(() => {});
+    onSalir();
+  };
+
   const avisarError = (contexto: string, error: unknown, titulo: string) => {
     if (esCancelada(error) || cerrarSiVencio(error)) return;
     registrarCausa(contexto, error);
@@ -37,7 +45,7 @@ export function SuperadminProvider({ token, correo, onSalir, children }: Props) 
   };
 
   return (
-    <ContextoSuperadmin value={{ token, correo, salir: onSalir, avisarError, cerrarSiVencio }}>
+    <ContextoSuperadmin value={{ token, correo, salir, avisarError, cerrarSiVencio }}>
       {children}
     </ContextoSuperadmin>
   );

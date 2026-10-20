@@ -85,11 +85,11 @@ export default function TableroCartera({ token }: { token: string }) {
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
-        style={[s.numero, { color: destacada ? colors.primary : colors.textPrimary }]}
+        style={[s.numero, { color: destacada ? colors.primaryText : colors.textPrimary }]}
       >
         {valor}
       </Text>
-      <Text style={[s.textoTarjeta, { color: destacada ? colors.primary : colors.textSecondary }]}>
+      <Text style={[s.textoTarjeta, { color: destacada ? colors.primaryText : colors.textSecondary }]}>
         {texto}
       </Text>
     </View>
@@ -109,7 +109,7 @@ export default function TableroCartera({ token }: { token: string }) {
       >
         <Text
           numberOfLines={1}
-          style={[s.nombreBarra, { color: activa ? colors.primary : colors.textPrimary }]}
+          style={[s.nombreBarra, { color: activa ? colors.primaryText : colors.textPrimary }]}
         >
           {p.nombre}
           {p.activo ? "" : " (retirado)"}
@@ -248,7 +248,7 @@ export default function TableroCartera({ token }: { token: string }) {
         </Text>
       )}
 
-      {error ? <Text style={s.error}>{error}</Text> : null}
+      {error ? <Text style={[s.error, { color: colors.peligroTexto }]}>{error}</Text> : null}
       {!resumen && !error ? <ActivityIndicator color={colors.primaryText} style={s.cargando} /> : null}
 
       {resumen ? (
@@ -310,7 +310,7 @@ const s = StyleSheet.create({
   flechaApagada: { opacity: 0.25 },
   textoNavegador: { flex: 1, fontSize: 14, fontWeight: "bold", textAlign: "center" },
   cargando: { marginVertical: 20 },
-  error: { color: "#EF4444", fontSize: 13, marginVertical: 10 },
+  error: { fontSize: 13, marginVertical: 10 },
   filaTarjetas: { flexDirection: "row", gap: 8 },
   tarjeta: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, borderRadius: 8, borderWidth: 1, alignItems: "center" },
   numero: { fontSize: 17, fontWeight: "bold" },

@@ -11,7 +11,6 @@ import {
 import TextoMarkdown from "@/components/ui/TextoMarkdown";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { DocumentoLegal, TipoDocumento, obtenerDocumentoLegal } from "./api";
 import { guardarDocumento, leerDocumentoGuardado } from "./documentosGuardados";
 
@@ -133,7 +132,7 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
             </>
           ) : error ? (
             <View style={styles.estado}>
-              <Text accessibilityLiveRegion="polite" style={[styles.error, { color: COLORES.peligro }]}>
+              <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.peligroTexto }]}>
                 {error}
               </Text>
               {reintentar}

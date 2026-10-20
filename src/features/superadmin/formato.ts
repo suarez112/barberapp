@@ -26,6 +26,18 @@ export const formatearFecha = (valor: string | null | undefined, conHora = false
   return `${dia}, ${hora}`;
 };
 
+// "2026-09" -> "sep 26"
+export const formatearMes = (mes: string) => {
+  const [anio, numero] = mes.split("-");
+  return `${MESES[Number(numero) - 1] ?? mes} ${anio?.slice(2) ?? ""}`.trim();
+};
+
+// "2026-09-21" -> "21 sep"
+export const formatearDiaMes = (dia: string) => {
+  const [, mes, numero] = dia.split("-");
+  return `${Number(numero)} ${MESES[Number(mes) - 1] ?? ""}`.trim();
+};
+
 export const formatearNumero = (n: number) => n.toLocaleString("es-CO");
 export const formatearPesos = (n: number) => `$${n.toLocaleString("es-CO")}`;
 

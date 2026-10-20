@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 
 type Props = {
   icono: ComponentProps<typeof Ionicons>["name"];
@@ -17,7 +16,7 @@ export default function PantallaAviso({ icono, titulo, mensaje, children }: Prop
   const { colors } = useAppTheme();
   return (
     <View style={styles.contenedor}>
-      <Ionicons name={icono} size={64} color={COLORES.advertencia} />
+      <Ionicons name={icono} size={64} color={colors.avisoTexto} />
       <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
       {mensaje ? (
         <Text style={[styles.mensaje, { color: colors.textSecondary }]}>{mensaje}</Text>

@@ -14,6 +14,11 @@ export type Paleta = {
   primaryText: string;
   // Texto sobre un fondo del color del negocio (negro o blanco, el que más contraste)
   onPrimary: string;
+  // Textos de estado y apagados que se leen (4.5:1) sobre el fondo y las tarjetas del tema
+  peligroTexto: string;
+  exitoTexto: string;
+  avisoTexto: string;
+  apagadoTexto: string;
   // Borde de los campos (contraste 3:1 con el fondo)
   inputBorder: string;
   // Mensajes de error bajo los campos
@@ -26,6 +31,8 @@ export type Paleta = {
 // Colores fijos que no dependen del negocio ni del tema
 export const COLORES = {
   primarioPorDefecto: "#EAB308",
+  // Dorado oscuro: el amarillo del negocio como texto sobre fondo claro (6:1 sobre blanco)
+  doradoOscuro: "#806000",
   secundarioPorDefecto: "#0D0D0D",
   textoSobrePrimario: "#000",
   blanco: "#FFF",
@@ -95,6 +102,9 @@ export const crearPaleta = (
   const fondo = esOscuro
     ? (empresa?.colorSecundario ?? COLORES.secundarioPorDefecto)
     : "#F3F4F6";
+  // Con fondo claro el amarillo por defecto no se lee como texto: se usa el dorado oscuro
+  const primaryTextClaro =
+    primary.toUpperCase() === COLORES.primarioPorDefecto ? COLORES.doradoOscuro : colorLegible(primary, fondo);
   return {
     bg: fondo,
     headerBg: esOscuro ? "#1A1A1A" : "#FFFFFF",
@@ -103,8 +113,12 @@ export const crearPaleta = (
     textPrimary: esOscuro ? "#FFFFFF" : "#111827",
     textSecondary: esOscuro ? "#A3A3A3" : "#4B5563",
     primary,
-    primaryText: colorLegible(primary, esOscuro ? "#171717" : fondo),
+    primaryText: esOscuro ? colorLegible(primary, "#171717") : primaryTextClaro,
     onPrimary: textoSobre(primary),
+    peligroTexto: esOscuro ? COLORES.peligro : "#B91C1C",
+    exitoTexto: esOscuro ? COLORES.exitoClaro : COLORES.exito,
+    avisoTexto: esOscuro ? COLORES.advertencia : "#92400E",
+    apagadoTexto: esOscuro ? COLORES.apagado : "#5B6470",
     inputBorder: esOscuro ? "#737373" : "#868E96",
     error: esOscuro ? "#F87171" : "#B91C1C",
     cardSelectedBg: esOscuro ? "#262419" : "#FEF9C3",

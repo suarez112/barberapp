@@ -32,7 +32,7 @@ export default function TextoMarkdown({ contenido }: { contenido: string }) {
               key={i}
               style={[
                 nivel === 1 ? styles.titulo1 : styles.titulo2,
-                { color: nivel === 1 ? colors.primary : colors.textPrimary },
+                { color: nivel === 1 ? colors.primaryText : colors.textPrimary },
               ]}
             >
               {enLinea(titulo[2])}

@@ -2,7 +2,6 @@ import { StyleSheet, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { Barbero } from "@/types";
 import TarjetaOpcion, { estilosCuadricula } from "./TarjetaOpcion";
 
@@ -40,7 +39,7 @@ export default function SelectorProfesional({
           <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
             {b.especialidad}
           </Text>
-          <Text style={styles.equipo}>{b.equipo}</Text>
+          <Text style={[styles.equipo, { color: colors.apagadoTexto }]}>{b.equipo}</Text>
         </TarjetaOpcion>
       ))}
     </View>
@@ -48,5 +47,5 @@ export default function SelectorProfesional({
 }
 
 const styles = StyleSheet.create({
-  equipo: { color: COLORES.apagado, fontSize: 10, fontWeight: "bold", marginTop: 8 },
+  equipo: { fontSize: 10, fontWeight: "bold", marginTop: 8 },
 });
