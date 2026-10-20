@@ -86,6 +86,7 @@ src/
     admin.tsx      -> features/admin/AdminPanelScreen (company account, account token) ->
                    features/admin/PanelAdministrador (PanelNegocio + subscription banner + "Mi negocio";
                    expired subscription: PanelVencido with only "Planes" and "Mi negocio")
+  config/app.ts    APP_NOMBRE (name shown in the intro animation, header and "Acerca de") and DESARROLLADOR (developer card data; an empty value hides its button, no photo shows initials)
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
                    department/municipality from GET /api/v1/ubicaciones, schedule as 7 rows with Abierto/Cerrado switch and
                    opening/closing dropdowns, "Copiar el horario del lunes a todos los días" = `copiarLunes`), validarEmpresa
@@ -169,6 +170,12 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - Phones arrive in E.164 (`+573001234567`) since backend migration 011. Show them with `utils/telefonos.ts` `telefonoConBandera()` ("🇨🇴 +57 316 278 1393") and build WhatsApp links with `numeroParaWhatsApp()`; both handle E.164 and old digit-only numbers (never prepend the country code to a number that starts with `+`).
 - Roles: `/admin` redirects to `/login` without an account session and to `/cliente` for `rol = cliente`; `/mis-negocios` and `/mis-citas` redirect to `/cliente` without a client session; `/panel` redirects to `/login` without a staff session and to `/admin` for the account admin.
 - `request()` sends a `FormData` body as multipart (no JSON `Content-Type`).
+
+## Intro and help
+
+- `app/index.tsx` shows `inicio/AnimacionInicio` (logo + name, ~1.8 s, once per app launch) and then the role selection; with a saved session it redirects straight to the panel with no animation.
+- The header menu (`MenuCabecera`) has "Ayuda" -> `/ayuda` (`features/ayuda/AyudaScreen`): PQRS (`/pqrs`, `features/pqrs`: form as guest or with the account token, `POST /api/v1/pqrs`, plus "Mis solicitudes" from `GET /api/v1/pqrs/mias` with radicado and status, account sessions only), "Conoce al desarrollador" (`/desarrollador`), "Acerca de" (`/acerca-de`: version from app.json, Política de datos and Términos) and, with an account session, "Eliminar mi cuenta" (confirm, password, final confirm, `POST /api/v1/cuentas/eliminar`; a 409 asks whether to close the business too and retries with `eliminarNegocio: true`). A wrong password is a 401 there and must not close the session.
+- No payment texts in registration or login; in Planes the plan buttons read "PAGOS DISPONIBLES PRÓXIMAMENTE".
 
 ## Calendar
 

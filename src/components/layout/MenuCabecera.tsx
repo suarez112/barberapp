@@ -40,7 +40,7 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
     {
       icono: "help-circle-outline",
       texto: "Ayuda",
-      ayuda: "Abre PQRS, información del desarrollador y datos de la app",
+      ayuda: "Abre PQRS, informaciÃ³n del desarrollador y datos de la app",
       onPress: () => {
         onCerrar();
         push("/ayuda");
