@@ -13,12 +13,6 @@ export type ValoresEmpresa = {
   departamento: string | null;
   ciudad: string | null;
   direccion: string;
-  // true: los días abiertos comparten un solo horario (diasAbiertos, apertura, cierre).
-  // false: cada día tiene el suyo (dias).
-  mismoHorario: boolean;
-  diasAbiertos: number[];
-  apertura: string;
-  cierre: string;
   dias: DiaFormulario[]; // los 7, 0 = domingo … 6 = sábado
 };
 
@@ -29,6 +23,12 @@ const DE_LUNES_A_SABADO = [1, 2, 3, 4, 5, 6];
 const diasIguales = (abiertos: number[], apertura: string, cierre: string): DiaFormulario[] =>
   Array.from({ length: 7 }, (_, dia) => ({ dia, abierto: abiertos.includes(dia), apertura, cierre }));
 
+// Pone el horario del lunes (abierto o cerrado, apertura y cierre) en los 7 días
+export const copiarLunes = (dias: DiaFormulario[]): DiaFormulario[] => {
+  const lunes = dias.find((d) => d.dia === 1);
+  return lunes ? dias.map((d) => ({ ...lunes, dia: d.dia })) : dias;
+};
+
 export const VALORES_VACIOS: ValoresEmpresa = {
   nombre: "",
   categoria: "",
@@ -38,10 +38,6 @@ export const VALORES_VACIOS: ValoresEmpresa = {
   departamento: null,
   ciudad: null,
   direccion: "",
-  mismoHorario: true,
-  diasAbiertos: DE_LUNES_A_SABADO,
-  apertura: APERTURA,
-  cierre: CIERRE,
   dias: diasIguales(DE_LUNES_A_SABADO, APERTURA, CIERRE),
 };
 
@@ -55,11 +51,6 @@ export const valoresDesdePerfil = (p: PerfilEmpresa): ValoresEmpresa => {
       cierre: h?.cierre ?? CIERRE,
     };
   });
-  const abiertos = dias.filter((d) => d.abierto);
-  // Si todos los días abiertos tienen el mismo horario, se muestra la casilla marcada
-  const mismoHorario = abiertos.every(
-    (d) => d.apertura === abiertos[0]?.apertura && d.cierre === abiertos[0]?.cierre,
-  );
   return {
     nombre: p.nombre,
     categoria: p.categoria,
@@ -69,17 +60,9 @@ export const valoresDesdePerfil = (p: PerfilEmpresa): ValoresEmpresa => {
     departamento: p.departamento,
     ciudad: p.departamento ? p.ciudad : null,
     direccion: p.direccion,
-    mismoHorario,
-    diasAbiertos: abiertos.map((d) => d.dia),
-    apertura: abiertos[0]?.apertura ?? APERTURA,
-    cierre: abiertos[0]?.cierre ?? CIERRE,
     dias,
   };
 };
-
-// Horario de los 7 días según el modo elegido
-export const horarioDeValores = (v: ValoresEmpresa): DiaFormulario[] =>
-  v.mismoHorario ? diasIguales(v.diasAbiertos, v.apertura, v.cierre) : v.dias;
 
 // Código del negocio: solo letras sin tildes y números, máximo 10, en mayúsculas.
 // "central 10" -> "CENTRAL10", "Peña" -> "PEA"
@@ -112,11 +95,9 @@ export const sinErrores = <K extends string>(errores: Errores<K>, claves: string
 
 export const hayErrores = (errores: Errores<string>) => Object.keys(errores).length > 0;
 
-const CAMPOS_HORARIO = ["mismoHorario", "diasAbiertos", "apertura", "cierre", "dias"];
-
 // Campos con error que se limpian al cambiar estos valores (el horario es un solo error)
 export const camposCambiados = (cambios: Partial<ValoresEmpresa>) =>
-  Object.keys(cambios).map((k) => (CAMPOS_HORARIO.includes(k) ? "horario" : k));
+  Object.keys(cambios).map((k) => (k === "dias" ? "horario" : k));
 
 const revisarTexto = (valor: string, queEscribir: string, max: number) => {
   if (!valor.trim()) return `Escribe ${queEscribir}.`;
@@ -154,7 +135,7 @@ const limpiarErrores = <K extends string>(errores: Record<K, string | null>): Er
   Object.fromEntries(Object.entries(errores).filter(([, v]) => v)) as Errores<K>;
 
 export function validarEmpresa(v: ValoresEmpresa): Resultado {
-  const dias = horarioDeValores(v);
+  const dias = v.dias;
   const errores = limpiarErrores<CampoEmpresa>({
     nombre: revisarTexto(v.nombre, "el nombre del negocio", 100),
     categoria: revisarTexto(v.categoria, "la categoría, por ejemplo Barbería", 60),

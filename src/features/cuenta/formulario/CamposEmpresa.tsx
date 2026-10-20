@@ -1,9 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import Boton from "@/components/ui/Boton";
 import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
-import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
@@ -12,6 +18,7 @@ import { EstadoCodigo, useCodigoDisponible } from "./useCodigoDisponible";
 import { useUbicaciones } from "./useUbicaciones";
 import {
   CampoEmpresa,
+  copiarLunes,
   DiaFormulario,
   Errores,
   limpiarCodigo,
@@ -20,7 +27,6 @@ import {
 
 // 0 = domingo … 6 = sábado (como en el backend), mostrados de lunes a domingo
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
-const DIAS_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const DIAS_LARGOS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const EMPLEADOS = Array.from({ length: 10 }, (_, i) => ({
@@ -62,10 +68,6 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
   const estadoCodigo = useCodigoDisponible(valores.codigoAcceso, codigoActual);
 
-  const etiqueta = (texto: string) => (
-    <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{texto}</Text>
-  );
-
   const campo = (
     clave: "nombre" | "categoria" | "nombreAdministradora" | "direccion",
     texto: string,
@@ -92,34 +94,9 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
   const cambiarDia = (dia: number, cambios: Partial<DiaFormulario>) =>
     onCambiar({ dias: valores.dias.map((d) => (d.dia === dia ? { ...d, ...cambios } : d)) });
 
-  const alternarDiaAbierto = (dia: number) =>
-    onCambiar({
-      diasAbiertos: valores.diasAbiertos.includes(dia)
-        ? valores.diasAbiertos.filter((d) => d !== dia)
-        : [...valores.diasAbiertos, dia],
-    });
-
-  // Al cambiar de modo se conserva lo elegido en el otro
-  const alternarMismoHorario = () => {
-    if (valores.mismoHorario) {
-      onCambiar({
-        mismoHorario: false,
-        dias: valores.dias.map((d) => ({
-          ...d,
-          abierto: valores.diasAbiertos.includes(d.dia),
-          apertura: valores.apertura,
-          cierre: valores.cierre,
-        })),
-      });
-      return;
-    }
-    const primero = valores.dias.find((d) => d.abierto);
-    onCambiar({
-      mismoHorario: true,
-      diasAbiertos: valores.dias.filter((d) => d.abierto).map((d) => d.dia),
-      apertura: primero?.apertura ?? valores.apertura,
-      cierre: primero?.cierre ?? valores.cierre,
-    });
+  const copiarHorarioDelLunes = () => {
+    onCambiar({ dias: copiarLunes(valores.dias) });
+    AccessibilityInfo.announceForAccessibility("Se copió el horario del lunes a todos los días");
   };
 
   const horas = (
@@ -206,6 +183,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
         onChangeText={(t) => onCambiar({ codigoAcceso: limpiarCodigo(t) })}
         estiloTexto={styles.codigo}
         style={styles.campoCodigo}
+        centrado
       />
       <View style={styles.estadoCodigo}>
         {estadoCodigo === "verificando" ? (
@@ -285,77 +263,21 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
       })}
 
       <TituloSeccion>HORARIO DE ATENCIÓN</TituloSeccion>
-      <Tocable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: valores.mismoHorario }}
-        accessibilityLabel="Mismo horario todos los días"
-        accessibilityHint="Desmárcala para poner un horario distinto a cada día"
-        onPress={alternarMismoHorario}
-        style={styles.casilla}
-      >
-        <Ionicons
-          name={valores.mismoHorario ? "checkbox" : "square-outline"}
-          size={22}
-          color={colors.primaryText}
-        />
-        <Text style={[styles.textoCasilla, { color: colors.textPrimary }]}>
-          Mismo horario todos los días
+      {errores.horario ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.ayuda, { color: colors.error }]}>
+          {errores.horario}
         </Text>
-      </Tocable>
-
-      {valores.mismoHorario ? (
-        <>
-          {etiqueta("Días que abre *")}
-          {errores.horario ? (
-            <Text accessibilityLiveRegion="polite" style={[styles.ayuda, { color: colors.error }]}>
-              {errores.horario}
-            </Text>
-          ) : null}
-          <View style={styles.dias}>
-            {ORDEN_DIAS.map((dia) => {
-              const activo = valores.diasAbiertos.includes(dia);
-              return (
-                <Tocable
-                  key={dia}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: activo }}
-                  accessibilityLabel={DIAS_LARGOS[dia]}
-                  accessibilityHint={activo ? "Toca para marcarlo cerrado" : "Toca para marcarlo abierto"}
-                  onPress={() => alternarDiaAbierto(dia)}
-                  style={[
-                    styles.dia,
-                    { borderColor: colors.cardBorder, backgroundColor: colors.cardBg },
-                    activo && { backgroundColor: colors.primary, borderColor: colors.primary },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.textoDia,
-                      { color: activo ? colors.onPrimary : colors.textSecondary },
-                    ]}
-                  >
-                    {DIAS_CORTOS[dia]}
-                  </Text>
-                </Tocable>
-              );
-            })}
-          </View>
-          {horas(valores.apertura, valores.cierre, (c) => onCambiar(c))}
-        </>
-      ) : (
-        <>
-          {errores.horario ? (
-            <Text accessibilityLiveRegion="polite" style={[styles.ayuda, { color: colors.error }]}>
-              {errores.horario}
-            </Text>
-          ) : null}
-          {ORDEN_DIAS.map((dia) => {
-          const d = valores.dias.find((x) => x.dia === dia);
-          if (!d) return null;
-          return (
+      ) : null}
+      {ORDEN_DIAS.map((dia) => {
+        const d = valores.dias.find((x) => x.dia === dia);
+        if (!d) return null;
+        return (
+          <View key={dia}>
             <View
-              key={dia}
-              style={[styles.tarjetaDia, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+              style={[
+                styles.tarjetaDia,
+                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+              ]}
             >
               <View style={styles.cabeceraDia}>
                 <Text style={[styles.nombreDia, { color: colors.textPrimary }]}>
@@ -365,8 +287,8 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
                   {d.abierto ? "Abierto" : "Cerrado"}
                 </Text>
                 <Switch
-                  accessibilityLabel={`${DIAS_LARGOS[dia]} abierto`}
-                  accessibilityHint="Activa o desactiva la atención de este día"
+                  accessibilityLabel={`${DIAS_LARGOS[dia]}: ${d.abierto ? "abierto" : "cerrado"}`}
+                  accessibilityHint="Abre o cierra el negocio este día"
                   value={d.abierto}
                   onValueChange={(abierto) => cambiarDia(dia, { abierto })}
                   trackColor={{ true: colors.primary, false: colors.cardBorder }}
@@ -374,19 +296,31 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
                 />
               </View>
               {d.abierto
-                ? horas(d.apertura, d.cierre, (c) => cambiarDia(dia, c), ` del ${DIAS_LARGOS[dia].toLowerCase()}`)
+                ? horas(
+                    d.apertura,
+                    d.cierre,
+                    (c) => cambiarDia(dia, c),
+                    ` del ${DIAS_LARGOS[dia].toLowerCase()}`,
+                  )
                 : null}
             </View>
-          );
-          })}
-        </>
-      )}
+            {dia === 1 ? (
+              <Boton
+                titulo="Copiar el horario del lunes a todos los días"
+                ayuda="Pone en los siete días el mismo horario del lunes, abierto o cerrado"
+                variante="neutro"
+                onPress={copiarHorarioDelLunes}
+                style={styles.copiar}
+              />
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  etiqueta: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   ayuda: { fontSize: 12, marginBottom: 8 },
   cargando: { marginVertical: 12 },
   codigo: { fontSize: 18, fontWeight: "bold", letterSpacing: 3 },
@@ -394,23 +328,12 @@ const styles = StyleSheet.create({
   estadoCodigo: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 22, marginBottom: 6 },
   textoCodigo: { fontSize: 12 },
   negrita: { fontWeight: "bold", fontSize: 13 },
-  casilla: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, marginBottom: 10 },
-  textoCasilla: { fontSize: 14, fontWeight: "600" },
-  dias: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  dia: {
-    borderWidth: 1,
-    borderRadius: 22,
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  textoDia: { fontSize: 12, fontWeight: "bold" },
-  fila: { flexDirection: "row", gap: 10 },
-  columna: { flex: 1 },
-  tarjetaDia: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingTop: 6, marginBottom: 8 },
-  cabeceraDia: { flexDirection: "row", alignItems: "center", paddingBottom: 6, gap: 8 },
+  fila: { flexDirection: "row", gap: 8 },
+  // minWidth 0: en pantallas angostas las dos horas se reparten el ancho
+  columna: { flex: 1, minWidth: 0, marginBottom: 8 },
+  tarjetaDia: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, marginBottom: 8 },
+  cabeceraDia: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: 8 },
   nombreDia: { flex: 1, fontSize: 14, fontWeight: "bold" },
   estadoDia: { fontSize: 12 },
+  copiar: { marginBottom: 12 },
 });
