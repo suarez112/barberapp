@@ -136,8 +136,21 @@ export default function BloqueoSemanal({
       ? `${primero.num} – ${ultimo.num} ${mesDe(ultimo.fecha)}`
       : `${primero.num} ${mesDe(primero.fecha)} – ${ultimo.num} ${mesDe(ultimo.fecha)}`;
 
-  const abreEseDia = (diaSemana: number) =>
-    !horario?.length || !!horario.find((h) => h.dia === diaSemana)?.abierto;
+  // Horario de ese día de la semana (sin horario guardado: el general de la semana).
+  // El backend rechaza bloqueos en días cerrados o fuera de la apertura y el cierre.
+  const horarioDe = (diaSemana: number) => {
+    if (!horario?.length) return { ini: inicioNegocio, fin: finNegocio };
+    const h = horario.find((x) => x.dia === diaSemana);
+    return h?.abierto && h.apertura && h.cierre
+      ? { ini: horario24AMinutos(h.apertura), fin: horario24AMinutos(h.cierre) }
+      : null;
+  };
+  const abreEseDia = (diaSemana: number) => horarioDe(diaSemana) !== null;
+  // La casilla completa debe quedar dentro del horario de ese día
+  const abiertoEn = (diaSemana: number, ini: number) => {
+    const h = horarioDe(diaSemana);
+    return !!h && ini >= h.ini && ini + PASO <= h.fin;
+  };
 
   const delDia = (dia: DiaTabla, tipo: Modo) =>
     (bloqueos ?? []).filter((b) =>
@@ -314,7 +327,8 @@ export default function BloqueoSemanal({
               ? "Solo ese día: lo que bloquees aplica únicamente a esa fecha."
               : "Cada semana: lo que bloquees se repite todas las semanas ese mismo día."}{" "}
             Toca una hora para bloquearla o liberarla, o toca el día de arriba para
-            bloquear el día completo. Cada casilla es de 30 minutos.
+            bloquear el día completo. Cada casilla es de 30 minutos. Las horas con
+            &quot;—&quot; y los días &quot;Cerrado&quot; están fuera del horario del negocio.
           </Text>
         </>
       ) : (
@@ -367,9 +381,10 @@ export default function BloqueoSemanal({
               return (
                 <TouchableOpacity
                   key={d.fecha}
-                  disabled={!esAdmin}
+                  // Un bloqueo que ya existía en un día cerrado se puede liberar
+                  disabled={!esAdmin || (cerrado && !estilo)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}${estilo ? ", bloqueado" : ""}`}
+                  accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}${cerrado ? ", cerrado" : estilo ? ", bloqueado" : ""}`}
                   accessibilityHint="Bloquea o libera el día completo"
                   onPress={() => tocarDia(d)}
                   style={[
@@ -389,6 +404,9 @@ export default function BloqueoSemanal({
                   ) : (
                     <Text style={[s.diaNum, { color: colors.textPrimary }]}>{d.num}</Text>
                   )}
+                  {cerrado ? (
+                    <Text style={[s.cerrado, { color: colors.textSecondary }]}>Cerrado</Text>
+                  ) : null}
                 </TouchableOpacity>
               );
             })}
@@ -401,12 +419,13 @@ export default function BloqueoSemanal({
               </View>
               {dias.map((d) => {
                 const estilo = estadoCelda(d, ini);
+                const abierto = abiertoEn(d.diaSemana, ini);
                 return (
                   <TouchableOpacity
                     key={d.fecha + ini}
-                    disabled={!esAdmin}
+                    disabled={!esAdmin || (!abierto && !estilo)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}${estilo ? ", ocupado o bloqueado" : ", libre"}`}
+                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}${estilo ? ", ocupado o bloqueado" : abierto ? ", libre" : ", cerrado"}`}
                     accessibilityHint="Bloquea o libera esta hora"
                     onPress={() => tocarCelda(d, ini)}
                     style={[
@@ -415,10 +434,15 @@ export default function BloqueoSemanal({
                         backgroundColor: estilo?.fondo ?? LIBRE.fondo,
                         borderColor: estilo?.borde ?? LIBRE.borde,
                       },
-                      (!abreEseDia(d.diaSemana) || d.fecha < hoy) && s.apagado,
+                      (!abierto || d.fecha < hoy) && s.apagado,
+                      !abierto && !estilo && { backgroundColor: "transparent" },
                     ]}
                   >
-                    {estilo ? <Ionicons name={estilo.simbolo} size={16} color={estilo.texto} /> : null}
+                    {estilo ? (
+                      <Ionicons name={estilo.simbolo} size={16} color={estilo.texto} />
+                    ) : !abierto ? (
+                      <Text style={[s.cerradoCelda, { color: colors.textSecondary }]}>—</Text>
+                    ) : null}
                   </TouchableOpacity>
                 );
               })}
@@ -429,6 +453,7 @@ export default function BloqueoSemanal({
 
       <View style={s.leyenda}>
         <ItemLeyenda color={LIBRE.fondo} borde={LIBRE.borde} texto="Libre" />
+        <ItemLeyenda color="transparent" borde={LIBRE.borde} texto="— Cerrado" />
         {[
           { estilo: SOLO_ESE_DIA, texto: "Solo ese día" },
           { estilo: CADA_SEMANA, texto: "Cada semana" },
@@ -529,6 +554,8 @@ const s = StyleSheet.create({
   },
   diaNom: { fontSize: 9, fontWeight: "bold" },
   diaNum: { fontSize: 14, fontWeight: "bold" },
+  cerrado: { fontSize: 8, fontWeight: "bold" },
+  cerradoCelda: { fontSize: 12 },
   celda: {
     flex: 1,
     height: 44,
