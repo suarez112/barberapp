@@ -56,6 +56,19 @@ export type EstadisticasPlataforma = {
   };
 };
 
+// GET /superadmin/ingresos: suma del precio del plan en cada activación. NO son pagos reales.
+export type IngresosPlataforma = {
+  estimado: boolean;
+  moneda: string;
+  total: number;
+  activaciones: number;
+  porMes: { mes: string; total: number; activaciones: number }[]; // últimos 12, el actual al final
+  porAnio: { anio: number; total: number; activaciones: number }[];
+  mejorMes: { mes: string; total: number; activaciones: number } | null;
+  mejorAnio: { anio: number; total: number; activaciones: number } | null;
+  nota: string;
+};
+
 export type NegocioResumen = {
   id: string;
   nombre: string;
@@ -151,6 +164,9 @@ export const obtenerResumen = (token: string, signal?: AbortSignal) =>
 
 export const obtenerEstadisticas = (token: string, signal?: AbortSignal) =>
   request<EstadisticasPlataforma>(`${BASE}/estadisticas`, { token, signal });
+
+export const obtenerIngresos = (token: string, signal?: AbortSignal) =>
+  request<IngresosPlataforma>(`${BASE}/ingresos`, { token, signal });
 
 // Cierra la sesión también en el servidor: el token deja de servir
 export const cerrarSesionSuperadmin = (token: string) =>

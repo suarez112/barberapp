@@ -8,6 +8,7 @@ import Encabezado from "./components/Encabezado";
 import EstadoCarga from "./components/EstadoCarga";
 import EstadisticasSuperadmin from "./EstadisticasSuperadmin";
 import { formatearNumero } from "./formato";
+import IngresosSuperadmin from "./IngresosSuperadmin";
 import { useCargar } from "./useCargar";
 
 type Tarjeta = {
@@ -60,6 +61,7 @@ export default function InicioSuperadmin({ onVerNegocio }: Props) {
         ) : null}
       </EstadoCarga>
       <EstadisticasSuperadmin onVerNegocio={onVerNegocio} />
+      <IngresosSuperadmin />
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { crearDia, fechaLarga, hoyColombiaISO, sumarDias } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
 import { PeriodoResumen, ProfesionalResumen } from "./api";
+import EstadisticasCartera from "./EstadisticasCartera";
 import ProyeccionCartera from "./ProyeccionCartera";
 import { periodoVisible, textoRango } from "./periodoVisible";
 import { useFechaRegistro } from "./useFechaRegistro";
@@ -275,6 +276,8 @@ export default function TableroCartera({ token }: { token: string }) {
               {elegido ? detalle(elegido) : null}
             </>
           )}
+
+          <EstadisticasCartera resumen={resumen} />
         </>
       ) : null}
 
