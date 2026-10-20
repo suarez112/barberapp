@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto as abrirGaleria, FotoElegida } from "@/utils/imagenes";
 
 type Props = {
@@ -21,6 +22,7 @@ export default function FotoBarbero({
   forma = "circulo",
   onCambiar,
 }: Props) {
+  const { colors } = useAppTheme();
   // Si no hay foto, se muestran las iniciales (Jhon Álvarez -> JA)
   const iniciales = nombre
     .split(" ")
@@ -53,12 +55,12 @@ export default function FotoBarbero({
             style={{
               width: "100%",
               aspectRatio: 4 / 5,
-              backgroundColor: "#262626",
+              backgroundColor: colors.inicialesBg,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Text style={{ color, fontWeight: "bold", fontSize: 40 }}>
+            <Text style={{ color: colors.inicialesTexto, fontWeight: "bold", fontSize: 40 }}>
               {iniciales}
             </Text>
           </View>
@@ -78,6 +80,8 @@ export default function FotoBarbero({
         borderWidth: 2,
         borderColor: color,
       }}
+      // Recorta desde el centro sin deformar la foto
+      resizeMode="cover"
     />
   ) : (
     <View
@@ -87,12 +91,12 @@ export default function FotoBarbero({
         borderRadius: size / 2,
         borderWidth: 2,
         borderColor: color,
-        backgroundColor: "#262626",
+        backgroundColor: colors.inicialesBg,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Text style={{ color, fontWeight: "bold", fontSize: size / 3 }}>
+      <Text style={{ color: colors.inicialesTexto, fontWeight: "bold", fontSize: size / 3 }}>
         {iniciales}
       </Text>
     </View>

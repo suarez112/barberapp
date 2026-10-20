@@ -1,4 +1,4 @@
-import { MESES_LARGOS, sumarDias } from "@/utils/fechas";
+import { sumarDias } from "@/utils/fechas";
 import { PeriodoResumen } from "./api";
 
 export type PeriodoNavegable = Exclude<PeriodoResumen, "rango">;
@@ -67,15 +67,4 @@ export function periodoVisible(
     hayAnterior,
     haySiguiente: atras > 0,
   };
-}
-
-// "20 de octubre de 2026", "13 – 19 de octubre de 2026" o "28 de septiembre – 4 de octubre de 2026"
-export function textoRango(desde: string, hasta: string) {
-  const [y1, m1, d1] = partes(desde);
-  const [y2, m2, d2] = partes(hasta);
-  const mes = (m: number) => MESES_LARGOS[m - 1].toLowerCase();
-  if (desde === hasta) return `${d1} de ${mes(m1)} de ${y1}`;
-  if (y1 === y2 && m1 === m2) return `${d1} – ${d2} de ${mes(m2)} de ${y2}`;
-  if (y1 === y2) return `${d1} de ${mes(m1)} – ${d2} de ${mes(m2)} de ${y2}`;
-  return `${d1} de ${mes(m1)} de ${y1} – ${d2} de ${mes(m2)} de ${y2}`;
 }

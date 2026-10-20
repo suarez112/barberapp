@@ -3,17 +3,17 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import SelectorDias from "@/components/ui/SelectorDias";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { crearDia, fechaLarga, hoyColombiaISO, sumarDias } from "@/utils/fechas";
+import { crearDia, hoyColombiaISO, sumarDias, textoRango } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
-import { PeriodoResumen, ProfesionalResumen } from "./api";
+import { Comparar, PeriodoResumen, ProfesionalResumen } from "./api";
 import EstadisticasCartera from "./EstadisticasCartera";
 import ProyeccionCartera from "./ProyeccionCartera";
-import { periodoVisible, textoRango } from "./periodoVisible";
+import { periodoVisible } from "./periodoVisible";
 import { useFechaRegistro } from "./useFechaRegistro";
 import { useResumenCartera } from "./useResumenCartera";
 
 const PERIODOS: { valor: PeriodoResumen; texto: string }[] = [
-  { valor: "hoy", texto: "Hoy" },
+  { valor: "hoy", texto: "Día" },
   { valor: "semana", texto: "Semana" },
   { valor: "mes", texto: "Mes" },
   { valor: "rango", texto: "Rango" },
@@ -23,6 +23,9 @@ const PERIODOS: { valor: PeriodoResumen; texto: string }[] = [
 const MAX_DIAS_RANGO = 365;
 
 const dinero = (n: number) => `$${formatearPesos(n)}`;
+
+// Por defecto se compara con el período anterior
+const COMPARAR_ANTERIOR: Comparar = { tipo: "anterior", desde: "", hasta: "" };
 
 // Texto de las flechas según el período
 const UNIDAD: Record<Exclude<PeriodoResumen, "rango">, { anterior: string; siguiente: string }> = {
@@ -42,6 +45,8 @@ export default function TableroCartera({ token }: { token: string }) {
   const [elegidoId, setElegidoId] = useState<string | null>(null);
   // Hoy, Semana y Mes: cuántos días, semanas o meses hacia atrás (0 = el actual)
   const [atras, setAtras] = useState(0);
+  // Con qué se compara en "Comparado con" (se vuelve al período anterior al cambiar de período)
+  const [comparar, setComparar] = useState<Comparar>(COMPARAR_ANTERIOR);
   const registro = useFechaRegistro(token);
   const hoy = hoyColombiaISO();
 
@@ -53,11 +58,18 @@ export default function TableroCartera({ token }: { token: string }) {
 
   const visible = periodo === "rango" ? null : periodoVisible(periodo, atras, hoy, registro);
   const consulta = visible ?? { periodo: "rango" as const, desde: desdeRango, hasta: hastaRango };
-  const { resumen, error } = useResumenCartera(token, consulta.periodo, consulta.desde, consulta.hasta);
+  const { resumen, error, cargando } = useResumenCartera(
+    token,
+    consulta.periodo,
+    consulta.desde,
+    consulta.hasta,
+    comparar,
+  );
 
   const cambiarPeriodo = (p: PeriodoResumen) => {
     setPeriodo(p);
     setAtras(0); // al cambiar de período se vuelve al actual
+    setComparar(COMPARAR_ANTERIOR);
   };
 
   const cambiarDesde = (fecha: string) => {
@@ -243,9 +255,7 @@ export default function TableroCartera({ token }: { token: string }) {
         </View>
       ) : (
         <Text style={[s.fechas, { color: colors.textSecondary }]}>
-          {consulta.desde === consulta.hasta
-            ? fechaLarga(consulta.desde)
-            : `${fechaLarga(consulta.desde)} – ${fechaLarga(consulta.hasta)}`}
+          {textoRango(consulta.desde, consulta.hasta)}
         </Text>
       )}
 
@@ -277,7 +287,14 @@ export default function TableroCartera({ token }: { token: string }) {
             </>
           )}
 
-          <EstadisticasCartera resumen={resumen} />
+          <EstadisticasCartera
+            resumen={resumen}
+            esDia={periodo === "hoy"}
+            comparar={comparar}
+            onCambiarComparar={setComparar}
+            actualizando={cargando}
+            hoy={hoy}
+          />
         </>
       ) : null}
 

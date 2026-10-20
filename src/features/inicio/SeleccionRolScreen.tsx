@@ -70,6 +70,9 @@ export default function SeleccionRolScreen() {
             <Text style={{ color: colors.primaryText, textDecorationLine: "underline" }}>Inicia sesión</Text>
           </Text>
         </Tocable>
+        <Text style={[styles.aclaracion, { color: colors.textSecondary }]}>
+          Negocios, equipos de trabajo y clientes registrados
+        </Text>
       </View>
     </Pantalla>
   );
@@ -91,4 +94,5 @@ const styles = StyleSheet.create({
   },
   enlace: { alignSelf: "center", padding: 12, marginTop: 10 },
   textoEnlace: { fontSize: 14, fontWeight: "600" },
+  aclaracion: { fontSize: 12, textAlign: "center", marginTop: -6 },
 });

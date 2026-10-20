@@ -23,6 +23,9 @@ export type Paleta = {
   // Pestaña activa: fondo y texto (claro: amarillo con texto negro; oscuro: sin fondo, texto del negocio)
   seleccionBg: string;
   seleccionTexto: string;
+  // Iniciales de quien no tiene foto: círculo y letra (claro: gris claro con letra oscura)
+  inicialesBg: string;
+  inicialesTexto: string;
   // Botón secundario (Cancelar, Usar mi ubicación…): fondo, borde y texto
   secundarioBg: string;
   secundarioBorde: string;
@@ -46,8 +49,8 @@ export const COLORES = {
   // el texto encima sale de textoSobre() y siempre cumple 4.5:1
   rojo: "#DC2626", // bloqueado, error, cancelado, vencido
   verde: "#15803D", // activo, completado, ok
-  naranja: "#F97316", // pendiente, advertencia
-  azul: "#1D4ED8", // información
+  naranja: "#F97316", // advertencia
+  azul: "#1D4ED8", // información, cita pendiente
   neutro: "#374151", // inactivo, cerrado, suspendido
   whatsapp: "#25D366",
 } as const;
@@ -133,6 +136,8 @@ export const crearPaleta = (
     inputBorder: esOscuro ? "#737373" : "#868E96",
     error: esOscuro ? "#F87171" : "#B91C1C",
     cardSelectedBg: esOscuro ? "#262419" : mezclar(primary, "#FFFFFF", 0.3),
+    inicialesBg: esOscuro ? "#262626" : "#E5E7EB",
+    inicialesTexto: esOscuro ? colorLegible(primary, "#262626") : "#111827",
     seleccionBg: esOscuro ? "transparent" : primary,
     seleccionTexto: esOscuro ? colorLegible(primary, "#141414") : onPrimary,
     secundarioBg: esOscuro ? "#262626" : "#FFFFFF",

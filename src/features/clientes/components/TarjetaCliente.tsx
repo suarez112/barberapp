@@ -84,16 +84,19 @@ export default function TarjetaCliente({ token, cliente: c, onAlternarBloqueo }:
             c.enListaNegra ? "Le permite volver a reservar" : "Ya no podrá reservar en tu negocio"
           }
           onPress={() => onAlternarBloqueo(c)}
-          style={[styles.bloqueo, { borderColor: colorBloqueo }]}
+          style={styles.zonaBloqueo}
         >
-          <Ionicons
-            name={c.enListaNegra ? "lock-open-outline" : "ban-outline"}
-            size={14}
-            color={colorBloqueo}
-          />
-          <Text style={[styles.bloqueoTexto, { color: colorBloqueo }]}>
-            {c.enListaNegra ? "Desbloquear" : "Bloquear"}
-          </Text>
+          {/* La zona táctil mide 44 px de alto; el botón que se ve es más compacto */}
+          <View style={[styles.bloqueo, { borderColor: colorBloqueo }]}>
+            <Ionicons
+              name={c.enListaNegra ? "lock-open-outline" : "ban-outline"}
+              size={12}
+              color={colorBloqueo}
+            />
+            <Text style={[styles.bloqueoTexto, { color: colorBloqueo }]}>
+              {c.enListaNegra ? "Desbloquear" : "Bloquear"}
+            </Text>
+          </View>
         </Tocable>
       </View>
 
@@ -117,17 +120,16 @@ const styles = StyleSheet.create({
   },
   verCitas: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, flex: 1 },
   verCitasTexto: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
+  zonaBloqueo: { minHeight: 44, minWidth: 44, justifyContent: "center" },
   bloqueo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: 12,
-    marginVertical: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
     borderWidth: 1.5,
     borderRadius: 8,
     justifyContent: "center",
   },
-  bloqueoTexto: { fontSize: 12, fontWeight: "bold" },
+  bloqueoTexto: { fontSize: 11, fontWeight: "bold" },
 });

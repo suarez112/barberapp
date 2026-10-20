@@ -11,7 +11,7 @@ import { formatearPesos } from "@/utils/formato";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
 
 export const ESTADO_CITA: Record<EstadoCita, { texto: string; color: string }> = {
-  CONFIRMADA: { texto: "Pendiente", color: COLORES.naranja },
+  CONFIRMADA: { texto: "Pendiente", color: COLORES.azul },
   COMPLETADA: { texto: "Completada", color: COLORES.verde },
   CANCELADA: { texto: "Cancelada", color: COLORES.rojo },
 };
@@ -152,14 +152,17 @@ function BotonEstado({
   onPress: () => void;
 }) {
   return (
+    // La zona táctil mide 44 px de alto; el botón que se ve es más compacto
     <Tocable
       accessibilityRole="button"
       accessibilityLabel={texto}
       accessibilityHint="Cambia el estado de esta cita"
-      style={[styles.botonEstado, { backgroundColor: color }]}
+      style={styles.zonaBoton}
       onPress={onPress}
     >
-      <Text style={[styles.botonEstadoTexto, { color: textoSobre(color) }]}>{texto}</Text>
+      <View style={[styles.botonEstado, { backgroundColor: color }]}>
+        <Text style={[styles.botonEstadoTexto, { color: textoSobre(color) }]}>{texto}</Text>
+      </View>
     </Tocable>
   );
 }
@@ -177,14 +180,15 @@ const styles = StyleSheet.create({
   precio: { fontSize: 13, fontWeight: "bold" },
   nota: { fontSize: 11, marginTop: 8 },
   alerta: { fontWeight: "bold" },
-  acciones: { flexDirection: "row", gap: 10, marginTop: 10 },
+  acciones: { flexDirection: "row", gap: 10, marginTop: 4 },
+  zonaBoton: { flex: 1, minHeight: 44, justifyContent: "center" },
   botonEstado: {
-    flex: 1,
-    minHeight: 44,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
   },
-  botonEstadoTexto: { fontWeight: "bold", fontSize: 12 },
+  botonEstadoTexto: { fontWeight: "bold", fontSize: 11 },
   whatsapp: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
 });

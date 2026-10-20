@@ -1,8 +1,16 @@
 import { ScrollView, StyleSheet, Text } from "react-native";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
+import { textoSobre } from "../../theme/paleta";
 
-export type OpcionChip<T extends string> = { id: T; label: string };
+export type OpcionChip<T extends string> = {
+  id: T;
+  label: string;
+  // Color propio (ej. el de un estado): relleno al estar activa, con texto negro o blanco
+  color?: string;
+  // Borde cuando no está activa (por defecto, el borde normal de las tarjetas)
+  bordeInactiva?: string;
+};
 
 type Props<T extends string> = {
   opciones: readonly OpcionChip<T>[];
@@ -33,14 +41,26 @@ export default function Chips<T extends string>({ opciones, valor, onCambiar }: 
             style={[
               styles.chip,
               activo
-                ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                : { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                ? {
+                    backgroundColor: o.color ?? colors.primary,
+                    borderColor: o.color ?? colors.primary,
+                  }
+                : {
+                    backgroundColor: colors.cardBg,
+                    borderColor: o.bordeInactiva ?? colors.cardBorder,
+                  },
             ]}
           >
             <Text
               style={[
                 styles.texto,
-                { color: activo ? colors.onPrimary : colors.textSecondary },
+                {
+                  color: activo
+                    ? o.color
+                      ? textoSobre(o.color)
+                      : colors.onPrimary
+                    : colors.textSecondary,
+                },
               ]}
             >
               {o.label}

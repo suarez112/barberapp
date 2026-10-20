@@ -7,7 +7,7 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero, Dia, EstadoCita } from "@/types";
 import { horaAMinutos } from "@/utils/disponibilidad";
-import { mesCorto } from "@/utils/fechas";
+import { fechaConDia } from "@/utils/fechas";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { Personal } from "../sesion/usePersonal";
 import { useAgenda } from "./AgendaProvider";
@@ -50,7 +50,14 @@ export default function AgendaTab({
   const { citas } = useAgenda();
   const { empresa } = useNegocio();
   const { completar, cancelar, puedeCompletar } = useAccionesCita(personal);
+  const { colors } = useAppTheme();
   const [filtro, setFiltro] = useState<Filtro>("todas");
+  // "Pendientes" en azul, como la etiqueta de la cita (distinto del rojo y el verde)
+  const filtros = FILTROS.map((f) =>
+    f.id === "CONFIRMADA"
+      ? { ...f, color: ESTADO_CITA.CONFIRMADA.color, bordeInactiva: colors.infoTexto }
+      : f,
+  );
 
   // Una cita abierta desde una notificación no debe quedar oculta por un filtro
   const [resaltadaVista, setResaltadaVista] = useState(citaResaltadaId);
@@ -77,8 +84,7 @@ export default function AgendaTab({
       <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
 
       <TituloSeccion>
-        {profesional.nombre.toUpperCase()} · {dia.diaNom} {dia.num}{" "}
-        {mesCorto(dia.fechaFull)}
+        {profesional.nombre.toUpperCase()} · {fechaConDia(dia.fechaFull)}
       </TituloSeccion>
 
       <View style={styles.resumen}>
@@ -95,7 +101,7 @@ export default function AgendaTab({
         />
       </View>
 
-      <Chips opciones={FILTROS} valor={filtro} onCambiar={setFiltro} />
+      <Chips opciones={filtros}valor={filtro} onCambiar={setFiltro} />
 
       {visibles.length === 0 ? (
         <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>

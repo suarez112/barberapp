@@ -67,6 +67,31 @@ export const fechaLarga = (fecha: string) => {
   return `${d} de ${MESES_LARGOS[m - 1].toLowerCase()} de ${y}`;
 };
 
+const DIAS_SEMANA_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+// "2026-10-19" -> "Lun"
+const diaSemanaCorto = (fecha: string) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return DIAS_SEMANA_CORTOS[new Date(y, m - 1, d).getDay()];
+};
+
+// "2026-10-19" -> "Lun 19 de octubre de 2026"
+export const fechaConDia = (fecha: string) => `${diaSemanaCorto(fecha)} ${fechaLarga(fecha)}`;
+
+// "Lun 19 de octubre de 2026", "Lun 19 – Dom 25 de octubre de 2026"
+// o "Lun 28 de septiembre – Dom 4 de octubre de 2026"
+export function textoRango(desde: string, hasta: string) {
+  if (desde === hasta) return fechaConDia(desde);
+  const [y1, m1, d1] = desde.split("-").map(Number);
+  const [y2, m2, d2] = hasta.split("-").map(Number);
+  const mes = (m: number) => MESES_LARGOS[m - 1].toLowerCase();
+  const inicio = `${diaSemanaCorto(desde)} ${d1}`;
+  const fin = `${diaSemanaCorto(hasta)} ${d2}`;
+  if (y1 === y2 && m1 === m2) return `${inicio} – ${fin} de ${mes(m2)} de ${y2}`;
+  if (y1 === y2) return `${inicio} de ${mes(m1)} – ${fin} de ${mes(m2)} de ${y2}`;
+  return `${fechaConDia(desde)} – ${fechaConDia(hasta)}`;
+}
+
 // "2026-10-15" -> día del selector
 export const crearDia = (fecha: string): Dia => {
   const [y, m, d] = fecha.split("-").map(Number);

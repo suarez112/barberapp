@@ -40,6 +40,16 @@ export const obtenerCartera = (
 
 export type PeriodoResumen = "hoy" | "semana" | "mes" | "rango";
 
+// Con qué se compara el período (parámetro "comparar" del backend)
+export type TipoComparacion = "anterior" | "mes_pasado" | "anio_pasado" | "personalizado";
+
+export type Comparar = {
+  tipo: TipoComparacion;
+  // Solo se usan con "personalizado"
+  desde: string;
+  hasta: string;
+};
+
 export type ProfesionalResumen = {
   barberoId: string;
   nombre: string;
@@ -73,6 +83,9 @@ export type VariacionResumen = {
 export type EstadisticasResumen = {
   ticketPromedio: number; // totalVentas / citasCompletadas (0 si no hubo citas)
   comparacion: {
+    tipo: TipoComparacion;
+    // Texto si el rango de comparación empieza antes del registro del negocio
+    aviso: string | null;
     periodoAnterior: {
       desde: string;
       hasta: string;
@@ -107,18 +120,24 @@ export type EstadisticasResumen = {
   };
 };
 
-// hoy, semana (lunes a domingo), mes, o rango con desde y hasta ("2026-10-01")
+// hoy, semana (lunes a domingo), mes, o rango con desde y hasta ("2026-10-01").
+// comparar: con qué período se compara
 export const obtenerResumenCartera = (
   token: string,
   periodo: PeriodoResumen,
   rango: { desde: string; hasta: string } | null,
+  comparar: Comparar,
   signal?: AbortSignal,
 ) => {
   const fechas =
     periodo === "rango" && rango
       ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
       : "";
-  return request<ResumenCartera>(`/api/v1/cartera/resumen?periodo=${periodo}${fechas}`, {
+  const con =
+    comparar.tipo === "personalizado"
+      ? `&comparar=personalizado&compararDesde=${encodeURIComponent(comparar.desde)}&compararHasta=${encodeURIComponent(comparar.hasta)}`
+      : `&comparar=${comparar.tipo}`;
+  return request<ResumenCartera>(`/api/v1/cartera/resumen?periodo=${periodo}${fechas}${con}`, {
     token,
     signal,
   });

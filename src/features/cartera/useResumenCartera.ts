@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
 import { describirError } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
-import { obtenerResumenCartera, PeriodoResumen, ResumenCartera } from "./api";
+import { Comparar, obtenerResumenCartera, PeriodoResumen, ResumenCartera } from "./api";
 
-type Resultado = { clave: string; resumen: ResumenCartera | null; error: string | null };
+type Resultado = { base: string; clave: string; resumen: ResumenCartera | null; error: string | null };
 
-// Resumen de la cartera de un período (con rango: desde y hasta).
-// Al cambiar de período o salir de la pantalla, la petición anterior se cancela.
+// Resumen de la cartera de un período (con rango: desde y hasta), comparado con lo
+// que elija `comparar`. Al cambiar de período o salir de la pantalla, la petición
+// anterior se cancela.
 export function useResumenCartera(
   token: string,
   periodo: PeriodoResumen,
   desde: string,
   hasta: string,
+  comparar: Comparar,
 ) {
-  const clave = periodo === "rango" ? `rango|${desde}|${hasta}` : periodo;
+  const base = periodo === "rango" ? `rango|${desde}|${hasta}` : periodo;
+  const clave = `${base}|${comparar.tipo}|${comparar.desde}|${comparar.hasta}`;
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  // Último resumen recibido bien, para no dejar la pantalla vacía si falla una comparación
+  const [bueno, setBueno] = useState<Resultado | null>(null);
 
   useEffect(() => {
     const controlador = new AbortController();
@@ -22,12 +27,18 @@ export function useResumenCartera(
       token,
       periodo,
       periodo === "rango" ? { desde, hasta } : null,
+      { tipo: comparar.tipo, desde: comparar.desde, hasta: comparar.hasta },
       controlador.signal,
     )
-      .then((resumen) => setResultado({ clave, resumen, error: null }))
+      .then((resumen) => {
+        const recibido = { base, clave, resumen, error: null };
+        setResultado(recibido);
+        setBueno(recibido);
+      })
       .catch((e) => {
         if (esCancelada(e)) return;
         setResultado({
+          base,
           clave,
           resumen: null,
           error: describirError(e, { titulo: "", porDefecto: "No se pudo cargar la cartera." })
@@ -35,9 +46,17 @@ export function useResumenCartera(
         });
       });
     return () => controlador.abort();
-  }, [token, periodo, desde, hasta, clave]);
+  }, [token, periodo, desde, hasta, base, clave, comparar.tipo, comparar.desde, comparar.hasta]);
 
-  // Mientras llega la respuesta del período actual, resumen y error son null ("cargando")
+  // Mientras llega la respuesta, resumen y error son null ("cargando"). Si solo cambió
+  // la comparación se sigue mostrando el resumen anterior del mismo período, para que
+  // las tarjetas abiertas no se cierren ni la pantalla parpadee.
   const vigente = resultado?.clave === clave ? resultado : null;
-  return { resumen: vigente?.resumen ?? null, error: vigente?.error ?? null };
+  const delMismoPeriodo = bueno?.base === base ? bueno : null;
+  return {
+    resumen: vigente?.resumen ?? delMismoPeriodo?.resumen ?? null,
+    error: vigente?.error ?? null,
+    // true mientras llega la respuesta de lo que se pidió ahora
+    cargando: vigente === null,
+  };
 }
