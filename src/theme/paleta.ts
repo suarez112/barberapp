@@ -37,6 +37,8 @@ export const COLORES = {
   info: "#1E3A8A",
   cancelado: "#991B1B",
   advertencia: "#F59E0B",
+  // Fondo ámbar que se lee con texto blanco (etiqueta "Pendiente")
+  advertenciaOscuro: "#B45309",
   inactivo: "#854D0E",
   neutro: "#333",
   apagado: "#737373",

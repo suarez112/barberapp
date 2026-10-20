@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
-import { estilosTexto } from "@/components/ui/estilosTexto";
 import Insignia from "@/components/ui/Insignia";
 import { MINUTOS_ALERTA_COMPLETADA_TARDE } from "@/constants/config";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -9,13 +8,12 @@ import { COLORES } from "@/theme/paleta";
 import { Cita, EstadoCita } from "@/types";
 import { fechaHoraCita, formatearHora } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
-import { telefonoConBandera } from "@/utils/telefonos";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
 
-const COLOR_ESTADO: Record<EstadoCita, string> = {
-  CONFIRMADA: COLORES.exito,
-  COMPLETADA: COLORES.info,
-  CANCELADA: COLORES.cancelado,
+export const ESTADO_CITA: Record<EstadoCita, { texto: string; color: string }> = {
+  CONFIRMADA: { texto: "Pendiente", color: COLORES.advertenciaOscuro },
+  COMPLETADA: { texto: "Completada", color: COLORES.exito },
+  CANCELADA: { texto: "Cancelada", color: COLORES.cancelado },
 };
 
 // Minutos entre la hora de la cita y el momento en que se marcó completada
@@ -44,7 +42,10 @@ export default function TarjetaCita({
   const { colors } = useAppTheme();
   const tieneWhatsApp = numeroParaWhatsApp(c.telefono, c.indicativo) !== null;
   const retraso = minutosDeRetraso(c);
-  const subtitulo = [estilosTexto.subtitulo, { color: colors.textSecondary }];
+  const estado = ESTADO_CITA[c.estado];
+  // "03:30 PM" -> "03:30" grande y "PM" pequeño debajo
+  const [hora, ampm] = c.hora.split(" ");
+  const nota = [styles.nota, { color: colors.textSecondary }];
 
   return (
     <View
@@ -53,19 +54,36 @@ export default function TarjetaCita({
         { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
       ]}
     >
-      <View style={styles.filaEntre}>
-        <Text style={[styles.hora, { color: colors.primaryText }]}>⏰ {c.hora}</Text>
-        <Insignia texto={c.estado} color={COLOR_ESTADO[c.estado]} />
-      </View>
-      <Text
-        style={[estilosTexto.titulo, styles.cliente, { color: colors.textPrimary }]}
-      >
-        {c.cliente}
-      </Text>
-      <View style={styles.filaEntre}>
-        <Text style={subtitulo}>
-          📞 {telefonoConBandera(c.telefono, c.indicativo)}
-        </Text>
+      <View style={styles.fila}>
+        <View
+          style={styles.columnaHora}
+          accessible
+          accessibilityLabel={`Hora ${c.hora}`}
+        >
+          <Text style={[styles.hora, { color: colors.primaryText }]}>{hora}</Text>
+          {ampm ? (
+            <Text style={[styles.ampm, { color: colors.textSecondary }]}>{ampm}</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.datos}>
+          <View style={styles.filaTitulo}>
+            <Text
+              style={[styles.cliente, { color: colors.textPrimary }]}
+              numberOfLines={1}
+            >
+              {c.cliente}
+            </Text>
+            <Insignia texto={estado.texto} color={estado.color} />
+          </View>
+          <Text style={[styles.servicio, { color: colors.textSecondary }]} numberOfLines={1}>
+            {c.servicio}
+          </Text>
+          <Text style={[styles.precio, { color: colors.textPrimary }]}>
+            ${formatearPesos(c.precio)}
+          </Text>
+        </View>
+
         <Tocable
           onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}
           accessibilityRole="button"
@@ -75,16 +93,30 @@ export default function TarjetaCita({
         >
           <Ionicons
             name="logo-whatsapp"
-            size={26}
+            size={28}
             color={tieneWhatsApp ? COLORES.whatsapp : colors.textSecondary}
           />
         </Tocable>
       </View>
-      <Text style={subtitulo}>
-        ✂️ {c.servicio} (${formatearPesos(c.precio)})
-      </Text>
 
-      {c.estado === "CONFIRMADA" ? (
+      {c.estado === "COMPLETADA" && c.completadaEn ? (
+        <Text style={nota}>
+          Completada por {c.completadaPor} a las {formatearHora(c.completadaEn)}
+          {esAdmin && retraso > MINUTOS_ALERTA_COMPLETADA_TARDE ? (
+            <Text style={styles.alerta}>
+              {"  "}⚠️ {Math.round(retraso / 60)} h después
+            </Text>
+          ) : null}
+        </Text>
+      ) : null}
+
+      {c.estado === "CANCELADA" && c.canceladaEn ? (
+        <Text style={nota}>
+          Cancelada por {c.canceladaPor} a las {formatearHora(c.canceladaEn)}
+        </Text>
+      ) : null}
+
+      {c.estado === "CONFIRMADA" && (puedeCompletar || esAdmin) ? (
         <View style={styles.acciones}>
           {puedeCompletar ? (
             <BotonEstado
@@ -102,26 +134,6 @@ export default function TarjetaCita({
           ) : null}
         </View>
       ) : null}
-
-      {c.estado === "COMPLETADA" && c.completadaEn ? (
-        <View style={styles.detalle}>
-          <Text style={subtitulo}>
-            ✅ Completada por {c.completadaPor} a las{" "}
-            {formatearHora(c.completadaEn)}
-          </Text>
-          {esAdmin && retraso > MINUTOS_ALERTA_COMPLETADA_TARDE ? (
-            <Text style={styles.alerta}>
-              ⚠️ Registrada {Math.round(retraso / 60)} h después de la cita
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      {c.estado === "CANCELADA" && c.canceladaEn ? (
-        <Text style={[subtitulo, styles.detalle]}>
-          ❌ Cancelada por {c.canceladaPor} a las {formatearHora(c.canceladaEn)}
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -138,7 +150,7 @@ function BotonEstado({
   return (
     <Tocable
       accessibilityRole="button"
-      accessibilityLabel={texto.charAt(0) + texto.slice(1).toLowerCase()}
+      accessibilityLabel={texto}
       accessibilityHint="Cambia el estado de esta cita"
       style={[styles.botonEstado, { backgroundColor: color }]}
       onPress={onPress}
@@ -149,27 +161,25 @@ function BotonEstado({
 }
 
 const styles = StyleSheet.create({
-  tarjeta: { padding: 14, borderRadius: 8, borderWidth: 1, marginBottom: 10 },
-  filaEntre: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  hora: { fontSize: 13, fontWeight: "bold" },
-  cliente: { marginTop: 6 },
+  tarjeta: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 10 },
+  fila: { flexDirection: "row", alignItems: "center", gap: 12 },
+  columnaHora: { width: 64, alignItems: "center" },
+  hora: { fontSize: 22, fontWeight: "bold" },
+  ampm: { fontSize: 12, fontWeight: "bold" },
+  datos: { flex: 1, gap: 2 },
+  filaTitulo: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cliente: { flexShrink: 1, fontSize: 15, fontWeight: "bold" },
+  servicio: { fontSize: 13 },
+  precio: { fontSize: 13, fontWeight: "bold" },
+  nota: { fontSize: 11, marginTop: 8 },
+  alerta: { color: COLORES.advertencia, fontWeight: "bold" },
   acciones: { flexDirection: "row", gap: 10, marginTop: 10 },
-  detalle: { marginTop: 8 },
-  alerta: {
-    fontSize: 11,
-    color: COLORES.advertencia,
-    fontWeight: "bold",
-    marginTop: 4,
-  },
   botonEstado: {
     flex: 1,
-    paddingVertical: 8,
+    minHeight: 44,
     borderRadius: 6,
     alignItems: "center",
+    justifyContent: "center",
   },
   botonEstadoTexto: { color: COLORES.blanco, fontWeight: "bold", fontSize: 12 },
   whatsapp: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
