@@ -248,7 +248,7 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
         placeholder="ej: mínimo 8 caracteres"
         autoComplete="new-password"
         textContentType="newPassword"
-        maxLength={64}
+        requisitos
         value={valores.clave}
         onChangeText={cambiar("clave")}
       />
@@ -259,7 +259,7 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
         ayuda="Escribe otra vez la misma contraseña"
         autoComplete="new-password"
         textContentType="newPassword"
-        maxLength={64}
+        confirmaDe={valores.clave}
         value={valores.confirmacion}
         onChangeText={cambiar("confirmacion")}
       />

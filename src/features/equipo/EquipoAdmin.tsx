@@ -236,7 +236,8 @@ export default function EquipoAdmin({ personal, onIrAMiNegocio }: Props) {
           placeholder={enEdicion ? "ej: vacía = no cambiar" : "ej: mínimo 8 caracteres"}
           autoComplete="off"
           textContentType="newPassword"
-          maxLength={64}
+          // Al editar, vacía no cambia nada: los requisitos aparecen al escribir
+          requisitos={!enEdicion || !!campos.clave}
           value={campos.clave}
           onChangeText={cambiar("clave")}
         />

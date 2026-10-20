@@ -163,7 +163,7 @@ export default function RegistroEmpresaScreen() {
           placeholder="ej: mínimo 8 caracteres"
           autoComplete="new-password"
           textContentType="newPassword"
-          maxLength={64}
+          requisitos
           value={acceso.clave}
           onChangeText={cambiarAcceso("clave")}
         />
@@ -174,7 +174,7 @@ export default function RegistroEmpresaScreen() {
           ayuda="Escribe otra vez la misma contraseña"
           autoComplete="new-password"
           textContentType="newPassword"
-          maxLength={64}
+          confirmaDe={acceso.clave}
           value={acceso.confirmacion}
           onChangeText={cambiarAcceso("confirmacion")}
           onSubmitEditing={registrar}
