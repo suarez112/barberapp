@@ -18,9 +18,9 @@ import { CitaCliente, listarMisCitas } from "./api";
 import { useClienteConSesion } from "./useClienteConSesion";
 
 const ESTADOS: Record<EstadoCita, { texto: string; color: string }> = {
-  CONFIRMADA: { texto: "CONFIRMADA", color: COLORES.info },
-  COMPLETADA: { texto: "COMPLETADA", color: COLORES.exito },
-  CANCELADA: { texto: "CANCELADA", color: COLORES.cancelado },
+  CONFIRMADA: { texto: "CONFIRMADA", color: COLORES.azul },
+  COMPLETADA: { texto: "COMPLETADA", color: COLORES.verde },
+  CANCELADA: { texto: "CANCELADA", color: COLORES.rojo },
 };
 
 // Citas que el cliente reservó con su cuenta (las de invitado no aparecen)
@@ -110,7 +110,7 @@ function MisCitas({ token }: { token: string }) {
               <Boton
                 titulo="REINTENTAR"
                 ayuda="Vuelve a cargar tus citas"
-                variante="neutro"
+                variante="secundario"
                 onPress={cargar}
               />
             </View>

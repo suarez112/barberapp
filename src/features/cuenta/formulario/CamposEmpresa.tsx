@@ -214,7 +214,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar los departamentos y municipios"
-            variante="neutro"
+            variante="secundario"
             onPress={reintentar}
           />
         </View>
@@ -308,7 +308,7 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
               <Boton
                 titulo="Copiar el horario del lunes a todos los días"
                 ayuda="Pone en los siete días el mismo horario del lunes, abierto o cerrado"
-                variante="neutro"
+                variante="secundario"
                 onPress={copiarHorarioDelLunes}
                 style={styles.copiar}
               />

@@ -59,7 +59,7 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
     return (
       <View>
         <TextoInfo>{error}</TextoInfo>
-        <Boton titulo="REINTENTAR" ayuda="Vuelve a cargar los planes" variante="neutro" onPress={reintentar} />
+        <Boton titulo="REINTENTAR" ayuda="Vuelve a cargar los planes" variante="secundario" onPress={reintentar} />
       </View>
     );
   }

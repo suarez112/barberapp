@@ -19,6 +19,14 @@ export type Paleta = {
   exitoTexto: string;
   avisoTexto: string;
   apagadoTexto: string;
+  infoTexto: string;
+  // Pestaña activa: fondo y texto (claro: amarillo con texto negro; oscuro: sin fondo, texto del negocio)
+  seleccionBg: string;
+  seleccionTexto: string;
+  // Botón secundario (Cancelar, Usar mi ubicación…): fondo, borde y texto
+  secundarioBg: string;
+  secundarioBorde: string;
+  secundarioTexto: string;
   // Borde de los campos (contraste 3:1 con el fondo)
   inputBorder: string;
   // Mensajes de error bajo los campos
@@ -31,24 +39,16 @@ export type Paleta = {
 // Colores fijos que no dependen del negocio ni del tema
 export const COLORES = {
   primarioPorDefecto: "#EAB308",
-  // Dorado oscuro: el amarillo del negocio como texto sobre fondo claro (6:1 sobre blanco)
-  doradoOscuro: "#806000",
   secundarioPorDefecto: "#0D0D0D",
   textoSobrePrimario: "#000",
   blanco: "#FFF",
-  peligro: "#EF4444",
-  peligroOscuro: "#7F1D1D",
-  peligroSuave: "#FECACA",
-  exito: "#166534",
-  exitoClaro: "#22C55E",
-  info: "#1E3A8A",
-  cancelado: "#991B1B",
-  advertencia: "#F59E0B",
-  // Fondo ámbar que se lee con texto blanco (etiqueta "Pendiente")
-  advertenciaOscuro: "#B45309",
-  inactivo: "#854D0E",
-  neutro: "#333",
-  apagado: "#737373",
+  // Colores de estado como relleno (etiquetas, botones, celdas). Los mismos en ambos temas:
+  // el texto encima sale de textoSobre() y siempre cumple 4.5:1
+  rojo: "#DC2626", // bloqueado, error, cancelado, vencido
+  verde: "#15803D", // activo, completado, ok
+  naranja: "#F97316", // pendiente, advertencia
+  azul: "#1D4ED8", // información
+  neutro: "#374151", // inactivo, cerrado, suspendido
   whatsapp: "#25D366",
 } as const;
 
@@ -93,18 +93,28 @@ export const textoSobre = (fondo: string) => {
   return contraste([0, 0, 0], f) >= contraste([255, 255, 255], f) ? "#000000" : "#FFFFFF";
 };
 
+// Mezcla `color` con `fondo`: t = 0 deja el fondo, t = 1 deja el color
+const mezclar = (color: string, fondo: string, t: number) => {
+  const c = aRgb(color);
+  const f = aRgb(fondo);
+  if (!c || !f) return fondo;
+  return aHex(f.map((v, i) => v + (c[i] - v) * t));
+};
+
+// Tema claro: fondo claro, tarjetas blancas, textos y enlaces en negro o gris oscuro;
+// el color del negocio (amarillo) solo se usa como fondo de botones, pestañas y selección.
+// Tema oscuro: el color del negocio también se usa como texto (ajustado a 4.5:1).
+// Todos los colores del tema viven aquí: para cambiarlos, se edita solo esta función.
 export const crearPaleta = (
   tema: Tema,
   empresa: Pick<Empresa, "colorPrimario" | "colorSecundario"> | null,
 ): Paleta => {
   const esOscuro = tema === "OSCURO";
   const primary = empresa?.colorPrimario ?? COLORES.primarioPorDefecto;
+  const onPrimary = textoSobre(primary);
   const fondo = esOscuro
     ? (empresa?.colorSecundario ?? COLORES.secundarioPorDefecto)
     : "#F3F4F6";
-  // Con fondo claro el amarillo por defecto no se lee como texto: se usa el dorado oscuro
-  const primaryTextClaro =
-    primary.toUpperCase() === COLORES.primarioPorDefecto ? COLORES.doradoOscuro : colorLegible(primary, fondo);
   return {
     bg: fondo,
     headerBg: esOscuro ? "#1A1A1A" : "#FFFFFF",
@@ -113,15 +123,21 @@ export const crearPaleta = (
     textPrimary: esOscuro ? "#FFFFFF" : "#111827",
     textSecondary: esOscuro ? "#A3A3A3" : "#4B5563",
     primary,
-    primaryText: esOscuro ? colorLegible(primary, "#171717") : primaryTextClaro,
-    onPrimary: textoSobre(primary),
-    peligroTexto: esOscuro ? COLORES.peligro : "#B91C1C",
-    exitoTexto: esOscuro ? COLORES.exitoClaro : COLORES.exito,
-    avisoTexto: esOscuro ? COLORES.advertencia : "#92400E",
-    apagadoTexto: esOscuro ? COLORES.apagado : "#5B6470",
+    primaryText: esOscuro ? colorLegible(primary, "#171717") : "#111827",
+    onPrimary,
+    peligroTexto: esOscuro ? "#F87171" : "#B91C1C",
+    exitoTexto: esOscuro ? "#4ADE80" : "#15803D",
+    avisoTexto: esOscuro ? "#FB923C" : "#B45309",
+    infoTexto: esOscuro ? "#60A5FA" : "#1D4ED8",
+    apagadoTexto: esOscuro ? "#9CA3AF" : "#5B6470",
     inputBorder: esOscuro ? "#737373" : "#868E96",
     error: esOscuro ? "#F87171" : "#B91C1C",
-    cardSelectedBg: esOscuro ? "#262419" : "#FEF9C3",
+    cardSelectedBg: esOscuro ? "#262419" : mezclar(primary, "#FFFFFF", 0.3),
+    seleccionBg: esOscuro ? "transparent" : primary,
+    seleccionTexto: esOscuro ? colorLegible(primary, "#141414") : onPrimary,
+    secundarioBg: esOscuro ? "#262626" : "#FFFFFF",
+    secundarioBorde: esOscuro ? "#737373" : "#6B7280",
+    secundarioTexto: esOscuro ? "#FFFFFF" : "#111827",
     inputBg: esOscuro ? "#171717" : "#FFFFFF",
     bottomBarBg: esOscuro ? "#141414" : "#FFFFFF",
   };

@@ -35,11 +35,11 @@ export default function EstadisticasSuperadmin({ onVerNegocio }: Props) {
 }
 
 function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio: (id: string) => void }) {
-  const { colors, esOscuro } = useAppTheme();
+  const { colors } = useAppTheme();
 
   // Un color por estado, legible en el tema actual; además cada barra lleva su nombre escrito
   const colorEstado: Record<EstadoNegocio, string> = {
-    prueba: esOscuro ? "#60A5FA" : COLORES.info,
+    prueba: colors.infoTexto,
     activo: colors.exitoTexto,
     vencido: colors.peligroTexto,
     suspendido: colors.apagadoTexto,
@@ -141,7 +141,7 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
           >
             {formatearPesos(ingreso.total)}
           </Text>
-          {ingreso.estimado ? <Insignia texto="ESTIMADO" color={COLORES.advertenciaOscuro} /> : null}
+          {ingreso.estimado ? <Insignia texto="ESTIMADO" color={COLORES.naranja} /> : null}
         </View>
         <Text style={[styles.nota, { color: colors.textSecondary }]}>{ingreso.moneda} al mes</Text>
         {ingreso.detalle.map((f) => (

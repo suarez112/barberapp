@@ -141,7 +141,7 @@ export default function PanelNegocio({
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar el panel"
-            variante="neutro"
+            variante="secundario"
             onPress={recargar}
           />
         </View>
@@ -204,7 +204,7 @@ export default function PanelNegocio({
           <Boton
             titulo="CERRAR SESIÓN"
             ayuda="Sale de tu cuenta en este celular"
-            variante="neutro"
+            variante="secundario"
             onPress={cerrarSesion}
             style={styles.botonAviso}
           />

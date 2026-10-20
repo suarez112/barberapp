@@ -31,13 +31,14 @@ const MODOS = [
   { id: "semanal", label: "Cada semana" },
 ] as const;
 
-// Colores de la tabla (igual en tema claro y oscuro)
-// Íconos dibujados (X, ↻, ✓): los caracteres de texto se ven de tamaños distintos
+// Colores de la tabla (iguales en tema claro y oscuro): los bloqueos van en rojo intenso,
+// sólido; el símbolo (X, ↻, ✓) los distingue entre sí. Íconos dibujados: los caracteres
+// de texto se ven de tamaños distintos
 type Icono = ComponentProps<typeof Ionicons>["name"];
 type EstiloCelda = { fondo: string; borde: string; texto: string; simbolo: Icono };
-const SOLO_ESE_DIA: EstiloCelda = { fondo: "#7F1D1D", borde: "#EF4444", texto: "#FECACA", simbolo: "close" };
-const CADA_SEMANA: EstiloCelda = { fondo: "#7C2D12", borde: "#F97316", texto: "#FED7AA", simbolo: "refresh" };
-const CON_CITA: EstiloCelda = { fondo: "#166534", borde: "#22C55E", texto: "#DCFCE7", simbolo: "checkmark" };
+const SOLO_ESE_DIA: EstiloCelda = { fondo: COLORES.rojo, borde: "#991B1B", texto: COLORES.blanco, simbolo: "close" };
+const CADA_SEMANA: EstiloCelda = { fondo: "#B91C1C", borde: "#7F1D1D", texto: COLORES.blanco, simbolo: "refresh" };
+const CON_CITA: EstiloCelda = { fondo: COLORES.verde, borde: "#14532D", texto: COLORES.blanco, simbolo: "checkmark" };
 const LIBRE_OSCURO = { fondo: "#2A2A2A", borde: "#404040" };
 const LIBRE_CLARO = { fondo: "#E5E7EB", borde: "#D1D5DB" };
 
@@ -483,7 +484,7 @@ export default function BloqueoSemanal({
           <View
             style={[
               s.marca,
-              { backgroundColor: b.tipo === "fecha" ? SOLO_ESE_DIA.borde : CADA_SEMANA.borde },
+              { backgroundColor: b.tipo === "fecha" ? SOLO_ESE_DIA.fondo : CADA_SEMANA.fondo },
             ]}
           />
           <Text style={[s.textoLista, { color: colors.textPrimary }]}>
@@ -496,7 +497,7 @@ export default function BloqueoSemanal({
           {esAdmin ? (
             <BotonIcono
               icono="trash-outline"
-              color={COLORES.peligro}
+              color={colors.peligroTexto}
               etiqueta="Liberar este horario"
               onPress={() => liberar(b, false)}
             />

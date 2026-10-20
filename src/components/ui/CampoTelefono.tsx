@@ -4,7 +4,8 @@ import { FlatList, Modal, Pressable, StyleProp, StyleSheet, Text, ViewStyle } fr
 import { PAISES, nombrePais } from "@/data/paises";
 import type { EstadoTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { bandera, indicativoDe } from "@/utils/telefonos";
+import { indicativoDe } from "@/utils/telefonos";
+import Bandera from "./Bandera";
 import CampoTexto from "./CampoTexto";
 import Tocable from "./Tocable";
 
@@ -72,7 +73,7 @@ export default function CampoTelefono({
             onPress={() => setAbierto(true)}
             style={[styles.pais, { borderRightColor: colors.inputBorder }]}
           >
-            <Text style={styles.bandera}>{bandera(pais)}</Text>
+            <Bandera pais={pais} />
             <Text style={[styles.indicativo, { color: colors.textPrimary }]}>+{indicativo}</Text>
             <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
           </Tocable>
@@ -111,13 +112,17 @@ export default function CampoTelefono({
                     accessibilityState={{ selected: activo }}
                     accessibilityLabel={`${item.nombre}, más ${indicativoDe(item.codigo)}`}
                     accessibilityHint="Elige este país para el teléfono"
-                    style={[styles.opcion, { borderBottomColor: colors.cardBorder }]}
+                    style={[
+                      styles.opcion,
+                      { borderBottomColor: colors.cardBorder },
+                      activo && { backgroundColor: colors.cardSelectedBg },
+                    ]}
                     onPress={() => {
                       telefono.elegirPais(item.codigo);
                       cerrar();
                     }}
                   >
-                    <Text style={styles.bandera}>{bandera(item.codigo)}</Text>
+                    <Bandera pais={item.codigo} />
                     <Text
                       style={[
                         styles.nombre,
@@ -148,7 +153,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRightWidth: 1,
   },
-  bandera: { fontSize: 20 },
   indicativo: { fontWeight: "bold", fontSize: 15 },
   fondo: {
     flex: 1,

@@ -135,7 +135,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
         <Boton
           titulo="MIS CITAS"
           ayuda="Muestra las citas que reservaste con tu cuenta"
-          variante="neutro"
+          variante="secundario"
           onPress={() => push("/mis-citas")}
           style={styles.botonCitas}
         />
@@ -174,7 +174,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
               <Boton
                 titulo="REINTENTAR"
                 ayuda="Vuelve a cargar tus negocios guardados"
-                variante="neutro"
+                variante="secundario"
                 onPress={cargar}
               />
             </View>
@@ -213,13 +213,13 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 </Text>
                 {n.recibiendoReservas ? null : (
                   <View style={styles.insignia}>
-                    <Insignia texto="NO RECIBE RESERVAS POR AHORA" color={COLORES.cancelado} />
+                    <Insignia texto="NO RECIBE RESERVAS POR AHORA" color={COLORES.rojo} />
                   </View>
                 )}
               </View>
               <BotonIcono
                 icono="trash-outline"
-                color={COLORES.peligro}
+                color={colors.peligroTexto}
                 etiqueta={`Quitar ${n.nombre}`}
                 ayuda="Lo quita de tu lista, pide confirmación"
                 onPress={() => quitar(n)}

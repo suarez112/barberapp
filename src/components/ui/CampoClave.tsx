@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
-import { COLORES } from "../../theme/paleta";
 import CampoTexto, { PropsCampo } from "./CampoTexto";
 
 // Mismo rango que el backend
@@ -21,11 +20,10 @@ type Props = Omit<PropsCampo, "secureTextEntry" | "derecha"> & {
 };
 
 export default function CampoClave({ requisitos = false, confirmaDe, ...props }: Props) {
-  const { colors, esOscuro } = useAppTheme();
+  const { colors } = useAppTheme();
   const [visible, setVisible] = useState(false);
   const valor = props.value ?? "";
-  // Verde con contraste suficiente en los dos temas
-  const verde = esOscuro ? COLORES.exitoClaro : COLORES.exito;
+  const verde = colors.exitoTexto;
 
   // Cada línea dice si se cumple, también para el lector de pantalla
   const linea = (cumple: boolean, texto: string) => (

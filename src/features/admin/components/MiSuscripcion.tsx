@@ -10,9 +10,9 @@ import { EstadoSuscripcion, Suscripcion } from "../../cuenta/api";
 import PlanesModal from "../../planes/PlanesModal";
 
 const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
-  prueba: { texto: "PRUEBA GRATUITA", color: COLORES.info },
-  activa: { texto: "ACTIVA", color: COLORES.exito },
-  vencida: { texto: "VENCIDA", color: COLORES.cancelado },
+  prueba: { texto: "PRUEBA GRATUITA", color: COLORES.azul },
+  activa: { texto: "ACTIVA", color: COLORES.verde },
+  vencida: { texto: "VENCIDA", color: COLORES.rojo },
 };
 
 const textoDias = (dias: number) => (dias === 1 ? "1 día" : `${dias} días`);

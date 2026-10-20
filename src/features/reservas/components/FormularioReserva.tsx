@@ -11,7 +11,8 @@ import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
 import { crearDia, mesCorto } from "@/utils/fechas";
-import { telefonoConBandera } from "@/utils/telefonos";
+import { telefonoMostrado } from "@/utils/telefonos";
+import TelefonoConBandera from "@/components/ui/TelefonoConBandera";
 import { EstadoReserva } from "../hooks/useReserva";
 import SelectorHoras from "./SelectorHoras";
 import SelectorProfesional from "./SelectorProfesional";
@@ -97,10 +98,10 @@ export default function FormularioReserva({ reserva }: Props) {
         // Cliente con sesión: sus datos se llenan solos
         <View
           accessible
-          accessibilityLabel={`Reservas con tu cuenta: ${datosCuenta.nombre}, ${telefonoConBandera(
+          accessibilityLabel={`Reservas con tu cuenta: ${datosCuenta.nombre}, ${telefonoMostrado(
             datosCuenta.telefono,
             datosCuenta.indicativo,
-          )}`}
+          ).texto}`}
           style={[styles.cuenta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
         >
           <Ionicons name="person-circle-outline" size={28} color={colors.primaryText} />
@@ -108,10 +109,12 @@ export default function FormularioReserva({ reserva }: Props) {
             <Text style={[styles.nombreCuenta, { color: colors.textPrimary }]}>
               {datosCuenta.nombre}
             </Text>
-            <Text style={[styles.detalleCuenta, { color: colors.textSecondary }]}>
-              {telefonoConBandera(datosCuenta.telefono, datosCuenta.indicativo)} · Reservas con tu
-              cuenta
-            </Text>
+            <TelefonoConBandera
+              telefono={datosCuenta.telefono}
+              indicativo={datosCuenta.indicativo}
+              style={[styles.detalleCuenta, { color: colors.textSecondary }]}
+              sufijo=" · Reservas con tu cuenta"
+            />
           </View>
         </View>
       ) : (

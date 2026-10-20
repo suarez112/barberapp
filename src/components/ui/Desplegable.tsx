@@ -170,6 +170,7 @@ export default function Desplegable<T extends string | number>({
                     style={[
                       styles.opcion,
                       { borderColor: colors.cardBorder },
+                      activa && { backgroundColor: colors.cardSelectedBg },
                       !buscable && styles.altoFijo,
                     ]}
                   >

@@ -67,7 +67,7 @@ export default function SeleccionRolScreen() {
         >
           <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>
             ¿Ya tienes cuenta?{" "}
-            <Text style={{ color: colors.primaryText }}>Inicia sesión</Text>
+            <Text style={{ color: colors.primaryText, textDecorationLine: "underline" }}>Inicia sesión</Text>
           </Text>
         </Tocable>
       </View>

@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { fechaLarga } from "@/utils/fechas";
 import { Suscripcion } from "../../cuenta/api";
 
@@ -27,7 +26,7 @@ export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscrip
         styles.aviso,
         {
           backgroundColor: colors.cardBg,
-          borderColor: urgente ? COLORES.advertencia : colors.primary,
+          borderColor: urgente ? colors.avisoTexto : colors.primary,
         },
       ]}
     >

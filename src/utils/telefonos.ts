@@ -17,9 +17,11 @@ const MAXIMO_DIGITOS = 15;
 
 export const soloDigitos = (texto: string) => texto.replace(/\D/g, "");
 
-// "CO" -> "🇨🇴" (letras indicadoras regionales)
-export const bandera = (pais: string) =>
-  String.fromCodePoint(...[...pais.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+// Bandera como imagen pequeña (los emoji de bandera no se dibujan en Windows ni en la web:
+// salen como letras, ej. "co"). Imágenes de flagcdn.com por código ISO, a doble tamaño
+// para pantallas nítidas; el componente <Bandera> las muestra.
+export const urlBandera = (pais: string) =>
+  `https://flagcdn.com/w80/${pais.toLowerCase()}.png`;
 
 export const indicativoDe = (pais: CountryCode) => getCountryCallingCode(pais);
 
@@ -72,17 +74,21 @@ export const separarPais = (
   return { pais, digitos: digitos.slice(formateador.getCallingCode()?.length ?? 0) };
 };
 
-// Teléfono guardado para mostrar: "+573162781393" -> "🇨🇴 +57 316 278 1393". Los
-// antiguos (solo dígitos) se arman con su indicativo; si no se entienden, tal cual.
-export const telefonoConBandera = (telefono?: string | null, indicativo?: string | null) => {
+// Teléfono guardado para mostrar: "+573162781393" -> { pais: "CO", texto: "+57 316 278 1393" }.
+// Los antiguos (solo dígitos) se arman con su indicativo; si no se entienden, tal cual (sin país).
+export const telefonoMostrado = (
+  telefono?: string | null,
+  indicativo?: string | null,
+): { pais: CountryCode | null; texto: string } => {
   const tel = (telefono ?? "").trim();
-  if (!tel) return "";
+  if (!tel) return { pais: null, texto: "" };
   const digitos = soloDigitos(tel);
   const e164 = tel.startsWith("+") ? `+${digitos}` : indicativo ? `+${indicativo}${digitos}` : null;
   const numero = e164 ? parsePhoneNumberFromString(e164) : undefined;
-  if (!numero?.isValid()) return indicativo && !tel.startsWith("+") ? `+${indicativo} ${tel}` : tel;
+  if (!numero?.isValid()) {
+    return { pais: null, texto: indicativo && !tel.startsWith("+") ? `+${indicativo} ${tel}` : tel };
+  }
   const nacional =
     numero.country === "CO" ? formatoColombia(numero.nationalNumber) : numero.formatNational();
-  const prefijo = numero.country ? `${bandera(numero.country)} ` : "";
-  return `${prefijo}+${numero.countryCallingCode} ${nacional}`;
+  return { pais: numero.country ?? null, texto: `+${numero.countryCallingCode} ${nacional}` };
 };

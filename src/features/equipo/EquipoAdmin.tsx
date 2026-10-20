@@ -205,7 +205,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
         <View
           style={[
             styles.cupo,
-            { backgroundColor: colors.cardBg, borderColor: lleno ? COLORES.advertencia : colors.cardBorder },
+            { backgroundColor: colors.cardBg, borderColor: lleno ? colors.avisoTexto : colors.cardBorder },
           ]}
         >
           <Text style={[styles.textoCupo, { color: colors.textPrimary }]}>
@@ -388,7 +388,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
             {!soyYo(b.id) ? (
               <BotonIcono
                 icono="trash-outline"
-                color={COLORES.peligro}
+                color={colors.peligroTexto}
                 etiqueta={`Retirar a ${b.nombre}`}
                 ayuda="Pide confirmación antes de retirarlo del equipo"
                 onPress={() => eliminar(b)}

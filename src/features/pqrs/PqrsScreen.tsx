@@ -26,9 +26,9 @@ const TIPOS: { valor: TipoPqrs; etiqueta: string }[] = [
 ];
 
 const ESTADOS: Record<EstadoPqrs, { texto: string; color: string }> = {
-  recibida: { texto: "RECIBIDA", color: COLORES.info },
-  en_proceso: { texto: "EN PROCESO", color: COLORES.advertenciaOscuro },
-  resuelta: { texto: "RESUELTA", color: COLORES.exito },
+  recibida: { texto: "RECIBIDA", color: COLORES.azul },
+  en_proceso: { texto: "EN PROCESO", color: COLORES.naranja },
+  resuelta: { texto: "RESUELTA", color: COLORES.verde },
   cerrada: { texto: "CERRADA", color: COLORES.neutro },
 };
 
@@ -188,7 +188,7 @@ export default function PqrsScreen() {
                   <Boton
                     titulo="REINTENTAR"
                     ayuda="Vuelve a cargar tus solicitudes"
-                    variante="neutro"
+                    variante="secundario"
                     onPress={cargar}
                   />
                 </View>

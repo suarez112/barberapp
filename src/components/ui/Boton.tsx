@@ -7,9 +7,9 @@ import {
   ViewStyle,
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
-import { COLORES } from "../../theme/paleta";
+import { COLORES, textoSobre } from "../../theme/paleta";
 
-type Variante = "primario" | "neutro" | "peligro";
+type Variante = "primario" | "secundario" | "peligro";
 
 type Props = {
   titulo: string;
@@ -39,12 +39,18 @@ export default function Boton({
   textStyle,
 }: Props) {
   const { colors } = useAppTheme();
-  const fondo = {
-    primario: colors.primary,
-    neutro: COLORES.neutro,
-    peligro: COLORES.peligroOscuro,
+  // Secundario: fondo y borde del tema (Cancelar, acciones de apoyo); no es negro ni amarillo
+  const estilos = {
+    primario: { backgroundColor: colors.primary, color: colors.onPrimary },
+    secundario: {
+      backgroundColor: colors.secundarioBg,
+      color: colors.secundarioTexto,
+      borderWidth: 1.5,
+      borderColor: colors.secundarioBorde,
+    },
+    peligro: { backgroundColor: COLORES.rojo, color: textoSobre(COLORES.rojo) },
   }[variante];
-  const colorTexto = variante === "primario" ? colors.onPrimary : COLORES.blanco;
+  const { color: colorTexto, ...fondo } = estilos;
 
   return (
     <Pressable
@@ -56,7 +62,7 @@ export default function Boton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.boton,
-        { backgroundColor: fondo },
+        fondo,
         pressed && styles.presionado,
         deshabilitado && styles.deshabilitado,
         style,

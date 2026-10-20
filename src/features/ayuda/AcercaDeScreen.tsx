@@ -24,14 +24,14 @@ export default function AcercaDeScreen() {
         <Boton
           titulo="POLÍTICA DE DATOS"
           ayuda="Abre la Política de Tratamiento de Datos Personales"
-          variante="neutro"
+          variante="secundario"
           onPress={() => setDocumento("politica-datos")}
           style={styles.boton}
         />
         <Boton
           titulo="TÉRMINOS Y CONDICIONES"
           ayuda="Abre los Términos y Condiciones de uso"
-          variante="neutro"
+          variante="secundario"
           onPress={() => setDocumento("terminos")}
           style={styles.boton}
         />

@@ -326,7 +326,7 @@ const s = StyleSheet.create({
   detalle: { borderWidth: 1, borderRadius: 10, padding: 14, marginTop: 10 },
   cabeceraDetalle: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
   tituloDetalle: { fontSize: 15, fontWeight: "bold" },
-  cerrar: { fontSize: 13, fontWeight: "bold" },
+  cerrar: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
   filaDetalle: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
   etiquetaDetalle: { fontSize: 13 },
   valorDetalle: { fontSize: 13, fontWeight: "bold" },

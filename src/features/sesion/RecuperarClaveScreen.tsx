@@ -225,7 +225,7 @@ export default function RecuperarClaveScreen() {
             <Boton
               titulo="PEDIR OTRO CÓDIGO"
               ayuda="Envía un código nuevo al mismo correo; el anterior deja de servir"
-              variante="neutro"
+              variante="secundario"
               deshabilitado={enviando}
               onPress={pedirCodigo}
               style={styles.boton}

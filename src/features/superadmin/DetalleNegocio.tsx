@@ -76,7 +76,7 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
                 <Boton
                   titulo="EXTENDER PRUEBA"
                   ayuda="Abre una ventana para sumar días a la prueba gratuita"
-                  variante="neutro"
+                  variante="secundario"
                   onPress={() => setAccion("prueba")}
                   style={styles.accion}
                 />
@@ -85,7 +85,7 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
                 <Boton
                   titulo="REACTIVAR"
                   ayuda="Abre una ventana para quitar la suspensión"
-                  variante="neutro"
+                  variante="secundario"
                   onPress={() => setAccion("reactivar")}
                   style={styles.accion}
                 />
@@ -191,7 +191,7 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
 
 const styles = StyleSheet.create({
   volver: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, marginBottom: 8, alignSelf: "flex-start" },
-  textoVolver: { fontSize: 14, fontWeight: "600" },
+  textoVolver: { fontSize: 14, fontWeight: "600", textDecorationLine: "underline" },
   titulo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 },
   nombre: { flex: 1 },
   h1: { fontSize: 26, fontWeight: "bold" },

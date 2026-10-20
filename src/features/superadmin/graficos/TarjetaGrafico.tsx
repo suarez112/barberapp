@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 16, fontWeight: "bold" },
   subtitulo: { fontSize: 13, marginTop: 2 },
   alternar: { minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "flex-end" },
-  textoAlternar: { fontSize: 13, fontWeight: "600" },
+  textoAlternar: { fontSize: 13, fontWeight: "600", textDecorationLine: "underline" },
   fila: { flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 6, borderBottomWidth: 1 },
   dato: { fontSize: 13 },
   valor: { fontSize: 13, fontWeight: "600" },

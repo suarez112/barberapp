@@ -153,7 +153,7 @@ function FormularioRespuesta({ pqrs, onGuardada }: { pqrs: PqrsAdmin; onGuardada
 
 const styles = StyleSheet.create({
   volver: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, marginBottom: 8, alignSelf: "flex-start" },
-  textoVolver: { fontSize: 14, fontWeight: "600" },
+  textoVolver: { fontSize: 14, fontWeight: "600", textDecorationLine: "underline" },
   titulo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 16 },
   nombre: { flex: 1 },
   h1: { fontSize: 26, fontWeight: "bold" },

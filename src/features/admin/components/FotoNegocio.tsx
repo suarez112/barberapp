@@ -73,7 +73,7 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
           <Boton
             titulo="CANCELAR"
             ayuda="Descarta la foto elegida"
-            variante="neutro"
+            variante="secundario"
             onPress={() => setPendiente(null)}
           />
         </>
@@ -81,7 +81,7 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
         <Boton
           titulo={fotoUrl ? "CAMBIAR FOTO" : "SUBIR FOTO"}
           ayuda="Abre tu galería para elegir la foto del negocio"
-          variante="neutro"
+          variante="secundario"
           onPress={elegir}
         />
       )}

@@ -82,7 +82,7 @@ export default function ConfirmacionCita({
           {/* Icono de check con aro */}
           <View style={[s.aro, { backgroundColor: `${colors.primary}33` }]}>
             <View style={[s.circulo, { backgroundColor: colors.primary }]}>
-              <Ionicons name="checkmark" size={38} color="#000" />
+              <Ionicons name="checkmark" size={38} color={colors.onPrimary} />
             </View>
           </View>
 

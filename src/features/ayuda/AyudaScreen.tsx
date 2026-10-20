@@ -155,7 +155,7 @@ export default function AyudaScreen() {
               <Boton
                 titulo="CANCELAR"
                 ayuda="No elimina nada y oculta el campo de contraseña"
-                variante="neutro"
+                variante="secundario"
                 deshabilitado={eliminando}
                 style={styles.cancelar}
                 onPress={() => {

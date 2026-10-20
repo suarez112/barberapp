@@ -42,9 +42,9 @@ export const formatearNumero = (n: number) => n.toLocaleString("es-CO");
 export const formatearPesos = (n: number) => `$${n.toLocaleString("es-CO")}`;
 
 export const ESTADOS_NEGOCIO: Record<EstadoNegocio, { texto: string; color: string }> = {
-  prueba: { texto: "EN PRUEBA", color: COLORES.info },
-  activo: { texto: "ACTIVO", color: COLORES.exito },
-  vencido: { texto: "VENCIDO", color: COLORES.cancelado },
+  prueba: { texto: "EN PRUEBA", color: COLORES.azul },
+  activo: { texto: "ACTIVO", color: COLORES.verde },
+  vencido: { texto: "VENCIDO", color: COLORES.rojo },
   suspendido: { texto: "SUSPENDIDO", color: COLORES.neutro },
 };
 
@@ -58,9 +58,9 @@ export const FILTROS_ESTADO: { id: FiltroEstado | "todos"; label: string }[] = [
 ];
 
 export const ESTADOS_PQRS: Record<EstadoPqrs, { texto: string; color: string }> = {
-  recibida: { texto: "RECIBIDA", color: COLORES.info },
-  en_proceso: { texto: "EN PROCESO", color: COLORES.advertenciaOscuro },
-  resuelta: { texto: "RESUELTA", color: COLORES.exito },
+  recibida: { texto: "RECIBIDA", color: COLORES.azul },
+  en_proceso: { texto: "EN PROCESO", color: COLORES.naranja },
+  resuelta: { texto: "RESUELTA", color: COLORES.verde },
   cerrada: { texto: "CERRADA", color: COLORES.neutro },
 };
 

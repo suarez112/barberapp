@@ -205,7 +205,7 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
       <Boton
         titulo={buscando ? "BUSCANDO UBICACIÓN…" : "USAR MI UBICACIÓN ACTUAL"}
         ayuda="Lee el GPS del celular hasta 20 segundos y pone el pin ahí. Úsalo dentro del local"
-        variante="neutro"
+        variante="secundario"
         onPress={usarUbicacionActual}
       />
 
@@ -249,5 +249,5 @@ const styles = StyleSheet.create({
     gap: 6,
     minHeight: 44,
   },
-  textoEnlace: { fontSize: 13, fontWeight: "bold" },
+  textoEnlace: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
 });

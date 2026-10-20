@@ -68,7 +68,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar los datos del negocio"
-            variante="neutro"
+            variante="secundario"
             onPress={recargar}
           />
         </View>
@@ -99,14 +99,6 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           <UbicacionNegocio perfil={perfil} onGuardar={guardarUbicacion} />
         </>
       ) : null}
-
-      <Boton
-        titulo="CERRAR SESIÓN"
-        ayuda="Sale de tu cuenta en este celular"
-        variante="peligro"
-        onPress={cerrarSesion}
-        style={styles.salir}
-      />
     </View>
   );
 
@@ -149,5 +141,4 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     marginVertical: 6,
   },
-  salir: { marginTop: 30 },
 });

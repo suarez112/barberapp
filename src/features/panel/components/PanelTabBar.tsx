@@ -37,7 +37,9 @@ export default function PanelTabBar({ pestanas, activa, onCambiar }: Props) {
       ]}
     >
       {pestanas.map((t) => {
-        const color = activa === t.id ? colors.primaryText : colors.textSecondary;
+        const esActiva = activa === t.id;
+        // Activa: amarillo con texto negro (tema claro) o texto del negocio (tema oscuro)
+        const color = esActiva ? colors.seleccionTexto : colors.textSecondary;
         return (
           <Tocable
             key={t.id}
@@ -45,7 +47,7 @@ export default function PanelTabBar({ pestanas, activa, onCambiar }: Props) {
             accessibilityState={{ selected: activa === t.id }}
             accessibilityLabel={t.label}
             accessibilityHint={`Abre la pestaña ${t.label}`}
-            style={styles.pestana}
+            style={[styles.pestana, esActiva && { backgroundColor: colors.seleccionBg }]}
             onPress={() => onCambiar(t.id)}
           >
             <Ionicons name={t.icono} size={18} color={color} />
@@ -65,6 +67,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     justifyContent: "space-around",
   },
-  pestana: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center" },
+  pestana: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 10, marginHorizontal: 2 },
   label: { fontSize: 11, marginTop: 3, fontWeight: "600" },
 });

@@ -83,7 +83,7 @@ export default function ClientesTab({ token }: { token: string }) {
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar los clientes"
-            variante="neutro"
+            variante="secundario"
             onPress={recargar}
           />
         </View>

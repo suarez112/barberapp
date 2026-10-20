@@ -14,7 +14,6 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import Tocable from "@/components/ui/Tocable";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { Producto } from "@/types";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio } from "@/utils/formato";
@@ -268,7 +267,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
             />
             <BotonIcono
               icono="trash-outline"
-              color={COLORES.peligro}
+              color={colors.peligroTexto}
               etiqueta={`Eliminar ${p.nombre}`}
               ayuda="Pide confirmación antes de eliminarlo"
               onPress={() => eliminar(p)}

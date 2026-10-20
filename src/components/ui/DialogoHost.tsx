@@ -2,15 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useSyncExternalStore } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
+import { COLORES, textoSobre } from "@/theme/paleta";
 import { dialogoActual, suscribirDialogos, TipoDialogo } from "@/utils/dialogos";
 
 type Icono = ComponentProps<typeof Ionicons>["name"];
 
 const ESTILO: Record<TipoDialogo, { icono: Icono; color?: string }> = {
-  exito: { icono: "checkmark", color: COLORES.exitoClaro },
-  error: { icono: "close", color: COLORES.peligro },
-  aviso: { icono: "alert", color: COLORES.advertencia },
+  exito: { icono: "checkmark", color: COLORES.verde },
+  error: { icono: "close", color: COLORES.rojo },
+  aviso: { icono: "alert", color: COLORES.naranja },
   // Sin color fijo: usa el color del negocio
   confirmacion: { icono: "help" },
 };
@@ -23,7 +23,7 @@ export default function DialogoHost() {
 
   const { icono, color = colors.primary } = ESTILO[dialogo.tipo];
   const esConfirmacion = dialogo.tipo === "confirmacion";
-  const colorAceptar = dialogo.destructivo ? COLORES.peligroOscuro : colors.primary;
+  const colorAceptar = dialogo.destructivo ? COLORES.rojo : colors.primary;
 
   return (
     <Modal
@@ -40,7 +40,7 @@ export default function DialogoHost() {
         >
           <View style={[s.aro, { backgroundColor: `${color}33` }]}>
             <View style={[s.circulo, { backgroundColor: color }]}>
-              <Ionicons name={icono} size={34} color="#000" />
+              <Ionicons name={icono} size={34} color={textoSobre(color)} />
             </View>
           </View>
 
@@ -59,7 +59,7 @@ export default function DialogoHost() {
             ]}
             onPress={() => dialogo.responder(true)}
           >
-            <Text style={[s.textoBoton, { color: dialogo.destructivo ? COLORES.blanco : colors.onPrimary }]}>
+            <Text style={[s.textoBoton, { color: textoSobre(colorAceptar) }]}>
               {(esConfirmacion && dialogo.textoAceptar) || "ACEPTAR"}
             </Text>
           </Pressable>

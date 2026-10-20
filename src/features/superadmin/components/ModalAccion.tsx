@@ -59,7 +59,7 @@ export default function ModalAccion({
             <Boton
               titulo="CANCELAR"
               ayuda="Cierra la ventana sin hacer cambios"
-              variante="neutro"
+              variante="secundario"
               deshabilitado={enviando}
               onPress={onCerrar}
             />

@@ -110,7 +110,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
         <Boton
           titulo="CANCELAR"
           ayuda="Descarta los cambios"
-          variante="neutro"
+          variante="secundario"
           onPress={() => editar(null)}
         />
       </View>

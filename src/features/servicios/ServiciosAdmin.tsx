@@ -10,7 +10,6 @@ import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { Servicio } from "@/types";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio, textoDuracion } from "@/utils/formato";
@@ -162,7 +161,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
             />
             <BotonIcono
               icono="trash-outline"
-              color={COLORES.peligro}
+              color={colors.peligroTexto}
               etiqueta={`Eliminar ${s.nombre}`}
               ayuda="Pide confirmación antes de eliminarlo"
               onPress={() => eliminar(s)}

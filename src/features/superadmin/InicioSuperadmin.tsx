@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { COLORES } from "@/theme/paleta";
+import { COLORES, textoSobre } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { obtenerResumen, ResumenPlataforma } from "./api";
 import Encabezado from "./components/Encabezado";
@@ -19,14 +19,14 @@ type Tarjeta = {
 };
 
 const TARJETAS: Tarjeta[] = [
-  { clave: "total", titulo: "Total de negocios", icono: "storefront-outline", color: COLORES.info, valor: (d) => d.totalNegocios },
-  { clave: "prueba", titulo: "En prueba", icono: "hourglass-outline", color: COLORES.info, valor: (d) => d.enPrueba },
-  { clave: "activos", titulo: "Activos", icono: "checkmark-circle-outline", color: COLORES.exito, valor: (d) => d.activos },
-  { clave: "vencidos", titulo: "Vencidos", icono: "alert-circle-outline", color: COLORES.cancelado, valor: (d) => d.vencidos },
+  { clave: "total", titulo: "Total de negocios", icono: "storefront-outline", color: COLORES.azul, valor: (d) => d.totalNegocios },
+  { clave: "prueba", titulo: "En prueba", icono: "hourglass-outline", color: COLORES.azul, valor: (d) => d.enPrueba },
+  { clave: "activos", titulo: "Activos", icono: "checkmark-circle-outline", color: COLORES.verde, valor: (d) => d.activos },
+  { clave: "vencidos", titulo: "Vencidos", icono: "alert-circle-outline", color: COLORES.rojo, valor: (d) => d.vencidos },
   { clave: "suspendidos", titulo: "Suspendidos", icono: "pause-circle-outline", color: COLORES.neutro, valor: (d) => d.suspendidos },
-  { clave: "nuevos", titulo: "Nuevos este mes", icono: "sparkles-outline", color: COLORES.exito, valor: (d) => d.nuevosEsteMes },
-  { clave: "porVencer", titulo: "Por vencer en 7 días", icono: "time-outline", color: COLORES.advertenciaOscuro, valor: (d) => d.porVencerEn7Dias },
-  { clave: "citas", titulo: "Citas de hoy", icono: "calendar-outline", color: COLORES.info, valor: (d) => d.citasHoy },
+  { clave: "nuevos", titulo: "Nuevos este mes", icono: "sparkles-outline", color: COLORES.verde, valor: (d) => d.nuevosEsteMes },
+  { clave: "porVencer", titulo: "Por vencer en 7 días", icono: "time-outline", color: COLORES.naranja, valor: (d) => d.porVencerEn7Dias },
+  { clave: "citas", titulo: "Citas de hoy", icono: "calendar-outline", color: COLORES.azul, valor: (d) => d.citasHoy },
 ];
 
 type Props = { onVerNegocio: (id: string) => void };
@@ -50,7 +50,7 @@ export default function InicioSuperadmin({ onVerNegocio }: Props) {
                 style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
               >
                 <View style={[styles.icono, { backgroundColor: t.color }]}>
-                  <Ionicons name={t.icono} size={22} color={COLORES.blanco} />
+                  <Ionicons name={t.icono} size={22} color={textoSobre(t.color)} />
                 </View>
                 <Text style={[styles.valor, { color: colors.textPrimary }]}>{formatearNumero(t.valor(datos))}</Text>
                 <Text style={[styles.titulo, { color: colors.textSecondary }]}>{t.titulo}</Text>

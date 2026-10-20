@@ -38,7 +38,7 @@ export default function AvisoInactividad({ segundos, onSeguir, onSalir }: Props)
           <Boton
             titulo="CERRAR SESIÓN"
             ayuda="Cierra tu sesión ahora"
-            variante="neutro"
+            variante="secundario"
             onPress={onSalir}
           />
         </View>

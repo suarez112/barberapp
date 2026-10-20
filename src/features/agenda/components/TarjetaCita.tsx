@@ -4,16 +4,16 @@ import Tocable from "@/components/ui/Tocable";
 import Insignia from "@/components/ui/Insignia";
 import { MINUTOS_ALERTA_COMPLETADA_TARDE } from "@/constants/config";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
+import { COLORES, textoSobre } from "@/theme/paleta";
 import { Cita, EstadoCita } from "@/types";
 import { fechaHoraCita, formatearHora } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
 
 export const ESTADO_CITA: Record<EstadoCita, { texto: string; color: string }> = {
-  CONFIRMADA: { texto: "Pendiente", color: COLORES.advertenciaOscuro },
-  COMPLETADA: { texto: "Completada", color: COLORES.exito },
-  CANCELADA: { texto: "Cancelada", color: COLORES.cancelado },
+  CONFIRMADA: { texto: "Pendiente", color: COLORES.naranja },
+  COMPLETADA: { texto: "Completada", color: COLORES.verde },
+  CANCELADA: { texto: "Cancelada", color: COLORES.rojo },
 };
 
 // Minutos entre la hora de la cita y el momento en que se marcó completada
@@ -125,14 +125,14 @@ export default function TarjetaCita({
           {puedeCompletar ? (
             <BotonEstado
               texto="Marcar completada"
-              color={COLORES.exito}
+              color={COLORES.verde}
               onPress={() => onCompletar(c)}
             />
           ) : null}
           {esAdmin ? (
             <BotonEstado
               texto="Cancelar cita"
-              color={COLORES.cancelado}
+              color={COLORES.rojo}
               onPress={() => onCancelar(c)}
             />
           ) : null}
@@ -159,7 +159,7 @@ function BotonEstado({
       style={[styles.botonEstado, { backgroundColor: color }]}
       onPress={onPress}
     >
-      <Text style={styles.botonEstadoTexto}>{texto}</Text>
+      <Text style={[styles.botonEstadoTexto, { color: textoSobre(color) }]}>{texto}</Text>
     </Tocable>
   );
 }
@@ -185,6 +185,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  botonEstadoTexto: { color: COLORES.blanco, fontWeight: "bold", fontSize: 12 },
+  botonEstadoTexto: { fontWeight: "bold", fontSize: 12 },
   whatsapp: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
 });

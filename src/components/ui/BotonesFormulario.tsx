@@ -22,7 +22,7 @@ export default function BotonesFormulario({
       <Boton
         titulo="CANCELAR"
         ayuda="Descarta lo escrito y cierra el formulario"
-        variante="neutro"
+        variante="secundario"
         onPress={onCancelar}
         style={styles.flex}
       />

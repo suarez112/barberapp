@@ -2,11 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Insignia from "@/components/ui/Insignia";
+import TelefonoConBandera from "@/components/ui/TelefonoConBandera";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { hoyColombiaISO, MESES_CORTOS } from "@/utils/fechas";
-import { telefonoConBandera } from "@/utils/telefonos";
 import { Cliente } from "../api";
 import HistorialCitas from "./HistorialCitas";
 
@@ -29,6 +29,8 @@ export default function TarjetaCliente({ token, cliente: c, onAlternarBloqueo }:
   // fechaUltimaCita es la fecha más lejana reservada: puede ser una cita próxima
   const esProxima = c.fechaUltimaCita !== null && c.fechaUltimaCita > hoyColombiaISO();
   const secundario = { color: colors.textSecondary };
+  // Bloquear en rojo, Desbloquear en verde (borde, ícono y texto), en los dos temas
+  const colorBloqueo = c.enListaNegra ? colors.exitoTexto : colors.peligroTexto;
 
   return (
     <View
@@ -41,16 +43,16 @@ export default function TarjetaCliente({ token, cliente: c, onAlternarBloqueo }:
         <Text style={[styles.nombre, { color: colors.textPrimary }]} numberOfLines={1}>
           {c.nombre}
         </Text>
-        {c.enListaNegra ? <Insignia texto="Bloqueado" color={COLORES.peligroOscuro} /> : null}
+        {c.enListaNegra ? <Insignia texto="Bloqueado" color={COLORES.rojo} /> : null}
         <Insignia
           texto={activo ? "Activo" : "Inactivo"}
-          color={activo ? COLORES.exito : COLORES.inactivo}
+          color={activo ? COLORES.verde : COLORES.neutro}
         />
       </View>
 
-      <Text style={[styles.linea, secundario]}>
-        {telefonoConBandera(c.telefono, c.indicativo)}
-      </Text>
+      <View style={styles.lineaTelefono}>
+        <TelefonoConBandera telefono={c.telefono} indicativo={c.indicativo} style={[styles.linea, secundario]} />
+      </View>
       <Text style={[styles.linea, secundario]}>
         {c.fechaUltimaCita
           ? `${esProxima ? "Próxima cita" : "Última visita"}: ${fechaCorta(c.fechaUltimaCita)}`
@@ -82,14 +84,14 @@ export default function TarjetaCliente({ token, cliente: c, onAlternarBloqueo }:
             c.enListaNegra ? "Le permite volver a reservar" : "Ya no podrá reservar en tu negocio"
           }
           onPress={() => onAlternarBloqueo(c)}
-          style={styles.bloqueo}
+          style={[styles.bloqueo, { borderColor: colorBloqueo }]}
         >
           <Ionicons
             name={c.enListaNegra ? "lock-open-outline" : "ban-outline"}
             size={14}
-            color={colors.textSecondary}
+            color={colorBloqueo}
           />
-          <Text style={[styles.bloqueoTexto, secundario]}>
+          <Text style={[styles.bloqueoTexto, { color: colorBloqueo }]}>
             {c.enListaNegra ? "Desbloquear" : "Bloquear"}
           </Text>
         </Tocable>
@@ -105,6 +107,7 @@ const styles = StyleSheet.create({
   cabecera: { flexDirection: "row", alignItems: "center", gap: 6 },
   nombre: { flex: 1, fontSize: 15, fontWeight: "bold" },
   linea: { fontSize: 13, marginTop: 4 },
+  lineaTelefono: { marginTop: 4 },
   pie: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -113,14 +116,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   verCitas: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, flex: 1 },
-  verCitasTexto: { fontSize: 13, fontWeight: "bold" },
+  verCitasTexto: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
   bloqueo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     minHeight: 44,
     minWidth: 44,
-    paddingLeft: 8,
+    paddingHorizontal: 12,
+    marginVertical: 4,
+    borderWidth: 1.5,
+    borderRadius: 8,
+    justifyContent: "center",
   },
-  bloqueoTexto: { fontSize: 12 },
+  bloqueoTexto: { fontSize: 12, fontWeight: "bold" },
 });
