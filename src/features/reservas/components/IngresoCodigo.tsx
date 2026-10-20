@@ -50,6 +50,7 @@ export default function IngresoCodigo() {
         }}
         onSubmitEditing={entrar}
         estiloTexto={styles.campo}
+        centrado
       />
 
       <Boton
@@ -66,7 +67,6 @@ const styles = StyleSheet.create({
   contenedor: { marginTop: 30 },
   ayuda: { marginBottom: 15 },
   campo: {
-    textAlign: "center",
     fontSize: 18,
     fontWeight: "bold",
     letterSpacing: 2,

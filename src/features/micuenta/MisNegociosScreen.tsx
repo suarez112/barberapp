@@ -157,6 +157,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
           }}
           onSubmitEditing={agregar}
           estiloTexto={styles.campoCodigo}
+          centrado
         />
         <Boton
           titulo={guardando ? "AGREGANDO…" : "AGREGAR"}

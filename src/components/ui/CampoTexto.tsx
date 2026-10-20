@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import {
   StyleProp,
   StyleSheet,
@@ -27,6 +27,8 @@ export type PropsCampo = Omit<TextInputProps, "style"> & {
   // Contenido dentro del recuadro, a los lados del texto (ej. "$", un ojo, una bandera)
   izquierda?: ReactNode;
   derecha?: ReactNode;
+  // Texto centrado (ej. un código): el cursor también queda en el centro
+  centrado?: boolean;
 };
 
 // Campo de texto accesible: etiqueta arriba, recuadro de al menos 48 px y el error debajo
@@ -39,11 +41,16 @@ export default function CampoTexto({
   estiloTexto,
   izquierda,
   derecha,
+  centrado = false,
   editable = true,
   multiline,
   ...props
 }: PropsCampo) {
   const { colors } = useAppTheme();
+  const [enfocado, setEnfocado] = useState(false);
+  // Android pone el cursor al inicio del placeholder aunque esté centrado:
+  // mientras se escribe en un campo centrado vacío, el ejemplo se oculta
+  const ocultarEjemplo = centrado && enfocado && !props.value;
   const hint = [error ? `Error: ${error}` : null, ayuda].filter(Boolean).join(". ");
 
   return (
@@ -72,11 +79,21 @@ export default function CampoTexto({
           editable={editable}
           multiline={multiline}
           {...props}
+          placeholder={ocultarEjemplo ? undefined : props.placeholder}
+          onFocus={(e) => {
+            setEnfocado(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setEnfocado(false);
+            props.onBlur?.(e);
+          }}
           style={[
             styles.texto,
             { color: colors.textPrimary },
             multiline && styles.multilinea,
             estiloTexto,
+            centrado && styles.centrado,
           ]}
         />
         {derecha}
@@ -104,5 +121,6 @@ const styles = StyleSheet.create({
   bloqueado: { opacity: 0.7 },
   texto: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
   multilinea: { minHeight: 90, textAlignVertical: "top" },
+  centrado: { textAlign: "center" },
   error: { fontSize: 12, marginTop: 4, lineHeight: 16 },
 });
