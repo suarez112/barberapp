@@ -85,6 +85,8 @@ export type Suscripcion = {
   // Día en que termina la prueba o el plan. null en empresas activas de antes de los planes
   fechaFin: string | null;
   diasRestantes: number | null; // 0 si está vencida
+  // Días de prueba que quedaban al activar el plan durante la prueba (se sumaron al plan)
+  diasPruebaSumados: number | null;
   // true siempre en la prueba y en los últimos 7 días de un plan
   mostrarRecordatorio: boolean;
   mensaje: string | null;
