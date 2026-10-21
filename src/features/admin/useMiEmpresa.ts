@@ -9,6 +9,7 @@ import {
   PerfilEmpresa,
   Suscripcion,
   actualizarMiEmpresa,
+  guardarIntervaloReservas,
   obtenerMiEmpresa,
   obtenerSuscripcion,
   subirFotoEmpresa,
@@ -119,6 +120,13 @@ export function useMiEmpresa(token: string) {
       );
     }, "No se pudo guardar la ubicación.");
 
+  const guardarIntervalo = (minutos: number) =>
+    ejecutar(async () => {
+      const { intervaloMinutos } = await guardarIntervaloReservas(token, minutos);
+      setPerfil((p) => (p ? { ...p, intervaloMinutos } : p));
+      avisar("Horarios guardados", "Tus clientes ya ven las horas con el nuevo intervalo.", "exito");
+    }, "No se pudo guardar el intervalo.");
+
   const guardarFoto = (foto: FotoElegida) =>
     ejecutar(async () => {
       const { fotoUrl, mensaje } = await subirFotoEmpresa(token, foto);
@@ -136,5 +144,6 @@ export function useMiEmpresa(token: string) {
     guardarDatos,
     guardarFoto,
     guardarUbicacion,
+    guardarIntervalo,
   };
 }

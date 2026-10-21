@@ -60,6 +60,8 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   diasAtencion: number[];
   horarioApertura: string;
   horarioCierre: string;
+  // Cada cuántos minutos pueden agendar los clientes (10, 20, 30, 40, 50 o 60)
+  intervaloMinutos: number;
   logoUrl: string | null;
   fotoUrl: string | null;
   colorPrimario: string | null;
@@ -149,6 +151,13 @@ export const obtenerSuscripcion = (token: string, signal?: AbortSignal) =>
 
 export const obtenerMiEmpresa = (token: string, signal?: AbortSignal) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", { token, signal });
+
+export const guardarIntervaloReservas = (token: string, intervaloMinutos: number) =>
+  request<{ mensaje: string; intervaloMinutos: number }>("/api/v1/admin/empresa/intervalo", {
+    method: "PUT",
+    body: { intervaloMinutos },
+    token,
+  });
 
 // Coordenadas del negocio: van siempre juntas (null en las dos las quita)
 // precisionUbicacion (metros) solo va con coordenadas leídas del GPS

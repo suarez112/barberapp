@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { crearCita } from "@/features/agenda/api";
+import { useCallback, useEffect, useState } from "react";
+import { consultarDisponibilidad, crearCita, HoraDisponible } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
 import { ACEPTACION } from "@/features/legal/api";
@@ -7,13 +7,10 @@ import { MENSAJE_AUTORIZACION } from "@/features/legal/CasillaAutorizacion";
 import { useTelefono } from "@/hooks/useTelefono";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { describirError, esEstado, registrarCausa } from "@/services/api/errores";
-import { ApiError, mensajeDeError } from "@/services/api/http";
+import { ApiError, esCancelada, mensajeDeError } from "@/services/api/http";
 import { Barbero, Dia, Servicio } from "@/types";
 import { avisar } from "@/utils/dialogos";
-import {
-  duracionEnMinutos,
-  obtenerHorariosDisponibles,
-} from "@/utils/disponibilidad";
+import { duracionEnMinutos } from "@/utils/disponibilidad";
 import {
   crearDia,
   DIAS_MAXIMOS_RESERVA,
@@ -32,11 +29,12 @@ const pideAceptarDocumentos = (error: unknown) =>
   (error.message.startsWith("Publicamos una nueva versión") ||
     error.message.startsWith("Debes aceptar la Política"));
 
+const HORA_OCUPADA = "Esa hora acaba de ocuparse, elige otra";
+
 // Estado y reglas del formulario de reserva del cliente
 export function useReserva() {
-  const { empresa, servicios } = useNegocio();
-  const { citas, citasOcupadas, bloqueos, agregarCita, cargarOcupacion } =
-    useAgenda();
+  const { empresa } = useNegocio();
+  const { agregarCita } = useAgenda();
   const { usuario, token, actualizarUsuario } = useCuenta();
 
   // Cliente con sesión: reserva con los datos de su cuenta (el backend ignora
@@ -72,20 +70,46 @@ export function useReserva() {
   const primerDia = hoyColombiaISO();
   const ultimoDia = sumarDias(primerDia, DIAS_MAXIMOS_RESERVA);
 
-  const horariosDisponibles =
-    barbero && servicio && empresa
-      ? obtenerHorariosDisponibles({
-          empresa,
-          barberoId: barbero.id,
-          servicio,
-          fecha: dia.fechaFull,
-          citas: [...citas, ...citasOcupadas],
-          bloqueos,
-          duracionMinimaServicios: servicios.length
-            ? Math.min(...servicios.map((s) => duracionEnMinutos(s.duracion)))
-            : undefined,
-        })
-      : [];
+  // Horas libres: las calcula el backend para este profesional, servicio y día.
+  // Se guarda con la consulta que las pidió: si no coincide con la actual, aún carga.
+  const [resultado, setResultado] = useState<{
+    clave: string;
+    horas: HoraDisponible[];
+    error: string | null;
+  } | null>(null);
+  const [intentoHoras, setIntentoHoras] = useState(0);
+
+  const empresaId = empresa?.id;
+  const barberoId = barbero?.id;
+  const servicioId = servicio?.id;
+  const fecha = dia.fechaFull;
+  const clave = `${empresaId}|${barberoId}|${servicioId}|${fecha}|${intentoHoras}`;
+  const hayConsulta = !!(empresaId && barbero && servicio);
+  const cargandoHoras = hayConsulta && resultado?.clave !== clave;
+  const horariosDisponibles = hayConsulta && !cargandoHoras ? (resultado?.horas ?? []) : [];
+  const errorHoras = hayConsulta && !cargandoHoras ? (resultado?.error ?? null) : null;
+
+  useEffect(() => {
+    if (!empresaId || !barberoId || !servicioId) return;
+    const control = new AbortController();
+    consultarDisponibilidad({ empresaId, barberoId, servicioId, fecha }, control.signal)
+      .then((r) => setResultado({ clave, horas: r.horas, error: null }))
+      .catch((error) => {
+        if (esCancelada(error)) return;
+        registrarCausa("Horas disponibles:", error);
+        setResultado({
+          clave,
+          horas: [],
+          error: describirError(error, {
+            titulo: "",
+            porDefecto: "No se pudieron cargar las horas.",
+          }).mensaje,
+        });
+      });
+    return () => control.abort();
+  }, [empresaId, barberoId, servicioId, fecha, clave]);
+
+  const recargarHoras = useCallback(() => setIntentoHoras((n) => n + 1), []);
 
   // Cambiar profesional, servicio o día invalida la hora elegida
   const elegirBarbero = (b: Barbero) => {
@@ -150,12 +174,27 @@ export function useReserva() {
       return;
     }
 
-    if (!horariosDisponibles.includes(hora)) {
-      avisar(
-        "Hora no disponible",
-        "Esa hora acaba de ocuparse. Por favor elige otra.",
-      );
-      setHora("");
+    // Antes de confirmar se vuelve a consultar: otra persona pudo tomar la hora
+    try {
+      const { horas } = await consultarDisponibilidad({
+        empresaId: empresa.id,
+        barberoId: barbero.id,
+        servicioId: servicio.id,
+        fecha: dia.fechaFull,
+      });
+      setResultado({ clave, horas, error: null });
+      if (!horas.some((h) => h.hora === hora)) {
+        avisar("Hora no disponible", HORA_OCUPADA, "aviso");
+        setHora("");
+        return;
+      }
+    } catch (error) {
+      registrarCausa("Error al revisar la hora:", error);
+      const aviso = describirError(error, {
+        titulo: "No se pudo agendar",
+        porDefecto: "Intenta de nuevo.",
+      });
+      avisar(aviso.titulo, aviso.mensaje, "error");
       return;
     }
 
@@ -191,18 +230,19 @@ export function useReserva() {
         );
         return;
       }
-      // 403: el teléfono está en la lista negra o el negocio no está recibiendo reservas.
-      // 409: la hora se ocupó o el profesional no atiende en ese horario.
+      // 409: la hora se ocupó entre la consulta y la reserva
+      if (esEstado(error, 409)) {
+        avisar("Horario no disponible", HORA_OCUPADA, "aviso");
+        setHora("");
+        recargarHoras();
+        return;
+      }
+      // 403: el teléfono está en la lista negra o el negocio no está recibiendo reservas
       const aviso = describirError(error, {
         titulo: "No se pudo agendar",
         porDefecto: "Intenta de nuevo.",
-        tituloConflicto: "Horario no disponible",
       });
       avisar(aviso.titulo, aviso.mensaje, "error");
-      if (esEstado(error, 409)) {
-        setHora("");
-        cargarOcupacion(empresa.id);
-      }
       return;
     }
 
@@ -236,6 +276,9 @@ export function useReserva() {
     primerDia,
     ultimoDia,
     horariosDisponibles,
+    cargandoHoras,
+    errorHoras,
+    recargarHoras,
     elegirBarbero,
     elegirServicio,
     elegirDia,

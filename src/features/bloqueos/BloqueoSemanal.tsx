@@ -46,6 +46,24 @@ const LIBRE_CLARO = { fondo: "#E5E7EB", borde: "#D1D5DB" };
 const minutosA24 = (total: number) =>
   `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 
+// Bloqueo provisional: ya se ve en la tabla, pero el servidor todavía no responde
+const PREFIJO_TEMPORAL = "guardando-";
+const esTemporal = (b: Bloqueo) => b.id.startsWith(PREFIJO_TEMPORAL);
+let contadorTemporal = 0;
+
+const bloqueoTemporal = (datos: NuevoBloqueo, nombre: string): Bloqueo => ({
+  id: `${PREFIJO_TEMPORAL}${++contadorTemporal}`,
+  barberoId: datos.barberoId,
+  barberoNombre: nombre,
+  tipo: datos.fecha ? "fecha" : "semanal",
+  diaSemana: datos.diaSemana ?? null,
+  fecha: datos.fecha ?? null,
+  todoElDia: !!datos.todoElDia,
+  horaInicio: datos.todoElDia ? "00:00" : datos.horaInicio,
+  horaFin: datos.todoElDia ? "24:00" : datos.horaFin,
+  motivo: datos.motivo ?? null,
+});
+
 // Lunes de la semana de esa fecha
 const lunesDe = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
@@ -98,12 +116,20 @@ export default function BloqueoSemanal({
   const [modo, setModo] = useState<Modo>("fecha");
   const [semanas, setSemanas] = useState(0); // 0 = esta semana
   const [bloqueos, setBloqueos] = useState<Bloqueo[] | null>(null);
-  const [ocupado, setOcupado] = useState(false);
+  // Bloqueos que se están liberando: se muestran libres mientras responde el servidor
+  const [liberando, setLiberando] = useState<Set<string>>(new Set());
 
+  // quitarTemporal: el bloqueo provisional que ya confirmó el servidor. Los demás
+  // provisionales (aún guardándose) se conservan para que no parpadeen.
   const cargar = useCallback(
-    () =>
+    (quitarTemporal?: string) =>
       listarBloqueos(token, esAdmin ? profesional.id : undefined)
-        .then((lista) => setBloqueos(lista.filter((b) => b.barberoId === profesional.id)))
+        .then((lista) =>
+          setBloqueos((prev) => [
+            ...lista.filter((b) => b.barberoId === profesional.id),
+            ...(prev ?? []).filter((b) => esTemporal(b) && b.id !== quitarTemporal),
+          ]),
+        )
         .catch((e) => {
           setBloqueos([]);
           avisarError(e, { titulo: "No se pudieron cargar los bloqueos" });
@@ -153,8 +179,12 @@ export default function BloqueoSemanal({
     return !!h && ini >= h.ini && ini + PASO <= h.fin;
   };
 
+  // Lo que se está liberando ya se ve libre
+  const visibles = (bloqueos ?? []).filter((b) => !liberando.has(b.id));
+  const guardandoBloqueos = (bloqueos ?? []).filter((b) => esTemporal(b) || liberando.has(b.id));
+
   const delDia = (dia: DiaTabla, tipo: Modo) =>
-    (bloqueos ?? []).filter((b) =>
+    visibles.filter((b) =>
       b.tipo === "fecha" ? tipo === "fecha" && b.fecha === dia.fecha : tipo === "semanal" && b.diaSemana === dia.diaSemana,
     );
 
@@ -184,25 +214,44 @@ export default function BloqueoSemanal({
       return ini < cf && ci < fin;
     });
 
-  // Ejecuta una acción con el servidor y recarga la lista
-  const ejecutar = async (accion: () => Promise<unknown>, titulo: string) => {
-    if (ocupado) return;
-    setOcupado(true);
+  // ¿Algún bloqueo de ese día espera la respuesta del servidor? (en el rango, si se da; o solo los de día completo)
+  const guardandoEn = (dia: DiaTabla, ini = 0, fin = 24 * 60, soloDiaCompleto = false) =>
+    guardandoBloqueos.some((b) => {
+      if (soloDiaCompleto && !b.todoElDia) return false;
+      if (b.tipo === "fecha" ? b.fecha !== dia.fecha : b.diaSemana !== dia.diaSemana) return false;
+      const t = tramo(b);
+      return ini < t.fin && t.ini < fin;
+    });
+
+  // Se marca al instante y se confirma con el servidor; si falla, se revierte
+  const crear = async (datos: NuevoBloqueo) => {
+    const provisional = bloqueoTemporal(datos, profesional.nombre);
+    setBloqueos((prev) => [...(prev ?? []), provisional]);
     try {
-      await accion();
-      await cargar();
+      await crearBloqueo(token, datos);
+      await cargar(provisional.id);
     } catch (e) {
-      avisarError(e, { titulo });
-    } finally {
-      setOcupado(false);
+      setBloqueos((prev) => (prev ?? []).filter((b) => b.id !== provisional.id));
+      avisarError(e, { titulo: "No se pudo bloquear" });
     }
   };
 
-  const crear = (datos: NuevoBloqueo) =>
-    ejecutar(() => crearBloqueo(token, datos), "No se pudo bloquear");
-
-  const quitar = (b: Bloqueo) =>
-    ejecutar(() => eliminarBloqueo(token, b.id), "No se pudo liberar");
+  const quitar = async (b: Bloqueo) => {
+    setLiberando((prev) => new Set(prev).add(b.id));
+    try {
+      await eliminarBloqueo(token, b.id);
+      await cargar();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo liberar" });
+    } finally {
+      // Si falló, el bloqueo vuelve a verse como estaba
+      setLiberando((prev) => {
+        const siguiente = new Set(prev);
+        siguiente.delete(b.id);
+        return siguiente;
+      });
+    }
+  };
 
   const describir = (b: Bloqueo) =>
     b.tipo === "fecha"
@@ -229,6 +278,7 @@ export default function BloqueoSemanal({
 
   const tocarCelda = (dia: DiaTabla, ini: number) => {
     const fin = ini + PASO;
+    if (guardandoEn(dia, ini, fin)) return; // espera la respuesta del servidor
     const otro: Modo = modo === "fecha" ? "semanal" : "fecha";
     const existente = buscarBloqueo(dia, modo, ini, fin);
     if (existente) {
@@ -257,6 +307,7 @@ export default function BloqueoSemanal({
   };
 
   const tocarDia = async (dia: DiaTabla) => {
+    if (guardandoEn(dia)) return;
     const existente = buscarDiaCompleto(dia, modo);
     if (existente) {
       liberar(existente, false);
@@ -293,7 +344,7 @@ export default function BloqueoSemanal({
   };
 
   // Primero los de una fecha (por fecha), luego los semanales de lunes a domingo
-  const ordenados = [...(bloqueos ?? [])].sort((a, b) => {
+  const ordenados = visibles.filter((b) => !esTemporal(b)).sort((a, b) => {
     if (a.tipo !== b.tipo) return a.tipo === "fecha" ? -1 : 1;
     const orden =
       a.tipo === "fecha"
@@ -361,7 +412,9 @@ export default function BloqueoSemanal({
               <Text style={[s.textoSemana, { color: colors.textPrimary }]}>
                 {etiquetaSemana}
               </Text>
-              {ocupado ? <ActivityIndicator size="small" color={colors.primaryText} /> : null}
+              {guardandoBloqueos.length > 0 ? (
+                <ActivityIndicator size="small" color={colors.primaryText} />
+              ) : null}
             </View>
             <TouchableOpacity
               accessibilityRole="button"
@@ -400,7 +453,9 @@ export default function BloqueoSemanal({
                   <Text style={[s.diaNom, { color: estilo?.texto ?? colors.textSecondary }]}>
                     {d.diaNom}
                   </Text>
-                  {estilo ? (
+                  {guardandoEn(d, 0, 24 * 60, true) ? (
+                    <ActivityIndicator size="small" color={estilo?.texto ?? colors.primaryText} style={s.iconoDia} />
+                  ) : estilo ? (
                     <Ionicons name={estilo.simbolo} size={20} color={estilo.texto} style={s.iconoDia} />
                   ) : (
                     <Text style={[s.diaNum, { color: colors.textPrimary }]}>{d.num}</Text>
@@ -421,12 +476,13 @@ export default function BloqueoSemanal({
               {dias.map((d) => {
                 const estilo = estadoCelda(d, ini);
                 const abierto = abiertoEn(d.diaSemana, ini);
+                const guardando = guardandoEn(d, ini, ini + PASO);
                 return (
                   <TouchableOpacity
                     key={d.fecha + ini}
                     disabled={!esAdmin || (!abierto && !estilo)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}${estilo ? ", ocupado o bloqueado" : abierto ? ", libre" : ", cerrado"}`}
+                    accessibilityLabel={`${DIAS_LARGOS[d.diaSemana]} ${d.num}, ${minutosAHora(ini)}${guardando ? ", guardando" : estilo ? ", ocupado o bloqueado" : abierto ? ", libre" : ", cerrado"}`}
                     accessibilityHint="Bloquea o libera esta hora"
                     onPress={() => tocarCelda(d, ini)}
                     style={[
@@ -439,7 +495,9 @@ export default function BloqueoSemanal({
                       !abierto && !estilo && { backgroundColor: "transparent" },
                     ]}
                   >
-                    {estilo ? (
+                    {guardando ? (
+                      <ActivityIndicator size="small" color={estilo?.texto ?? colors.primaryText} />
+                    ) : estilo ? (
                       <Ionicons name={estilo.simbolo} size={16} color={estilo.texto} />
                     ) : !abierto ? (
                       <Text style={[s.cerradoCelda, { color: colors.textSecondary }]}>—</Text>

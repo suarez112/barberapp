@@ -17,8 +17,11 @@ import { useNegocio } from "../negocio/NegocioProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { actualizarServicio, crearServicio, eliminarServicio } from "./api";
 
-// Duraciones que se ofrecen al crear o editar un servicio (en minutos)
-const DURACIONES = [15, 20, 30, 40, 45, 60, 75, 90, 105, 120, 150, 180];
+// Duraciones que se ofrecen al crear o editar un servicio: de 10 min a 2 h 30, de 10 en 10
+const OPCIONES_DURACION = Array.from({ length: 15 }, (_, i) => {
+  const minutos = (i + 1) * 10;
+  return { valor: minutos, etiqueta: textoDuracion(minutos) };
+});
 
 type Campos = { nombre: string; precio: string; duracion: number | null };
 
@@ -67,13 +70,6 @@ export default function ServiciosAdmin({ token }: { token: string }) {
       avisarError(e, { titulo: "No se pudo guardar el servicio" });
     }
   };
-
-  // Una duración guardada que no está en la lista (ej. 50 min) también se puede conservar
-  const opcionesDuracion = [
-    ...new Set([...DURACIONES, ...(campos.duracion ? [campos.duracion] : [])]),
-  ]
-    .sort((a, b) => a - b)
-    .map((m) => ({ valor: m, etiqueta: textoDuracion(m) }));
 
   const eliminar = async (s: Servicio) => {
     const ok = await confirmar({
@@ -125,7 +121,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
           error={errores.duracion}
           ayuda="Elige cuánto dura el servicio"
           placeholder="Elige la duración del servicio"
-          opciones={opcionesDuracion}
+          opciones={OPCIONES_DURACION}
           valor={campos.duracion}
           onCambiar={cambiar("duracion")}
         />

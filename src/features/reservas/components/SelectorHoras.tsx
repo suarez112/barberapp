@@ -2,10 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { Paleta } from "@/theme/paleta";
-import { horaAMinutos } from "@/utils/disponibilidad";
+import { horario24AMinutos } from "@/utils/disponibilidad";
+import type { HoraDisponible } from "../../agenda/api";
 
 type Props = {
-  horarios: string[];
+  horarios: HoraDisponible[];
+  // Hora elegida en el formato de la reserva ("09:40 AM")
   horaSel: string;
   onSeleccionar: (hora: string) => void;
   colors: Paleta;
@@ -18,9 +20,16 @@ const GRUPOS = [
   { nombre: "Noche", icono: "🌙", desde: 1080, hasta: 1440 }, // 6:00 PM en adelante
 ];
 
-const grupoDeHora = (hora: string): string | undefined => {
-  if (!hora) return undefined;
-  const min = horaAMinutos(hora);
+// "13:00" -> "1:00": solo la hora de inicio; el momento del día lo da el grupo
+const horaCorta = (inicio: string) => {
+  const min = horario24AMinutos(inicio);
+  return `${Math.floor(min / 60) % 12 || 12}:${String(min % 60).padStart(2, "0")}`;
+};
+
+const grupoDeHora = (horarios: HoraDisponible[], hora: string): string | undefined => {
+  const elegida = horarios.find((h) => h.hora === hora);
+  if (!elegida) return undefined;
+  const min = horario24AMinutos(elegida.inicio);
   return GRUPOS.find((g) => min >= g.desde && min < g.hasta)?.nombre;
 };
 
@@ -32,7 +41,7 @@ export default function SelectorHoras({
 }: Props) {
   // Cada momento del día es un desplegable; empiezan cerrados salvo el de la hora elegida
   const [abiertos, setAbiertos] = useState<Record<string, boolean>>(() => {
-    const grupo = grupoDeHora(horaSel);
+    const grupo = grupoDeHora(horarios, horaSel);
     return grupo ? { [grupo]: true } : {};
   });
   const [horaPrevia, setHoraPrevia] = useState(horaSel);
@@ -44,7 +53,7 @@ export default function SelectorHoras({
   // (ajuste durante el render en vez de un efecto: evita un render extra)
   if (horaSel !== horaPrevia) {
     setHoraPrevia(horaSel);
-    const grupo = grupoDeHora(horaSel);
+    const grupo = grupoDeHora(horarios, horaSel);
     if (grupo) setAbiertos((prev) => ({ ...prev, [grupo]: true }));
   }
 
@@ -61,7 +70,7 @@ export default function SelectorHoras({
     <View>
       {GRUPOS.map((grupo) => {
         const horasDelGrupo = horarios.filter((h) => {
-          const min = horaAMinutos(h);
+          const min = horario24AMinutos(h.inicio);
           return min >= grupo.desde && min < grupo.hasta;
         });
 
@@ -69,7 +78,7 @@ export default function SelectorHoras({
         if (horasDelGrupo.length === 0) return null;
 
         const abierto = !!abiertos[grupo.nombre];
-        const haySeleccion = horasDelGrupo.includes(horaSel);
+        const haySeleccion = horasDelGrupo.some((h) => h.hora === horaSel);
 
         return (
           <View key={grupo.nombre} style={{ marginBottom: 10 }}>
@@ -104,16 +113,17 @@ export default function SelectorHoras({
             {abierto && (
               <View style={[s.grid, { marginTop: 8 }]}>
                 {horasDelGrupo.map((h) => {
-                  const esSel = horaSel === h;
+                  const esSel = horaSel === h.hora;
                   return (
                     <TouchableOpacity
-                      key={h}
+                      key={h.hora}
                       style={[
                         s.chip,
                         {
                           backgroundColor: colors.cardBg,
                           borderColor: colors.cardBorder,
                         },
+                        h.pegada && { borderColor: colors.primary, borderWidth: 2 },
                         esSel && {
                           borderColor: colors.primary,
                           backgroundColor: colors.cardSelectedBg,
@@ -121,9 +131,9 @@ export default function SelectorHoras({
                       ]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: esSel }}
-                      accessibilityLabel={h}
+                      accessibilityLabel={`${h.hora}${h.pegada ? ", recomendada" : ""}`}
                       accessibilityHint="Elige esta hora para la cita"
-                      onPress={() => onSeleccionar(h)}
+                      onPress={() => onSeleccionar(h.hora)}
                     >
                       <Text
                         style={[
@@ -132,8 +142,15 @@ export default function SelectorHoras({
                           esSel && { color: colors.primaryText },
                         ]}
                       >
-                        {h}
+                        {horaCorta(h.inicio)}
                       </Text>
+                      {h.pegada ? (
+                        <View style={[s.marca, { backgroundColor: colors.primary }]}>
+                          <Text style={[s.textoMarca, { color: colors.onPrimary }]}>
+                            ★ Recomendada
+                          </Text>
+                        </View>
+                      ) : null}
                     </TouchableOpacity>
                   );
                 })}
@@ -169,7 +186,11 @@ const s = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 6,
+    gap: 4,
   },
-  textoChip: { fontSize: 12, fontWeight: "bold" },
+  textoChip: { fontSize: 14, fontWeight: "bold" },
+  marca: { borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  textoMarca: { fontSize: 10, fontWeight: "bold" },
   sinHoras: { fontSize: 13, marginVertical: 10 },
 });

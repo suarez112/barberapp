@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto from "@/components/ui/CampoTexto";
@@ -40,6 +40,9 @@ export default function FormularioReserva({ reserva }: Props) {
     primerDia,
     ultimoDia,
     horariosDisponibles,
+    cargandoHoras,
+    errorHoras,
+    recargarHoras,
     elegirBarbero,
     elegirServicio,
     elegirDia,
@@ -84,6 +87,18 @@ export default function FormularioReserva({ reserva }: Props) {
         <TextoInfo>⚠️ Selecciona primero un profesional y un servicio.</TextoInfo>
       ) : empresa && !horarioDelDia(empresa, dia.fechaFull) ? (
         <TextoInfo>El negocio no atiende este día. Elige otra fecha.</TextoInfo>
+      ) : errorHoras ? (
+        <View>
+          <TextoInfo>{errorHoras}</TextoInfo>
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar las horas disponibles"
+            variante="secundario"
+            onPress={recargarHoras}
+          />
+        </View>
+      ) : cargandoHoras && horariosDisponibles.length === 0 ? (
+        <ActivityIndicator color={colors.primaryText} />
       ) : (
         <SelectorHoras
           horarios={horariosDisponibles}

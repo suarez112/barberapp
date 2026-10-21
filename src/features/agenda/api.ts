@@ -27,6 +27,26 @@ export const listarBloqueosPublicos = (empresaId: string) =>
     `/api/v1/citas/bloqueos?empresaId=${encodeURIComponent(empresaId)}`,
   );
 
+// Hora libre de un profesional para un servicio. pegada = recomendada (no deja huecos)
+export type HoraDisponible = {
+  inicio: string; // "08:30" (24 h)
+  hora: string; // "08:30 AM", el formato que pide POST /citas
+  pegada: boolean;
+};
+
+// Horas libres de un profesional ese día para ese servicio (las calcula el backend)
+export const consultarDisponibilidad = (
+  p: { empresaId: string; barberoId: string; servicioId: string; fecha: string },
+  signal?: AbortSignal,
+) =>
+  request<{ horas: HoraDisponible[]; intervaloMinutos: number }>(
+    `/api/v1/citas/disponibilidad?empresaId=${encodeURIComponent(p.empresaId)}` +
+      `&barberoId=${encodeURIComponent(p.barberoId)}` +
+      `&servicioId=${encodeURIComponent(p.servicioId)}` +
+      `&fecha=${encodeURIComponent(p.fecha)}`,
+    { signal },
+  );
+
 // token: el de la cuenta del cliente; sin token es una reserva de invitado
 export const crearCita = (cita: NuevaCita, token?: string) =>
   request<{ cita: Cita }>("/api/v1/citas", { method: "POST", body: cita, token });
