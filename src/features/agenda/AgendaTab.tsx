@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Chips from "@/components/ui/Chips";
 import SelectorDias from "@/components/ui/SelectorDias";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { Barbero, Dia, EstadoCita } from "@/types";
-import { horaAMinutos } from "@/utils/disponibilidad";
+import { Barbero, BloqueoHorario, Dia, EstadoCita } from "@/types";
+import { horaAMinutos, horarioDelDia } from "@/utils/disponibilidad";
 import { fechaConDia } from "@/utils/fechas";
 import { useNegocio } from "../negocio/NegocioProvider";
+import { useAvisarError } from "../sesion/useAvisarError";
 import { Personal } from "../sesion/usePersonal";
 import { useAgenda } from "./AgendaProvider";
+import HojaCita from "./components/HojaCita";
+import LineaDeTiempo from "./components/LineaDeTiempo";
 import TarjetaCita, { ESTADO_CITA } from "./components/TarjetaCita";
+import { listarBloqueosPublicos } from "./api";
 import { useAccionesCita } from "./useAccionesCita";
+import { guardarVistaAgenda, leerVistaAgenda, VistaAgenda } from "./vistaPreferida";
 
 type Filtro = "todas" | EstadoCita;
 
@@ -29,6 +34,11 @@ const MENSAJE_VACIO: Record<Filtro, string> = {
   COMPLETADA: "No hay citas completadas para esta fecha.",
   CANCELADA: "No hay citas canceladas para esta fecha.",
 };
+
+const VISTAS = [
+  { id: "lista", label: "Lista" },
+  { id: "linea", label: "Línea de tiempo" },
+] as const;
 
 type Props = {
   profesional: Barbero;
@@ -51,7 +61,48 @@ export default function AgendaTab({
   const { empresa } = useNegocio();
   const { completar, cancelar, puedeCompletar } = useAccionesCita(personal);
   const { colors } = useAppTheme();
+  const avisarError = useAvisarError();
   const [filtro, setFiltro] = useState<Filtro>("todas");
+  const [vista, setVista] = useState<VistaAgenda>("lista");
+  const [citaAbiertaId, setCitaAbiertaId] = useState<string | null>(null);
+  // Bloqueos con el profesional al que pertenecen, para no mostrar los de otro mientras carga
+  const [bloqueosCargados, setBloqueos] = useState<{ barberoId: string; lista: BloqueoHorario[] } | null>(
+    null,
+  );
+  const bloqueos = bloqueosCargados?.barberoId === profesional.id ? bloqueosCargados.lista : [];
+
+  // Recuerda la última vista elegida
+  useEffect(() => {
+    leerVistaAgenda().then(setVista);
+  }, []);
+  const cambiarVista = (v: VistaAgenda) => {
+    setVista(v);
+    guardarVistaAgenda(v);
+  };
+
+  // Los bloqueos solo se necesitan en la línea de tiempo. Se usa la lista pública del negocio
+  // (el empleado no puede leer /bloqueos) y se queda con los del profesional mostrado.
+  const verLinea = vista === "linea";
+  const empresaId = empresa?.id;
+  useEffect(() => {
+    if (!verLinea || !empresaId) return;
+    let vigente = true;
+    listarBloqueosPublicos(empresaId)
+      .then(
+        (lista) =>
+          vigente &&
+          setBloqueos({
+            barberoId: profesional.id,
+            lista: lista.filter((b) => b.barberoId === profesional.id),
+          }),
+      )
+      .catch((e) => vigente && avisarError(e, { titulo: "No se pudieron cargar los bloqueos" }));
+    return () => {
+      vigente = false;
+    };
+    // avisarError cambia en cada render; solo importa quién y cuándo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verLinea, empresaId, profesional.id]);
   // "Pendientes" en azul, como la etiqueta de la cita (distinto del rojo y el verde)
   const filtros = FILTROS.map((f) =>
     f.id === "CONFIRMADA"
@@ -78,8 +129,12 @@ export default function AgendaTab({
     filtro === "todas" ? citasDelDia : citasDelDia.filter((c) => c.estado === filtro);
   const contar = (e: EstadoCita) => citasDelDia.filter((c) => c.estado === e).length;
 
+  const citaAbierta = citasDelDia.find((c) => c.id === citaAbiertaId);
+
   return (
     <View>
+      <Chips opciones={VISTAS} valor={vista} onCambiar={cambiarVista} />
+
       <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
       <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
 
@@ -101,9 +156,30 @@ export default function AgendaTab({
         />
       </View>
 
-      <Chips opciones={filtros}valor={filtro} onCambiar={setFiltro} />
+      {verLinea ? (
+        <>
+          <LineaDeTiempo
+            fecha={dia.fechaFull}
+            horario={empresa ? horarioDelDia(empresa, dia.fechaFull) : null}
+            citas={citasDelDia}
+            bloqueos={bloqueos}
+            citaResaltadaId={citaResaltadaId}
+            onAbrirCita={(c) => setCitaAbiertaId(c.id)}
+          />
+          <HojaCita
+            cita={citaAbierta ?? null}
+            puedeCompletar={citaAbierta ? puedeCompletar(citaAbierta) : false}
+            esAdmin={personal.esAdmin}
+            onCompletar={completar}
+            onCancelar={cancelar}
+            onCerrar={() => setCitaAbiertaId(null)}
+          />
+        </>
+      ) : null}
 
-      {visibles.length === 0 ? (
+      {verLinea ? null : <Chips opciones={filtros} valor={filtro} onCambiar={setFiltro} />}
+
+      {verLinea ? null : visibles.length === 0 ? (
         <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>
       ) : (
         visibles.map((c) => (
