@@ -10,9 +10,10 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar, avisarCamposConError } from "@/utils/dialogos";
+import EnlacePublico from "../enlace/EnlacePublico";
 import { ACEPTACION } from "../legal/api";
 import CasillaAutorizacion, { MENSAJE_AUTORIZACION } from "../legal/CasillaAutorizacion";
-import { consultarCodigoDisponible, registrarEmpresa } from "./api";
+import { consultarCodigoDisponible, registrarEmpresa, RespuestaRegistroEmpresa } from "./api";
 import { useSesion } from "../sesion/SesionProvider";
 import { useCuenta } from "./CuentaProvider";
 import CamposEmpresa from "./formulario/CamposEmpresa";
@@ -43,6 +44,8 @@ export default function RegistroEmpresaScreen() {
   const [errores, setErrores] = useState<Errores<CampoEmpresa>>({});
   const [erroresAcceso, setErroresAcceso] = useState<Errores<keyof ValoresAcceso>>({});
   const [errorAutorizacion, setErrorAutorizacion] = useState<string | null>(null);
+  // Cuando se registra se muestra el enlace del negocio antes de entrar al panel
+  const [registrada, setRegistrada] = useState<RespuestaRegistroEmpresa | null>(null);
 
   const volver = () => {
     if (canGoBack()) back();
@@ -84,12 +87,7 @@ export default function RegistroEmpresaScreen() {
       });
       await cerrarSesion();
       await iniciarCuenta(respuesta.usuario, respuesta.token);
-      avisar(
-        "¡Empresa registrada!",
-        `${respuesta.mensaje}\n\nCódigo para tus clientes: ${respuesta.empresa.codigoAcceso}\n\nPara volver a entrar usa tu correo (${respuesta.usuario.correo}) o tu usuario (${respuesta.usuario.usuario}) y tu contraseña.`,
-        "exito",
-      );
-      replace("/admin");
+      setRegistrada(respuesta);
     } catch (error) {
       registrarCausa("Registro de empresa", error);
       const aviso = describirError(error, {
@@ -118,6 +116,39 @@ export default function RegistroEmpresaScreen() {
       {...props}
     />
   );
+
+  if (registrada) {
+    return (
+      <Pantalla>
+        <View style={styles.contenedor}>
+          <Text style={[styles.titulo, { color: colors.primaryText }]}>¡EMPRESA REGISTRADA!</Text>
+          <Text style={[estilosTexto.subtitulo, styles.centrado, { color: colors.textSecondary }]}>
+            {registrada.mensaje}
+          </Text>
+          <TituloSeccion>ENLACE DE TU NEGOCIO</TituloSeccion>
+          <Text style={[estilosTexto.subtitulo, styles.ayuda, { color: colors.textSecondary }]}>
+            Compártelo con tus clientes: lo abren y reservan directo. El código para escribir a mano es{" "}
+            {registrada.empresa.codigoAcceso}.
+          </Text>
+          <EnlacePublico
+            enlace={registrada.empresa.enlacePublico}
+            nombreNegocio={registrada.empresa.nombre}
+          />
+          <Text style={[estilosTexto.subtitulo, styles.ayuda, { color: colors.textSecondary }]}>
+            Para volver a entrar usa tu correo ({registrada.usuario.correo}) o tu usuario (
+            {registrada.usuario.usuario}) y tu contraseña. Tu código QR está en &quot;Mi
+            negocio&quot;.
+          </Text>
+          <Boton
+            titulo="IR A MI PANEL"
+            ayuda="Abre el panel de tu negocio"
+            onPress={() => replace("/admin")}
+            style={styles.boton}
+          />
+        </View>
+      </Pantalla>
+    );
+  }
 
   return (
     <Pantalla cabecera={{ onVolver: volver }}>

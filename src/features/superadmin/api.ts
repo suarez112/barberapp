@@ -230,3 +230,26 @@ export const listarActividad = (
   filtros: { accion?: AccionActividad | ""; desde?: string; hasta?: string; pagina: number; limite: number },
   signal?: AbortSignal,
 ) => request<Pagina<ActividadItem>>(`${BASE}/actividad${consulta(filtros)}`, { token, signal });
+
+export type CategoriaAdmin = { id: string; nombre: string; activa: boolean };
+
+export const listarCategoriasAdmin = (token: string, signal?: AbortSignal) =>
+  request<CategoriaAdmin[]>(`${BASE}/categorias`, { token, signal });
+
+export const crearCategoria = (token: string, nombre: string) =>
+  request<{ mensaje: string; categoria: CategoriaAdmin }>(`${BASE}/categorias`, {
+    method: "POST",
+    body: { nombre },
+    token,
+  });
+
+// Las categorías no se borran: se desactivan con activa = false
+export const editarCategoria = (
+  token: string,
+  id: string,
+  cambios: { nombre?: string; activa?: boolean },
+) =>
+  request<{ mensaje: string; categoria: CategoriaAdmin }>(
+    `${BASE}/categorias/${encodeURIComponent(id)}`,
+    { method: "PATCH", body: cambios, token },
+  );

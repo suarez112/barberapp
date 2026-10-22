@@ -11,10 +11,11 @@ import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { EstadoCita } from "@/types";
-import { fechaLarga, hoyColombiaISO } from "@/utils/fechas";
+import { avisar, confirmar } from "@/utils/dialogos";
+import { fechaHoraCita, fechaLarga, hoyColombiaISO } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
 import { useAvisarError } from "../sesion/useAvisarError";
-import { CitaCliente, listarMisCitas } from "./api";
+import { cancelarMiCita, CitaCliente, listarMisCitas } from "./api";
 import { useClienteConSesion } from "./useClienteConSesion";
 
 const ESTADOS: Record<EstadoCita, { texto: string; color: string }> = {
@@ -49,6 +50,7 @@ function MisCitas({ token }: { token: string }) {
   const senal = useSenalDeSalida();
   const [citas, setCitas] = useState<CitaCliente[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
+  const [cancelando, setCancelando] = useState<string | null>(null);
 
   const cargar = useCallback(() => {
     setErrorCarga(null);
@@ -64,6 +66,36 @@ function MisCitas({ token }: { token: string }) {
   }, [token, senal]);
 
   useFocusEffect(cargar);
+
+  const cancelar = async (c: CitaCliente) => {
+    if (cancelando) return;
+    const seguir = await confirmar({
+      titulo: "¿Cancelar la cita?",
+      mensaje: `${c.servicio} en ${c.negocio}
+${fechaLarga(c.fecha)} · ${c.hora}`,
+      textoAceptar: "Sí, cancelar",
+      textoCancelar: "No",
+      destructivo: true,
+    });
+    if (!seguir) return;
+    setCancelando(c.id);
+    try {
+      await cancelarMiCita(token, c.id);
+      setCitas((lista) =>
+        lista ? lista.map((x) => (x.id === c.id ? { ...x, estado: "CANCELADA" } : x)) : lista,
+      );
+      avisar("Cita cancelada", "Avisamos al negocio que ya no vas a asistir.", "exito");
+    } catch (e) {
+      avisarError(e, {
+        titulo: "No se pudo cancelar la cita",
+        tituloConflicto: "No se pudo cancelar",
+      });
+      // Puede que la cita ya haya cambiado (la atendieron o ya empezó): se vuelve a cargar
+      cargar();
+    } finally {
+      setCancelando(null);
+    }
+  };
 
   const volver = () => {
     if (canGoBack()) back();
@@ -96,6 +128,16 @@ function MisCitas({ token }: { token: string }) {
       <Text style={[styles.detalle, { color: colors.textSecondary }]}>
         {c.servicio} con {c.barberoNombre} · {c.duracionMin} min · ${formatearPesos(c.precio)}
       </Text>
+      {c.estado === "CONFIRMADA" && fechaHoraCita(c.fecha, c.hora) > new Date() ? (
+        <Boton
+          titulo={cancelando === c.id ? "CANCELANDO…" : "CANCELAR CITA"}
+          ayuda="Cancela esta cita después de pedirte confirmación"
+          variante="peligro"
+          deshabilitado={cancelando !== null}
+          onPress={() => cancelar(c)}
+          style={styles.cancelar}
+        />
+      ) : null}
     </View>
   );
 
@@ -158,4 +200,5 @@ const styles = StyleSheet.create({
   },
   negocio: { fontSize: 15, fontWeight: "bold", flex: 1 },
   detalle: { fontSize: 12 },
+  cancelar: { marginTop: 8 },
 });

@@ -54,6 +54,8 @@ export type AccesoAdministradora = {
 
 export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   id: string;
+  // Dirección para compartir: <base>/<CÓDIGO>
+  enlacePublico: string;
   // null en negocios registrados antes de la versión con departamento
   departamento: string | null;
   horario: DiaHorario[];
@@ -111,6 +113,7 @@ export type RespuestaRegistroEmpresa = {
     id: string;
     nombre: string;
     codigoAcceso: string;
+    enlacePublico: string;
     estadoSuscripcion: string;
     trialEndsAt: string;
     diasPruebaRestantes: number;

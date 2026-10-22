@@ -14,6 +14,7 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
+import { useCategorias } from "../../categorias/useCategorias";
 import { EstadoCodigo, useCodigoDisponible } from "./useCodigoDisponible";
 import { useUbicaciones } from "./useUbicaciones";
 import {
@@ -67,9 +68,15 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
   const { colors } = useAppTheme();
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
   const estadoCodigo = useCodigoDisponible(valores.codigoAcceso, codigoActual);
+  const { categorias, error: errorCategorias, reintentar: reintentarCategorias } = useCategorias();
+  // La categoría actual siempre se ofrece, aunque ya no esté activa
+  const opcionesCategoria = (categorias ?? []).map((c) => ({ valor: c.nombre, etiqueta: c.nombre }));
+  if (valores.categoria && !opcionesCategoria.some((o) => o.valor === valores.categoria)) {
+    opcionesCategoria.push({ valor: valores.categoria, etiqueta: valores.categoria });
+  }
 
   const campo = (
-    clave: "nombre" | "categoria" | "nombreAdministradora" | "direccion",
+    clave: "nombre" | "nombreAdministradora" | "direccion",
     texto: string,
     props: Omit<PropsCampo, "etiqueta">,
   ) => (
@@ -140,12 +147,31 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
         autoComplete: "organization",
         textContentType: "organizationName",
       })}
-      {campo("categoria", "Categoría", {
-        maxLength: 60,
-        placeholder: "ej: Barbería o Salón de belleza",
-        ayuda: "Qué tipo de negocio es",
-        autoCapitalize: "sentences",
-      })}
+      {errorCategorias ? (
+        <View>
+          <Text style={[styles.ayuda, { color: colors.error }]}>{errorCategorias}</Text>
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar las categorías"
+            variante="secundario"
+            onPress={reintentarCategorias}
+          />
+        </View>
+      ) : !categorias ? (
+        <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
+      ) : (
+        <Desplegable
+          etiqueta="Categoría"
+          obligatorio
+          error={errores.categoria}
+          ayuda="Elige qué tipo de negocio es"
+          placeholder="Elige la categoría"
+          buscable
+          opciones={opcionesCategoria}
+          valor={valores.categoria || null}
+          onCambiar={(nombre) => onCambiar({ categoria: nombre })}
+        />
+      )}
       {campo("nombreAdministradora", "Nombre de quien administra", {
         maxLength: 120,
         placeholder: "ej: Ana Pérez",

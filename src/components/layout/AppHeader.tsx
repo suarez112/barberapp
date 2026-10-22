@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { APP_NOMBRE } from "@/config/app";
+import CampanaNotificaciones from "@/features/notificaciones/centro/CampanaNotificaciones";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import BotonCabecera from "./BotonCabecera";
@@ -50,6 +51,8 @@ export default function AppHeader({ onVolver, onSalir }: OpcionesCabecera) {
       >
         {empresa ? empresa.nombre : APP_NOMBRE.toUpperCase()}
       </Text>
+
+      <CampanaNotificaciones />
 
       <BotonCabecera
         icono="menu-outline"

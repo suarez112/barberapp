@@ -58,7 +58,8 @@
         {
           "locationWhenInUsePermission": "La app usa tu ubicación para guardar dónde está tu negocio en el mapa."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

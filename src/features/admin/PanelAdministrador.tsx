@@ -9,6 +9,7 @@ import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
+import EnlacePublicoNegocio from "./components/EnlacePublicoNegocio";
 import HorariosReserva from "./components/HorariosReserva";
 import UbicacionNegocio from "./components/UbicacionNegocio";
 import FotoNegocio from "./components/FotoNegocio";
@@ -96,6 +97,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           </View>
 
           {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
+          <EnlacePublicoNegocio perfil={perfil} />
           <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
           <HorariosReserva perfil={perfil} onGuardar={guardarIntervalo} />

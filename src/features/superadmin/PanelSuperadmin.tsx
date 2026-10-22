@@ -6,6 +6,7 @@ import { APP_NOMBRE } from "@/config/app";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar, confirmar } from "@/utils/dialogos";
 import ActividadSuperadmin from "./ActividadSuperadmin";
+import CategoriasSuperadmin from "./CategoriasSuperadmin";
 import AvisoInactividad from "./components/AvisoInactividad";
 import InicioSuperadmin from "./InicioSuperadmin";
 import NegociosSuperadmin from "./NegociosSuperadmin";
@@ -13,13 +14,14 @@ import PqrsSuperadmin from "./PqrsSuperadmin";
 import { useSuperadmin } from "./SuperadminContext";
 import { useInactividad } from "./useInactividad";
 
-type Seccion = "inicio" | "negocios" | "pqrs" | "actividad";
+type Seccion = "inicio" | "negocios" | "pqrs" | "categorias" | "actividad";
 type Icono = ComponentProps<typeof Ionicons>["name"];
 
 const SECCIONES: { id: Seccion; texto: string; icono: Icono }[] = [
   { id: "inicio", texto: "Inicio", icono: "grid-outline" },
   { id: "negocios", texto: "Negocios", icono: "storefront-outline" },
   { id: "pqrs", texto: "PQRS", icono: "chatbubble-ellipses-outline" },
+  { id: "categorias", texto: "Categorías", icono: "pricetags-outline" },
   { id: "actividad", texto: "Actividad", icono: "list-outline" },
 ];
 
@@ -148,6 +150,7 @@ export default function PanelSuperadmin() {
           {seccion === "inicio" && <InicioSuperadmin onVerNegocio={verNegocio} />}
           {seccion === "negocios" && <NegociosSuperadmin idInicial={negocioAbierto} />}
           {seccion === "pqrs" && <PqrsSuperadmin />}
+          {seccion === "categorias" && <CategoriasSuperadmin />}
           {seccion === "actividad" && <ActividadSuperadmin />}
         </View>
       </ScrollView>

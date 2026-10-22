@@ -54,3 +54,10 @@ export const quitarNegocio = (token: string, id: string) =>
 // De la más reciente a la más antigua; las reservas como invitado no aparecen
 export const listarMisCitas = (token: string, signal?: AbortSignal) =>
   request<CitaCliente[]>("/api/v1/mi-cuenta/citas", { token, signal });
+
+// Solo una cita suya, pendiente y que aún no empezó (si no, 409 con el motivo)
+export const cancelarMiCita = (token: string, id: string) =>
+  request<{ mensaje: string; estado: EstadoCita; canceladaEn: string }>(
+    `/api/v1/mi-cuenta/citas/${encodeURIComponent(id)}/cancelar`,
+    { method: "PATCH", token },
+  );

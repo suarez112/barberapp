@@ -139,7 +139,7 @@ export function validarEmpresa(v: ValoresEmpresa): Resultado {
   const dias = v.dias;
   const errores = limpiarErrores<CampoEmpresa>({
     nombre: revisarTexto(v.nombre, "el nombre del negocio", 100),
-    categoria: revisarTexto(v.categoria, "la categoría, por ejemplo Barbería", 60),
+    categoria: v.categoria.trim() ? null : "Elige la categoría de tu negocio.",
     nombreAdministradora: revisarTexto(v.nombreAdministradora, "el nombre de quien administra", 120),
     numeroEmpleados: !v.numeroEmpleados ? "Elige cuántas personas trabajan en el negocio." : null,
     codigoAcceso: !v.codigoAcceso
