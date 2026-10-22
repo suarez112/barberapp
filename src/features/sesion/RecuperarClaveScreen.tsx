@@ -3,7 +3,8 @@ import { useCallback, useState } from "react";
 import { BackHandler, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
-import CampoClave, { claveValida } from "@/components/ui/CampoClave";
+import CampoClave from "@/components/ui/CampoClave";
+import { claveValida, MENSAJE_CLAVE } from "@/utils/clave";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -90,7 +91,7 @@ export default function RecuperarClaveScreen() {
     if (enviando) return;
     const nuevos: Errores = {
       codigo: /^\d{6}$/.test(codigo) ? undefined : "Escribe los 6 dígitos del código que te llegó.",
-      clave: claveValida(clave) ? undefined : "La contraseña debe tener de 8 a 64 caracteres.",
+      clave: claveValida(clave) ? undefined : MENSAJE_CLAVE,
       confirmacion:
         clave === confirmacion
           ? undefined
@@ -195,8 +196,8 @@ export default function RecuperarClaveScreen() {
               etiqueta="Contraseña nueva"
               obligatorio
               error={errores.clave}
-              ayuda="De 8 a 64 caracteres"
-              placeholder="ej: mínimo 8 caracteres"
+              ayuda="Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
+              placeholder="ej: MiClave#2026"
               autoComplete="new-password"
               textContentType="newPassword"
               requisitos

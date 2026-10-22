@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -16,11 +17,23 @@ type Props = {
   cabecera?: OpcionesCabecera;
   // Contenido fijo bajo el scroll (ej. barra de pestañas)
   pie?: ReactNode;
+  // Con esta función se puede deslizar hacia abajo para actualizar
+  alRefrescar?: () => Promise<unknown>;
 };
 
 // Estructura común de todas las pantallas: cabecera, contenido con scroll y pie
-export default function Pantalla({ children, cabecera, pie }: Props) {
+export default function Pantalla({ children, cabecera, pie, alRefrescar }: Props) {
   const { colors, esOscuro } = useAppTheme();
+  const [refrescando, setRefrescando] = useState(false);
+  const refrescar = async () => {
+    if (!alRefrescar) return;
+    setRefrescando(true);
+    try {
+      await alRefrescar();
+    } finally {
+      setRefrescando(false);
+    }
+  };
   return (
     <SafeAreaView style={[styles.contenedor, { backgroundColor: colors.bg }]}>
       <StatusBar
@@ -40,6 +53,16 @@ export default function Pantalla({ children, cabecera, pie }: Props) {
           // (también las listas en modales, que reciben los toques a través de este ScrollView)
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            alRefrescar ? (
+              <RefreshControl
+                refreshing={refrescando}
+                onRefresh={refrescar}
+                colors={[colors.primary]}
+                tintColor={colors.primaryText}
+              />
+            ) : undefined
+          }
         >
           {children}
           <View style={styles.espacioFinal} />

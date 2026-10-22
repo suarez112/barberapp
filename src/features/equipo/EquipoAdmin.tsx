@@ -7,6 +7,7 @@ import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
 import CampoClave from "@/components/ui/CampoClave";
+import { claveValida, MENSAJE_CLAVE } from "@/utils/clave";
 import Desplegable from "@/components/ui/Desplegable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
@@ -108,9 +109,9 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
       ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del integrante." } : {}),
       ...(!campos.usuario.trim() ? { usuario: "Escribe el usuario con el que entrará a la app." } : {}),
       ...(!enEdicion && !clave
-        ? { clave: "Escribe una contraseña de 8 a 64 caracteres." }
-        : clave && (clave.length < 8 || clave.length > 64)
-          ? { clave: "La contraseña debe tener de 8 a 64 caracteres." }
+        ? { clave: "Escribe una contraseña nueva." }
+        : clave && !claveValida(clave)
+          ? { clave: MENSAJE_CLAVE }
           : {}),
       ...(isNaN(pct) || pct < 0 || pct > 100
         ? { porcentaje: "Escribe un número de 0 a 100, por ejemplo 50." }
@@ -269,10 +270,10 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
           error={errores.clave}
           ayuda={
             enEdicion
-              ? "Déjala vacía para no cambiarla. De 8 a 64 caracteres"
-              : "De 8 a 64 caracteres"
+              ? "Déjala vacía para no cambiarla. Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
+              : "Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
           }
-          placeholder={enEdicion ? "ej: vacía = no cambiar" : "ej: mínimo 8 caracteres"}
+          placeholder={enEdicion ? "ej: vacía = no cambiar" : "ej: MiClave#2026"}
           autoComplete="off"
           textContentType="newPassword"
           // Al editar, vacía no cambia nada: los requisitos aparecen al escribir

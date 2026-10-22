@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Chips from "@/components/ui/Chips";
 import SelectorDias from "@/components/ui/SelectorDias";
 import TextoInfo from "@/components/ui/TextoInfo";
@@ -15,7 +16,8 @@ import { useAgenda } from "./AgendaProvider";
 import HojaCita from "./components/HojaCita";
 import LineaDeTiempo from "./components/LineaDeTiempo";
 import TarjetaCita, { ESTADO_CITA } from "./components/TarjetaCita";
-import { listarBloqueosPublicos } from "./api";
+import { listarAgenda, listarBloqueosPublicos } from "./api";
+import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import { useAccionesCita } from "./useAccionesCita";
 import { guardarVistaAgenda, leerVistaAgenda, VistaAgenda } from "./vistaPreferida";
 
@@ -35,11 +37,6 @@ const MENSAJE_VACIO: Record<Filtro, string> = {
   CANCELADA: "No hay citas canceladas para esta fecha.",
 };
 
-const VISTAS = [
-  { id: "lista", label: "Lista" },
-  { id: "linea", label: "Línea de tiempo" },
-] as const;
-
 type Props = {
   profesional: Barbero;
   personal: Personal;
@@ -57,7 +54,7 @@ export default function AgendaTab({
   onCambiarDia,
   citaResaltadaId = null,
 }: Props) {
-  const { citas } = useAgenda();
+  const { citas, setCitas } = useAgenda();
   const { empresa } = useNegocio();
   const { completar, cancelar, puedeCompletar } = useAccionesCita(personal);
   const { colors } = useAppTheme();
@@ -71,13 +68,17 @@ export default function AgendaTab({
   );
   const bloqueos = bloqueosCargados?.barberoId === profesional.id ? bloqueosCargados.lista : [];
 
+  // Se actualiza al deslizar, al volver a la app, cada 30 s y al llegar una notificación
+  useRefrescoPanel(() => listarAgenda(personal.token).then(setCitas));
+
   // Recuerda la última vista elegida
   useEffect(() => {
     leerVistaAgenda().then(setVista);
   }, []);
-  const cambiarVista = (v: VistaAgenda) => {
-    setVista(v);
-    guardarVistaAgenda(v);
+  const cambiarVista = () => {
+    const siguiente: VistaAgenda = vista === "lista" ? "linea" : "lista";
+    setVista(siguiente);
+    guardarVistaAgenda(siguiente);
   };
 
   // Los bloqueos solo se necesitan en la línea de tiempo. Se usa la lista pública del negocio
@@ -103,13 +104,6 @@ export default function AgendaTab({
     // avisarError cambia en cada render; solo importa quién y cuándo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verLinea, empresaId, profesional.id]);
-  // "Pendientes" en azul, como la etiqueta de la cita (distinto del rojo y el verde)
-  const filtros = FILTROS.map((f) =>
-    f.id === "CONFIRMADA"
-      ? { ...f, color: ESTADO_CITA.CONFIRMADA.color, bordeInactiva: colors.infoTexto }
-      : f,
-  );
-
   // Una cita abierta desde una notificación no debe quedar oculta por un filtro
   const [resaltadaVista, setResaltadaVista] = useState(citaResaltadaId);
   if (resaltadaVista !== citaResaltadaId) {
@@ -133,7 +127,17 @@ export default function AgendaTab({
 
   return (
     <View>
-      <Chips opciones={VISTAS} valor={vista} onCambiar={cambiarVista} />
+      {/* Un solo botón: muestra el ícono de la vista a la que se pasará */}
+      <View style={styles.barraVista}>
+        <BotonIcono
+          icono={verLinea ? "list" : "time-outline"}
+          color={colors.primaryText}
+          etiqueta={verLinea ? "Ver las citas en lista" : "Ver las citas en línea de tiempo"}
+          ayuda="Cambia la forma de ver las citas del día"
+          tamano={24}
+          onPress={cambiarVista}
+        />
+      </View>
 
       <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
       <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
@@ -177,7 +181,7 @@ export default function AgendaTab({
         </>
       ) : null}
 
-      {verLinea ? null : <Chips opciones={filtros} valor={filtro} onCambiar={setFiltro} />}
+      {verLinea ? null : <Chips opciones={FILTROS} valor={filtro} onCambiar={setFiltro} />}
 
       {verLinea ? null : visibles.length === 0 ? (
         <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>
@@ -214,6 +218,7 @@ function Dato({ titulo, valor, color }: { titulo: string; valor: number; color?:
 }
 
 const styles = StyleSheet.create({
+  barraVista: { alignItems: "flex-end" },
   resumen: { flexDirection: "row", gap: 8 },
   dato: {
     flex: 1,

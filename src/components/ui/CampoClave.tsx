@@ -2,24 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
+import { CLAVE_MAX, REQUISITOS_CLAVE } from "../../utils/clave";
 import CampoTexto, { PropsCampo } from "./CampoTexto";
 
-// Mismo rango que el backend
-export const CLAVE_MIN = 8;
-export const CLAVE_MAX = 64;
-
-export const claveValida = (clave: string) =>
-  clave.length >= CLAVE_MIN && clave.length <= CLAVE_MAX;
 
 // Campo de contraseña con un ojo para mostrar u ocultar lo escrito
 type Props = Omit<PropsCampo, "secureTextEntry" | "derecha"> & {
   // Contraseña nueva: muestra debajo los requisitos con marca verde al cumplirlos
   requisitos?: boolean;
-  // "Confirma la contraseña": la contraseña con la que se compara en vivo
+  // "Confirma tu contraseña": la contraseña con la que se compara en vivo.
+  // En este campo no se puede copiar ni pegar (hay que escribirla de nuevo).
   confirmaDe?: string;
 };
 
 export default function CampoClave({ requisitos = false, confirmaDe, ...props }: Props) {
+  const esConfirmacion = confirmaDe !== undefined;
   const { colors } = useAppTheme();
   const [visible, setVisible] = useState(false);
   const valor = props.value ?? "";
@@ -51,9 +48,20 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
         autoCapitalize="none"
         autoCorrect={false}
         textContentType="password"
-        placeholder={confirmaDe !== undefined ? "ej: repite tu contraseña" : "ej: tu contraseña"}
+        placeholder={esConfirmacion ? "Confirma tu contraseña" : "ej: tu contraseña"}
         maxLength={CLAVE_MAX}
         {...props}
+        {...(esConfirmacion
+          ? {
+              // Sin menú de copiar/pegar; y un texto que entra de golpe (pegado desde el
+              // teclado o el portapapeles) se ignora: solo se acepta lo que se escribe
+              contextMenuHidden: true,
+              onChangeText: (texto: string) => {
+                if (texto.length - valor.length > 1) return;
+                props.onChangeText?.(texto);
+              },
+            }
+          : null)}
         style={[styles.campo, props.style]}
         secureTextEntry={!visible}
         derecha={
@@ -76,7 +84,9 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
       />
       {requisitos ? (
         <View accessibilityLiveRegion="polite" style={styles.requisitos}>
-          {linea(claveValida(valor), `De ${CLAVE_MIN} a ${CLAVE_MAX} caracteres`)}
+          {REQUISITOS_CLAVE.map((r) => (
+            <View key={r.texto}>{linea(r.cumple(valor), r.texto)}</View>
+          ))}
         </View>
       ) : null}
       {confirmaDe !== undefined && valor ? (

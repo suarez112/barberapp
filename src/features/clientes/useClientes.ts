@@ -42,6 +42,12 @@ export function useClientes(token: string) {
     cargar();
   }, [cargar]);
 
+  // Actualización silenciosa (sin cargando ni avisos); el que la llama decide qué hacer con un error
+  const refrescar = useCallback(
+    () => listarClientes(token).then((c) => setClientes(c)),
+    [token],
+  );
+
   const recargar = () => {
     setCargando(true);
     setError(null);
@@ -71,7 +77,7 @@ export function useClientes(token: string) {
     }
   };
 
-  return { clientes, cargando, error, recargar, bloquear, desbloquear };
+  return { clientes, cargando, error, recargar, refrescar, bloquear, desbloquear };
 }
 
 export type EstadoClientes = ReturnType<typeof useClientes>;

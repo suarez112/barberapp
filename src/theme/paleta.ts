@@ -45,6 +45,7 @@ export const COLORES = {
   secundarioPorDefecto: "#0D0D0D",
   textoSobrePrimario: "#000",
   blanco: "#FFF",
+  negro: "#111",
   // Colores de estado como relleno (etiquetas, botones, celdas). Los mismos en ambos temas:
   // el texto encima sale de textoSobre() y siempre cumple 4.5:1
   rojo: "#DC2626", // bloqueado, error, cancelado, vencido

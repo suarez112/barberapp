@@ -4,7 +4,7 @@ import { FlatList, Modal, Pressable, StyleProp, StyleSheet, Text, ViewStyle } fr
 import { PAISES, nombrePais } from "@/data/paises";
 import type { EstadoTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { indicativoDe } from "@/utils/telefonos";
+import { ejemploTelefono, indicativoDe } from "@/utils/telefonos";
 import Bandera from "./Bandera";
 import CampoTexto from "./CampoTexto";
 import Tocable from "./Tocable";
@@ -57,7 +57,7 @@ export default function CampoTelefono({
         obligatorio={obligatorio}
         error={telefono.error}
         style={style}
-        placeholder={pais === "CO" ? "ej: 316 278 1393" : "ej: número de celular"}
+        placeholder={ejemploTelefono(pais)}
         keyboardType="phone-pad"
         autoComplete="tel"
         textContentType="telephoneNumber"

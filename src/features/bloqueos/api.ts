@@ -42,3 +42,38 @@ export const eliminarBloqueo = (token: string, id: string) =>
     method: "DELETE",
     token,
   });
+
+// Cita de la tabla de bloqueos, con su inicio y fin reales (según la duración del servicio).
+// No incluye las canceladas.
+export type CitaCalendario = {
+  id: string;
+  barberoId: string;
+  barberoNombre: string;
+  fecha: string;
+  horaInicio: string; // "10:00"
+  horaFin: string; // "10:50"
+  servicio: string;
+  cliente: string;
+  estado: string;
+};
+
+export type CalendarioBloqueos = {
+  desde: string;
+  hasta: string;
+  // Cada cuántos minutos va una casilla (el intervalo de horarios del negocio)
+  intervaloMinutos: number;
+  bloqueos: Bloqueo[];
+  citas: CitaCalendario[];
+};
+
+// Solo la administradora. Bloqueos y citas de un rango (máximo 62 días) de un profesional.
+export const obtenerCalendarioBloqueos = (
+  token: string,
+  desde: string,
+  hasta: string,
+  barberoId: string,
+) =>
+  request<CalendarioBloqueos>(
+    `/api/v1/bloqueos/calendario?desde=${desde}&hasta=${hasta}&barberoId=${encodeURIComponent(barberoId)}`,
+    { token },
+  );

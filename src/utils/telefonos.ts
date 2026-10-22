@@ -1,7 +1,9 @@
+import ejemplosMoviles from "libphonenumber-js/examples.mobile.json";
 import {
   AsYouType,
   CountryCode,
   getCountryCallingCode,
+  getExampleNumber,
   parsePhoneNumberFromString,
 } from "libphonenumber-js/max";
 
@@ -11,7 +13,7 @@ import {
 export const PAIS_POR_DEFECTO: CountryCode = "CO";
 
 export const TELEFONO_INVALIDO =
-  "El número no es válido para el país elegido. Revisa los dígitos o cambia la bandera (ej: 316 278 1393 para Colombia).";
+  "El número no es válido para el país elegido. Revisa los dígitos o cambia la bandera (ej: (300) 123-4567 para Colombia).";
 
 const MAXIMO_DIGITOS = 15;
 
@@ -51,12 +53,30 @@ export const normalizarTelefono = (
 const formatoColombia = (digitos: string) =>
   [digitos.slice(0, 3), digitos.slice(3, 6), digitos.slice(6)].filter(Boolean).join(" ");
 
-// Número nacional mientras se escribe: "3162781393" -> "316 278 1393"
+// Máscara de Colombia mientras se escribe: "3162781393" -> "(316) 278-1393".
+// El paréntesis se cierra al escribir el cuarto dígito, para que borrar se sienta natural.
+const mascaraColombia = (d: string) => {
+  const area = d.slice(0, 3);
+  if (d.length <= 3) return `(${area}`;
+  const resto = d.slice(3);
+  return `(${area}) ${resto.slice(0, 3)}${resto.length > 3 ? `-${resto.slice(3)}` : ""}`;
+};
+
+// Número nacional mientras se escribe: "3162781393" -> "(316) 278-1393" en Colombia;
+// en los demás países, el formato nacional de cada uno
 export const formatearMientrasEscribe = (pais: CountryCode, digitos: string) => {
   const d = digitos.slice(0, MAXIMO_DIGITOS);
   if (!d) return "";
-  if (pais === "CO" && d.length <= 10) return formatoColombia(d);
+  if (pais === "CO" && d.length <= 10) return mascaraColombia(d);
   return new AsYouType(pais).input(d);
+};
+
+// Número inventado de ejemplo para el placeholder: el de Colombia fijo y, para los
+// demás países, el ejemplo de móvil de libphonenumber en su formato nacional
+export const ejemploTelefono = (pais: CountryCode) => {
+  if (pais === "CO") return "ej: (300) 123-4567";
+  const ejemplo = getExampleNumber(pais, ejemplosMoviles)?.formatNational();
+  return ejemplo ? `ej: ${ejemplo}` : "ej: número de celular";
 };
 
 // Si el texto trae el código del país ("+52 55 1234 5678" o "0052…"), devuelve el

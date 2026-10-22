@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto as abrirGaleria, FotoElegida } from "@/utils/imagenes";
 
@@ -116,17 +117,23 @@ export default function FotoBarbero({
       style={{ width: size, height: size, marginBottom: 8 }}
     >
       {circulo}
+      {/* Círculo blanco con borde e ícono oscuros: se ve igual en tema claro y oscuro */}
       <View
         style={{
           position: "absolute",
-          right: -2,
-          bottom: -2,
-          backgroundColor: color,
-          borderRadius: 10,
-          padding: 3,
+          right: -4,
+          bottom: -4,
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: COLORES.blanco,
+          borderWidth: 1.5,
+          borderColor: COLORES.negro,
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Ionicons name="camera" size={12} color="#000" />
+        <Ionicons name="camera" size={13} color={COLORES.negro} />
       </View>
     </TouchableOpacity>
   );

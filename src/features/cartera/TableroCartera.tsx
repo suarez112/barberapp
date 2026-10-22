@@ -7,6 +7,9 @@ import { crearDia, hoyColombiaISO, sumarDias, textoRango } from "@/utils/fechas"
 import { formatearPesos } from "@/utils/formato";
 import { Comparar, PeriodoResumen, ProfesionalResumen } from "./api";
 import EstadisticasCartera from "./EstadisticasCartera";
+import { listarAgenda } from "../agenda/api";
+import { useAgenda } from "../agenda/AgendaProvider";
+import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera from "./ProyeccionCartera";
 import { periodoVisible } from "./periodoVisible";
 import { useFechaRegistro } from "./useFechaRegistro";
@@ -38,6 +41,7 @@ const UNIDAD: Record<Exclude<PeriodoResumen, "rango">, { anterior: string; sigui
 // profesional (de mayor a menor) y el detalle del profesional que se toque.
 export default function TableroCartera({ token }: { token: string }) {
   const { colors } = useAppTheme();
+  const { setCitas } = useAgenda();
   const [periodo, setPeriodo] = useState<PeriodoResumen>("hoy");
   // Rango: por defecto, del primer día del mes hasta hoy
   const [desde, setDesde] = useState(() => `${hoyColombiaISO().slice(0, 8)}01`);
@@ -58,13 +62,16 @@ export default function TableroCartera({ token }: { token: string }) {
 
   const visible = periodo === "rango" ? null : periodoVisible(periodo, atras, hoy, registro);
   const consulta = visible ?? { periodo: "rango" as const, desde: desdeRango, hasta: hastaRango };
-  const { resumen, error, cargando } = useResumenCartera(
+  const { resumen, error, cargando, refrescar } = useResumenCartera(
     token,
     consulta.periodo,
     consulta.desde,
     consulta.hasta,
     comparar,
   );
+
+  // También la agenda: la proyección se calcula con las citas pendientes
+  useRefrescoPanel(() => Promise.all([refrescar(), listarAgenda(token).then(setCitas)]));
 
   const cambiarPeriodo = (p: PeriodoResumen) => {
     setPeriodo(p);

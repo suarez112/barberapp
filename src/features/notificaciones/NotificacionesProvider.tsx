@@ -8,7 +8,7 @@ import { useCuenta } from "../cuenta/CuentaProvider";
 import { useSesionLista } from "../sesion/RestaurarSesionProvider";
 import { useSesion } from "../sesion/SesionProvider";
 import { borrarDispositivo, registrarDispositivo } from "./api";
-import { notificacionesDisponibles, obtenerTokenPush } from "./nativo";
+import { cargarNotificaciones, notificacionesDisponibles, obtenerTokenPush } from "./nativo";
 import { guardarPreferencia, leerPreferencia } from "./preferencia";
 
 type ValorNotificaciones = {
@@ -24,6 +24,8 @@ type ValorNotificaciones = {
   citaPendiente: string | null;
   abrirCitaEnPanel: (citaId: string) => void;
   limpiarCitaPendiente: () => void;
+  // Cuántas notificaciones de cita han llegado con la app abierta (las pantallas se actualizan)
+  avisosRecibidos: number;
 };
 
 const [NotificacionesContext, useNotificaciones] =
@@ -44,6 +46,7 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
   const [preferencia, setPreferencia] = useState<boolean | null>(null);
   const [permiso, setPermiso] = useState(false);
   const [citaPendiente, setCitaPendiente] = useState<string | null>(null);
+  const [avisosRecibidos, setAvisosRecibidos] = useState(0);
   const registrado = useRef<Registrado | null>(null);
   // La sesión que ya estaba guardada al abrir la app: allí no se vuelve a preguntar
   const tokenRestaurado = useRef<string | null | undefined>(undefined);
@@ -104,6 +107,25 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
     return () => oyente.remove();
   }, [registrar]);
 
+  // Una notificación de cita que llega con la app abierta: las pantallas se actualizan
+  useEffect(() => {
+    if (!tokenSesion) return;
+    let vigente = true;
+    let quitar = () => {};
+    cargarNotificaciones().then((N) => {
+      if (!N || !vigente) return;
+      const oyente = N.addNotificationReceivedListener((notificacion) => {
+        const datos = notificacion.request.content.data;
+        if (typeof datos?.citaId === "string") setAvisosRecibidos((n) => n + 1);
+      });
+      quitar = () => oyente.remove();
+    });
+    return () => {
+      vigente = false;
+      quitar();
+    };
+  }, [tokenSesion]);
+
   const alternar = async () => {
     if (!tokenSesion) return;
     if (preferencia && permiso) {
@@ -152,6 +174,7 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
         citaPendiente,
         abrirCitaEnPanel: setCitaPendiente,
         limpiarCitaPendiente: () => setCitaPendiente(null),
+        avisosRecibidos,
       }}
     >
       {children}

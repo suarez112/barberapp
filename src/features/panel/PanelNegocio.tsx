@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
@@ -17,7 +17,9 @@ import { Suscripcion } from "../cuenta/api";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
 import { Personal } from "../sesion/usePersonal";
+import { useAvisarError } from "../sesion/useAvisarError";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
+import { RefrescoPanelProvider } from "./RefrescoPanel";
 import NegocioTab from "./NegocioTab";
 import PanelTabBar, { Pestana, PestanaPanel } from "./components/PanelTabBar";
 import PerfilBadge from "./components/PerfilBadge";
@@ -69,6 +71,19 @@ export default function PanelNegocio({
   const { citas } = useAgenda();
   const { citaPendiente, limpiarCitaPendiente } = useNotificaciones();
   const citaYaRecargada = useRef<string | null>(null);
+  const avisarError = useAvisarError();
+  // La pestaña abierta deja aquí su función de actualizar (deslizar hacia abajo)
+  const refrescoPestanaRef = useRef<(() => Promise<unknown>) | null>(null);
+  const registrarRefresco = useCallback((funcion: (() => Promise<unknown>) | null) => {
+    refrescoPestanaRef.current = funcion;
+  }, []);
+  const deslizarParaActualizar = async () => {
+    try {
+      await refrescoPestanaRef.current?.();
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo actualizar" });
+    }
+  };
 
   // Al tocar una notificación: va a la agenda, al día y al profesional de esa cita.
   // Si la cita es nueva y todavía no está en la agenda, se recarga una vez.
@@ -87,7 +102,11 @@ export default function PanelNegocio({
       recargar();
     } else {
       limpiarCitaPendiente();
-      avisar("Cita no encontrada", "No encontramos esa cita en tu agenda. Puede que ya no exista.", "aviso");
+      avisar(
+        "Cita no encontrada",
+        "No encontramos esa cita en tu agenda. Puede que ya no exista.",
+        "aviso",
+      );
     }
     // recargar y limpiarCitaPendiente cambian en cada render
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,9 +145,7 @@ export default function PanelNegocio({
   const activa = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
 
   const sinProfesionales = (
-    <TextoInfo>
-      Aún no hay profesionales en el equipo. Agrégalos en la pestaña Equipo.
-    </TextoInfo>
+    <TextoInfo>Aún no hay profesionales en el equipo. Agrégalos en la pestaña Equipo.</TextoInfo>
   );
 
   const contenido = () => {
@@ -181,9 +198,7 @@ export default function PanelNegocio({
       case "CLIENTES":
         return <ClientesTab token={personal.token} />;
       case "CARTERA":
-        return (
-          <CarteraPanel token={personal.token} esAdmin={esAdmin} />
-        );
+        return <CarteraPanel token={personal.token} esAdmin={esAdmin} />;
       case "NEGOCIO":
         return (
           <NegocioTab
@@ -220,29 +235,32 @@ export default function PanelNegocio({
     <Pantalla
       cabecera={{ onSalir: salir }}
       pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
+      alRefrescar={empresa ? deslizarParaActualizar : undefined}
     >
-      <View>
-        {empresa ? (
-          <PerfilBadge
-            nombre={yo?.nombre ?? personal.nombre}
-            esAdmin={esAdmin}
-            esCuentaAdmin={personal.esCuentaAdmin}
-            porcentaje={yo?.porcentajeGanancia}
-            empresa={empresa}
-          />
-        ) : null}
-        {encabezado}
+      <RefrescoPanelProvider registrar={registrarRefresco}>
+        <View>
+          {empresa ? (
+            <PerfilBadge
+              nombre={yo?.nombre ?? personal.nombre}
+              esAdmin={esAdmin}
+              esCuentaAdmin={personal.esCuentaAdmin}
+              porcentaje={yo?.porcentajeGanancia}
+              empresa={empresa}
+            />
+          ) : null}
+          {encabezado}
 
-        {conSupervision && profesional ? (
-          <SelectorSupervision
-            barberos={barberos}
-            seleccionadoId={profesional.id}
-            onSeleccionar={(b) => setSupervisadoId(b.id)}
-          />
-        ) : null}
+          {conSupervision && profesional ? (
+            <SelectorSupervision
+              barberos={barberos}
+              seleccionadoId={profesional.id}
+              onSeleccionar={(b) => setSupervisadoId(b.id)}
+            />
+          ) : null}
 
-        {contenido()}
-      </View>
+          {contenido()}
+        </View>
+      </RefrescoPanelProvider>
     </Pantalla>
   );
 }

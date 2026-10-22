@@ -3,6 +3,9 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { fechaISO } from "@/utils/fechas";
+import { listarAgenda } from "../agenda/api";
+import { useAgenda } from "../agenda/AgendaProvider";
+import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera, { PeriodoActual } from "./ProyeccionCartera";
 import TableroCartera from "./TableroCartera";
 import { useCartera } from "./useCartera";
@@ -84,6 +87,7 @@ export default function CarteraPanel({ token, esAdmin }: Props) {
 
 function MiCartera({ token }: { token: string }) {
   const { colors } = useAppTheme();
+  const { setCitas } = useAgenda();
   const [periodo, setPeriodo] = useState<Periodo>("DIARIO");
   const [atras, setAtras] = useState(0);
 
@@ -98,7 +102,9 @@ function MiCartera({ token }: { token: string }) {
 
   // El servidor solo le devuelve lo suyo. La ganancia de cada cita usa el
   // porcentaje que tenía al completarse.
-  const { cartera, error } = useCartera(token, desde, hasta, null);
+  const { cartera, error, refrescar } = useCartera(token, desde, hasta, null);
+  // También la agenda: la proyección se calcula con las citas pendientes
+  useRefrescoPanel(() => Promise.all([refrescar(), listarAgenda(token).then(setCitas)]));
   const propia = cartera?.porProfesional[0];
 
   const tarjeta = (valor: string, texto: string, destacada = false) => (

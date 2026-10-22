@@ -9,6 +9,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { confirmar } from "@/utils/dialogos";
 import { normalizar } from "@/utils/formato";
 import { soloDigitos } from "@/utils/telefonos";
+import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import { Cliente } from "./api";
 import TarjetaCliente from "./components/TarjetaCliente";
 import { useClientes } from "./useClientes";
@@ -18,7 +19,9 @@ type Filtro = "todos" | "bloqueados";
 // Clientes del negocio (solo administrador)
 export default function ClientesTab({ token }: { token: string }) {
   const { colors } = useAppTheme();
-  const { clientes, cargando, error, recargar, bloquear, desbloquear } = useClientes(token);
+  const { clientes, cargando, error, recargar, refrescar, bloquear, desbloquear } =
+    useClientes(token);
+  useRefrescoPanel(refrescar);
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
 

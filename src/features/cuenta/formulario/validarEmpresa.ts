@@ -1,4 +1,5 @@
 import { DatosEmpresa, DiaHorarioEnvio, PerfilEmpresa } from "../api";
+import { claveValida, MENSAJE_CLAVE } from "@/utils/clave";
 
 // Horario de un día en el formulario
 export type DiaFormulario = { dia: number; abierto: boolean; apertura: string; cierre: string };
@@ -183,7 +184,6 @@ export const ACCESO_VACIO: ValoresAcceso = { correo: "", usuario: "", clave: "",
 
 const ERROR_CORREO = "Escribe un correo válido, por ejemplo nombre@gmail.com.";
 const ERROR_USUARIO = "Usa de 4 a 20 caracteres: solo letras, números, punto o guion bajo, sin espacios.";
-const ERROR_CLAVE = "La contraseña debe tener de 8 a 64 caracteres.";
 const ERROR_CONFIRMACION = "Las contraseñas no coinciden: escríbela igual en los dos campos.";
 
 const revisarCorreo = (correo: string) =>
@@ -198,7 +198,7 @@ export const validarAcceso = (a: ValoresAcceso): Errores<keyof ValoresAcceso> =>
       : !USUARIO.test(a.usuario.trim())
         ? ERROR_USUARIO
         : null,
-    clave: a.clave.length < 8 || a.clave.length > 64 ? ERROR_CLAVE : null,
+    clave: claveValida(a.clave) ? null : MENSAJE_CLAVE,
     confirmacion: a.clave !== a.confirmacion ? ERROR_CONFIRMACION : null,
   });
 };
@@ -233,7 +233,7 @@ export const validarCliente = (c: ValoresCliente): Errores<keyof ValoresCliente>
         ? revisarCorreo(correo)
         : null,
     usuario: usuario && !USUARIO.test(usuario) ? ERROR_USUARIO : null,
-    clave: c.clave.length < 8 || c.clave.length > 64 ? ERROR_CLAVE : null,
+    clave: claveValida(c.clave) ? null : MENSAJE_CLAVE,
     confirmacion: c.clave !== c.confirmacion ? ERROR_CONFIRMACION : null,
   });
 };

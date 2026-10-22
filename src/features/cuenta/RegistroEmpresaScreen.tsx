@@ -159,8 +159,8 @@ export default function RegistroEmpresaScreen() {
           etiqueta="Contraseña"
           obligatorio
           error={erroresAcceso.clave}
-          ayuda="De 8 a 64 caracteres"
-          placeholder="ej: mínimo 8 caracteres"
+          ayuda="Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
+          placeholder="ej: MiClave#2026"
           autoComplete="new-password"
           textContentType="newPassword"
           requisitos

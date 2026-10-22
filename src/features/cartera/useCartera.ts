@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { describirError } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { Cartera, obtenerCartera } from "./api";
@@ -16,6 +16,8 @@ export function useCartera(
 ) {
   const clave = `${desde}|${hasta}|${barberoId ?? ""}`;
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  // Sube al actualizar: vuelve a pedir lo mismo sin borrar lo que ya se ve
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!activo) return;
@@ -32,9 +34,13 @@ export function useCartera(
         });
       });
     return () => controlador.abort();
-  }, [token, desde, hasta, barberoId, activo, clave]);
+  }, [token, desde, hasta, barberoId, activo, clave, version]);
 
   // Mientras llega la respuesta del rango actual, cartera y error son null ("cargando")
   const vigente = activo && resultado?.clave === clave ? resultado : null;
-  return { cartera: vigente?.cartera ?? null, error: vigente?.error ?? null };
+  const refrescar = useCallback(() => {
+    setVersion((v) => v + 1);
+    return new Promise<void>((listo) => setTimeout(listo, 700));
+  }, []);
+  return { cartera: vigente?.cartera ?? null, error: vigente?.error ?? null, refrescar };
 }
