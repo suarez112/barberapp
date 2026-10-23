@@ -34,6 +34,8 @@ export type PerfilPublico = {
   fotoUrl: string | null;
   // Enlace de Google Maps (coordenadas o dirección); null si no hay datos
   googleMapsUrl: string | null;
+  // WhatsApp de contacto del negocio (https://wa.me/<número>); null si no lo configuró
+  whatsappUrl: string | null;
 };
 
 export const obtenerPerfilPublico = (codigo: string) =>

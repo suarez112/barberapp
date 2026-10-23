@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
+import Desplegable from "@/components/ui/Desplegable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import { ZONAS_HORARIAS } from "@/data/zonasHorarias";
+import { useTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { telefonoMostrado } from "@/utils/telefonos";
 import { avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
-import { DatosEmpresa, PerfilEmpresa } from "../../cuenta/api";
+import { CambiosEmpresa, DatosEmpresa, PerfilEmpresa } from "../../cuenta/api";
 import CamposEmpresa from "../../cuenta/formulario/CamposEmpresa";
 import {
   CampoEmpresa,
@@ -19,11 +23,29 @@ import {
 
 type Props = {
   perfil: PerfilEmpresa;
-  onGuardar: (cambios: Partial<DatosEmpresa>) => Promise<boolean>;
+  onGuardar: (cambios: CambiosEmpresa) => Promise<boolean>;
 };
 
 const DIAS_LARGOS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
+
+// 0 a 48 horas de anticipación mínima para cancelar o reprogramar
+const OPCIONES_ANTICIPACION = Array.from({ length: 49 }, (_, h) => ({
+  valor: h,
+  etiqueta: h === 0 ? "Sin límite (hasta el último momento)" : h === 1 ? "1 hora" : `${h} horas`,
+}));
+
+const textoAnticipacion = (h: number) =>
+  h === 0 ? "Sin límite" : h === 1 ? "1 hora" : `${h} horas`;
+
+// Zona horaria: las conocidas más la que ya tenga el negocio, si es otra
+const opcionesZona = (actual: string) =>
+  ZONAS_HORARIAS.some((z) => z.valor === actual)
+    ? ZONAS_HORARIAS
+    : [...ZONAS_HORARIAS, { valor: actual, etiqueta: actual }];
+
+const nombreZona = (zona: string) =>
+  ZONAS_HORARIAS.find((z) => z.valor === zona)?.etiqueta ?? zona;
 
 const hora = (hhmm: string | null) => (hhmm ? minutosAHora(horario24AMinutos(hhmm)) : "");
 
@@ -43,7 +65,7 @@ const cambiosEntre = (antes: PerfilEmpresa, despues: DatosEmpresa) => {
         return JSON.stringify(anterior) !== JSON.stringify(despues[k]);
       })
       .map((k) => [k, despues[k]]),
-  ) as Partial<DatosEmpresa>;
+  ) as CambiosEmpresa;
   if (cambios.departamento || cambios.ciudad) {
     cambios.departamento = despues.departamento;
     cambios.ciudad = despues.ciudad;
@@ -57,21 +79,40 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
   const [edicion, setEdicion] = useState<ValoresEmpresa | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState<Errores<CampoEmpresa>>({});
+  const whatsapp = useTelefono();
+  const [anticipacion, setAnticipacion] = useState(perfil.anticipacionCancelacionHoras);
+  const [zona, setZona] = useState(perfil.zonaHoraria);
 
   const editar = (valores: ValoresEmpresa | null) => {
     setErrores({});
+    if (valores) {
+      whatsapp.cargar(perfil.whatsappContacto);
+      setAnticipacion(perfil.anticipacionCancelacionHoras);
+      setZona(perfil.zonaHoraria);
+    }
     setEdicion(valores);
   };
 
   const guardar = async () => {
     if (!edicion || guardando) return;
     const resultado = validarEmpresa(edicion);
-    if (!resultado.ok) {
-      setErrores(resultado.errores);
+    const contacto = whatsapp.validarOpcional();
+    if (!resultado.ok || contacto === null) {
+      setErrores(resultado.ok ? {} : resultado.errores);
       avisarCamposConError();
       return;
     }
     const cambios = cambiosEntre(perfil, resultado.datos);
+    // WhatsApp: vacío lo quita; solo se envía si cambió
+    const nuevoWhatsapp = contacto === "vacio" ? null : contacto.telefono;
+    if (nuevoWhatsapp !== perfil.whatsappContacto) {
+      cambios.whatsappContacto = nuevoWhatsapp;
+      if (contacto !== "vacio") cambios.indicativoWhatsapp = contacto.indicativo;
+    }
+    if (anticipacion !== perfil.anticipacionCancelacionHoras) {
+      cambios.anticipacionCancelacionHoras = anticipacion;
+    }
+    if (zona !== perfil.zonaHoraria) cambios.zonaHoraria = zona;
     if (Object.keys(cambios).length === 0) {
       editar(null);
       return;
@@ -96,10 +137,30 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
           valores={edicion}
           codigoActual={perfil.codigoAcceso}
           errores={errores}
+          whatsapp={whatsapp}
           onCambiar={(c) => {
             setEdicion((v) => (v ? { ...v, ...c } : v));
             setErrores((e) => sinErrores(e, camposCambiados(c)));
           }}
+        />
+        <TituloSeccion>CANCELAR Y REPROGRAMAR</TituloSeccion>
+        <Desplegable
+          etiqueta="Anticipación mínima para cancelar o reprogramar"
+          ayuda="Cuántas horas antes de la cita puede un cliente con cuenta cancelarla o cambiarla. Después debe escribirte"
+          placeholder="Elige las horas"
+          opciones={OPCIONES_ANTICIPACION}
+          valor={anticipacion}
+          onCambiar={setAnticipacion}
+        />
+        <TituloSeccion>ZONA HORARIA</TituloSeccion>
+        <Desplegable
+          etiqueta="Zona horaria del negocio"
+          ayuda="Las horas de tu horario y de las citas se cuentan en esta zona. Para cambiarla no puedes tener citas pendientes"
+          placeholder="Elige la zona horaria"
+          buscable
+          opciones={opcionesZona(perfil.zonaHoraria)}
+          valor={zona}
+          onCambiar={setZona}
         />
         <Boton
           titulo={guardando ? "GUARDANDO…" : "GUARDAR CAMBIOS"}
@@ -125,6 +186,14 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
     ["Departamento", perfil.departamento ?? "Sin elegir"],
     ["Municipio", perfil.ciudad],
     ["Dirección", perfil.direccion],
+    [
+      "WhatsApp",
+      perfil.whatsappContacto
+        ? telefonoMostrado(perfil.whatsappContacto).texto
+        : "Sin configurar",
+    ],
+    ["Cancelar o reprogramar", textoAnticipacion(perfil.anticipacionCancelacionHoras)],
+    ["Zona horaria", nombreZona(perfil.zonaHoraria)],
   ];
 
   return (

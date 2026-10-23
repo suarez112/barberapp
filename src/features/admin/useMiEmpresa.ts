@@ -4,7 +4,7 @@ import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError, esCancelada } from "@/services/api/http";
 import { avisar } from "@/utils/dialogos";
 import {
-  DatosEmpresa,
+  CambiosEmpresa,
   FotoElegida,
   PerfilEmpresa,
   Suscripcion,
@@ -104,7 +104,7 @@ export function useMiEmpresa(token: string) {
     }
   };
 
-  const guardarDatos = (cambios: Partial<DatosEmpresa>) =>
+  const guardarDatos = (cambios: CambiosEmpresa) =>
     ejecutar(async () => {
       setPerfil(await actualizarMiEmpresa(token, cambios));
       avisar("Datos guardados", "La información del negocio se actualizó.", "exito");

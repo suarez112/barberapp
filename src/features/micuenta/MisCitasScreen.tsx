@@ -1,12 +1,13 @@
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Linking, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import Insignia from "@/components/ui/Insignia";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
+import { obtenerPerfilPublico } from "@/features/negocio/api";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
@@ -14,6 +15,7 @@ import { EstadoCita } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import { fechaHoraCita, fechaLarga, hoyColombiaISO } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
+import ReprogramarCitaModal from "./components/ReprogramarCitaModal";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { cancelarMiCita, CitaCliente, listarMisCitas } from "./api";
 import { useClienteConSesion } from "./useClienteConSesion";
@@ -23,6 +25,9 @@ const ESTADOS: Record<EstadoCita, { texto: string; color: string }> = {
   COMPLETADA: { texto: "COMPLETADA", color: COLORES.verde },
   CANCELADA: { texto: "CANCELADA", color: COLORES.rojo },
 };
+
+// 3 -> "3 horas", 1 -> "1 hora"
+const textoHoras = (h: number) => (h === 1 ? "1 hora" : `${h} horas`);
 
 // Citas que el cliente reservó con su cuenta (las de invitado no aparecen)
 export default function MisCitasScreen() {
@@ -51,6 +56,10 @@ function MisCitas({ token }: { token: string }) {
   const [citas, setCitas] = useState<CitaCliente[] | null>(null);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<string | null>(null);
+  // Cita que se está reprogramando (abre el modal)
+  const [reprogramando, setReprogramando] = useState<CitaCliente | null>(null);
+  // WhatsApp de cada negocio por código (null = no lo configuró), solo de citas fuera de plazo
+  const [whatsapps, setWhatsapps] = useState<Record<string, string | null>>({});
 
   const cargar = useCallback(() => {
     setErrorCarga(null);
@@ -66,6 +75,32 @@ function MisCitas({ token }: { token: string }) {
   }, [token, senal]);
 
   useFocusEffect(cargar);
+
+  // Citas pendientes que ya no se pueden cambiar desde la app (pasó el límite del negocio)
+  const fueraDePlazo = (c: CitaCliente) =>
+    c.estado === "CONFIRMADA" && !c.puedeCancelar && fechaHoraCita(c.fecha, c.hora) > new Date();
+
+  useEffect(() => {
+    const pendientes = [
+      ...new Set((citas ?? []).filter(fueraDePlazo).map((c) => c.codigoAcceso)),
+    ].filter((codigo) => !(codigo in whatsapps));
+    for (const codigo of pendientes) {
+      obtenerPerfilPublico(codigo)
+        .then((p) => setWhatsapps((w) => ({ ...w, [codigo]: p.whatsappUrl })))
+        // Sin perfil solo falta el botón de WhatsApp: el aviso se muestra igual
+        .catch(() => setWhatsapps((w) => ({ ...w, [codigo]: null })));
+    }
+    // fueraDePlazo solo depende de citas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [citas]);
+
+  const abrirWhatsApp = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      avisar("No se pudo abrir WhatsApp", "Verifica que esté instalado.", "error");
+    }
+  };
 
   const cancelar = async (c: CitaCliente) => {
     if (cancelando) return;
@@ -129,20 +164,77 @@ ${fechaLarga(c.fecha)} · ${c.hora}`,
         {c.servicio} con {c.barberoNombre} · {c.duracionMin} min · ${formatearPesos(c.precio)}
       </Text>
       {c.estado === "CONFIRMADA" && fechaHoraCita(c.fecha, c.hora) > new Date() ? (
-        <Boton
-          titulo={cancelando === c.id ? "CANCELANDO…" : "CANCELAR CITA"}
-          ayuda="Cancela esta cita después de pedirte confirmación"
-          variante="peligro"
-          deshabilitado={cancelando !== null}
-          onPress={() => cancelar(c)}
-          style={styles.cancelar}
-        />
+        c.puedeCancelar ? (
+          <View style={styles.acciones}>
+            <Boton
+              titulo="REPROGRAMAR"
+              ayuda="Elige otro día y otra hora para esta cita"
+              variante="secundario"
+              deshabilitado={!c.puedeReprogramar || cancelando !== null}
+              onPress={() => setReprogramando(c)}
+              style={styles.accion}
+            />
+            <Boton
+              titulo={cancelando === c.id ? "CANCELANDO…" : "CANCELAR"}
+              ayuda="Cancela esta cita después de pedirte confirmación"
+              variante="peligro"
+              deshabilitado={cancelando !== null}
+              onPress={() => cancelar(c)}
+              style={styles.accion}
+            />
+          </View>
+        ) : (
+          <View>
+            <View style={styles.acciones}>
+              <Boton
+                titulo="REPROGRAMAR"
+                ayuda="No disponible: la cita empieza muy pronto"
+                variante="secundario"
+                deshabilitado
+                onPress={() => {}}
+                style={styles.accion}
+              />
+              <Boton
+                titulo="CANCELAR"
+                ayuda="No disponible: la cita empieza muy pronto"
+                variante="peligro"
+                deshabilitado
+                onPress={() => {}}
+                style={styles.accion}
+              />
+            </View>
+            <Text style={[styles.aviso, { color: colors.avisoTexto }]}>
+              Faltan menos de {textoHoras(c.anticipacionCancelacionHoras)}: contacta directamente al
+              negocio
+            </Text>
+            {whatsapps[c.codigoAcceso] ? (
+              <Boton
+                titulo="ESCRIBIR POR WHATSAPP"
+                ayuda="Abre WhatsApp para hablar con el negocio"
+                variante="secundario"
+                onPress={() => abrirWhatsApp(whatsapps[c.codigoAcceso] as string)}
+                style={styles.cancelar}
+              />
+            ) : null}
+          </View>
+        )
       ) : null}
     </View>
   );
 
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
+      {reprogramando ? (
+        <ReprogramarCitaModal
+          cita={reprogramando}
+          token={token}
+          onCerrar={() => setReprogramando(null)}
+          onReprogramada={() => {
+            setReprogramando(null);
+            cargar();
+          }}
+        />
+      ) : null}
       <View style={styles.contenedor}>
         <Text style={[styles.titulo, { color: colors.primaryText }]}>MIS CITAS</Text>
         {citas === null ? (
@@ -201,4 +293,7 @@ const styles = StyleSheet.create({
   negocio: { fontSize: 15, fontWeight: "bold", flex: 1 },
   detalle: { fontSize: 12 },
   cancelar: { marginTop: 8 },
+  acciones: { flexDirection: "row", gap: 8, marginTop: 8 },
+  accion: { flex: 1 },
+  aviso: { fontSize: 12, fontWeight: "600", marginTop: 8 },
 });

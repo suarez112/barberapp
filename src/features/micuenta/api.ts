@@ -32,6 +32,13 @@ export type CitaCliente = {
   duracionMin: number;
   precio: number;
   estado: EstadoCita;
+  // Confirmada y dentro de la anticipación mínima del negocio (la calcula el backend)
+  puedeCancelar: boolean;
+  puedeReprogramar: boolean;
+  // Horas de anticipación mínima del negocio para cancelar o reprogramar
+  anticipacionCancelacionHoras: number;
+  vecesReprogramada: number;
+  zonaHoraria: string;
 };
 
 export const listarNegociosGuardados = (token: string, signal?: AbortSignal) =>
@@ -60,4 +67,16 @@ export const cancelarMiCita = (token: string, id: string) =>
   request<{ mensaje: string; estado: EstadoCita; canceladaEn: string }>(
     `/api/v1/mi-cuenta/citas/${encodeURIComponent(id)}/cancelar`,
     { method: "PATCH", token },
+  );
+
+// Cambia la fecha u hora de una cita suya pendiente: mismo servicio, profesional y precio.
+// Mismas reglas que reservar y la anticipación mínima del negocio (si no, 400/409 con el motivo)
+export const reprogramarMiCita = (
+  token: string,
+  id: string,
+  nueva: { fecha: string; hora: string },
+) =>
+  request<{ mensaje: string; cita: { id: string; fecha: string; hora: string; estado: EstadoCita } }>(
+    `/api/v1/mi-cuenta/citas/${encodeURIComponent(id)}/reprogramar`,
+    { method: "PATCH", body: nueva, token },
   );

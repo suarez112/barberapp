@@ -142,3 +142,76 @@ export const obtenerResumenCartera = (
     signal,
   });
 };
+
+// Reportes del administrador (/api/v1/reportes): mismos filtros de período que la cartera
+export type OcupacionProfesional = {
+  barberoId: string;
+  nombre: string;
+  horasDisponibles: number;
+  horasOcupadas: number;
+  porcentajeOcupacion: number;
+};
+
+export type ReporteOcupacion = {
+  desde: string;
+  hasta: string;
+  // Solo se mide hasta hoy; null si el período aún no empieza
+  calculadoHasta: string | null;
+  total: { horasDisponibles: number; horasOcupadas: number; porcentajeOcupacion: number };
+  porProfesional: OcupacionProfesional[];
+};
+
+export type ServicioRentable = {
+  servicioId: string;
+  nombre: string;
+  citas: number;
+  ingresos: number;
+  horasTrabajadas: number;
+  ingresoPorHora: number;
+  ticketPromedio: number;
+};
+
+export type ReporteServiciosRentables = {
+  total: { citas: number; ingresos: number; horasTrabajadas: number; ingresoPorHora: number };
+  // Ids de los servicios destacados; null si no hubo citas completadas
+  servicioMayorIngreso: string | null;
+  servicioMayorIngresoPorHora: string | null;
+  servicios: ServicioRentable[]; // de mayor a menor ingreso
+};
+
+export type CeldaDemanda = { dia: number; hora: string; citas: number }; // dia: 0 = domingo
+
+export type ReporteDemanda = {
+  totalCitas: number;
+  mapa: CeldaDemanda[];
+  diaMasDemandado: number | null;
+  horaMasDemandada: string | null;
+  pico: CeldaDemanda | null;
+};
+
+export type ReportesCartera = {
+  ocupacion: ReporteOcupacion;
+  serviciosRentables: ReporteServiciosRentables;
+  demanda: ReporteDemanda;
+};
+
+// Los tres reportes de un período (semana, mes o rango) a la vez
+export const obtenerReportesCartera = async (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  signal?: AbortSignal,
+): Promise<ReportesCartera> => {
+  const fechas =
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : "";
+  const pedir = <T>(ruta: string) =>
+    request<T>(`/api/v1/reportes/${ruta}?periodo=${periodo}${fechas}`, { token, signal });
+  const [ocupacion, serviciosRentables, demanda] = await Promise.all([
+    pedir<ReporteOcupacion>("ocupacion"),
+    pedir<ReporteServiciosRentables>("servicios-rentables"),
+    pedir<ReporteDemanda>("demanda"),
+  ]);
+  return { ocupacion, serviciosRentables, demanda };
+};

@@ -8,9 +8,11 @@ import {
   View,
 } from "react-native";
 import Boton from "@/components/ui/Boton";
+import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import type { EstadoTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
@@ -61,10 +63,18 @@ type Props = {
   codigoActual?: string;
   // Qué corregir en cada campo (se muestra debajo)
   errores?: Errores<CampoEmpresa>;
+  // WhatsApp de contacto (opcional): su estado lo lleva quien usa el formulario
+  whatsapp: EstadoTelefono;
 };
 
 // Campos de la empresa: los usan el registro y la edición de "Mi negocio"
-export default function CamposEmpresa({ valores, onCambiar, codigoActual, errores = {} }: Props) {
+export default function CamposEmpresa({
+  valores,
+  onCambiar,
+  codigoActual,
+  errores = {},
+  whatsapp,
+}: Props) {
   const { colors } = useAppTheme();
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
   const estadoCodigo = useCodigoDisponible(valores.codigoAcceso, codigoActual);
@@ -287,6 +297,13 @@ export default function CamposEmpresa({ valores, onCambiar, codigoActual, errore
         autoComplete: "street-address",
         textContentType: "fullStreetAddress",
       })}
+
+      <TituloSeccion>CONTACTO</TituloSeccion>
+      <CampoTelefono
+        telefono={whatsapp}
+        etiqueta="WhatsApp de contacto del negocio"
+        ayuda="Opcional. Tus clientes lo ven cuando ya no pueden cancelar o reprogramar solos. Para otro país, toca la bandera."
+      />
 
       <TituloSeccion>HORARIO DE ATENCIÓN</TituloSeccion>
       {errores.horario ? (

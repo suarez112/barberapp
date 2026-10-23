@@ -12,7 +12,7 @@ import PagoProfesionales from "./PagoProfesionales";
 
 const dinero = (n: number) => `$${formatearPesos(n)}`;
 // 12.5 -> "12,5"
-const decimal = (n: number) => String(n).replace(".", ",");
+export const decimal = (n: number) => String(n).replace(".", ",");
 
 // El backend acepta rangos de comparación de hasta 366 días (contando los dos extremos)
 const MAX_DIAS_COMPARAR = 365;
@@ -27,7 +27,7 @@ const OPCIONES_COMPARAR: readonly OpcionDesplegable<TipoComparacion>[] = [
 ];
 
 // Lunes primero; el número es el que manda el backend (0 = domingo)
-const DIAS = [
+export const DIAS = [
   { dia: 1, nombre: "Lunes" },
   { dia: 2, nombre: "Martes" },
   { dia: 3, nombre: "Miércoles" },
@@ -37,10 +37,10 @@ const DIAS = [
   { dia: 0, nombre: "Domingo" },
 ];
 
-const NOMBRE_DIA: Record<number, string> = Object.fromEntries(DIAS.map((d) => [d.dia, d.nombre]));
+export const NOMBRE_DIA: Record<number, string> = Object.fromEntries(DIAS.map((d) => [d.dia, d.nombre]));
 
 // "14:00" -> "2:00 p. m."
-const horaLegible = (hora: string) => {
+export const horaLegible = (hora: string) => {
   const [h, m] = hora.split(":").map(Number);
   return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h < 12 ? "a. m." : "p. m."}`;
 };

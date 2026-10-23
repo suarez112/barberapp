@@ -11,8 +11,10 @@ import { listarAgenda } from "../agenda/api";
 import { useAgenda } from "../agenda/AgendaProvider";
 import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera from "./ProyeccionCartera";
+import ReportesCartera from "./ReportesCartera";
 import { periodoVisible } from "./periodoVisible";
 import { useFechaRegistro } from "./useFechaRegistro";
+import { useReportesCartera } from "./useReportesCartera";
 import { useResumenCartera } from "./useResumenCartera";
 
 const PERIODOS: { valor: PeriodoResumen; texto: string }[] = [
@@ -70,8 +72,17 @@ export default function TableroCartera({ token }: { token: string }) {
     comparar,
   );
 
+  // Ocupación, servicios rentables y demanda: no tienen sentido en un solo día
+  const reportes = useReportesCartera(token, consulta.periodo, consulta.desde, consulta.hasta, periodo !== "hoy");
+
   // También la agenda: la proyección se calcula con las citas pendientes
-  useRefrescoPanel(() => Promise.all([refrescar(), listarAgenda(token).then(setCitas)]));
+  useRefrescoPanel(() =>
+    Promise.all([
+      refrescar(),
+      periodo !== "hoy" ? reportes.refrescar() : Promise.resolve(),
+      listarAgenda(token).then(setCitas),
+    ]),
+  );
 
   const cambiarPeriodo = (p: PeriodoResumen) => {
     setPeriodo(p);
@@ -302,6 +313,15 @@ export default function TableroCartera({ token }: { token: string }) {
             actualizando={cargando}
             hoy={hoy}
           />
+
+          {periodo !== "hoy" ? (
+            <ReportesCartera
+              reportes={reportes.reportes}
+              error={reportes.error}
+              cargando={reportes.cargando}
+              onReintentar={reportes.refrescar}
+            />
+          ) : null}
         </>
       ) : null}
 

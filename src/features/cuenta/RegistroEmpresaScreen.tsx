@@ -7,6 +7,7 @@ import CampoClave from "@/components/ui/CampoClave";
 import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import { useTelefono } from "@/hooks/useTelefono";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar, avisarCamposConError } from "@/utils/dialogos";
@@ -37,6 +38,7 @@ export default function RegistroEmpresaScreen() {
   const { back, canGoBack, replace } = useRouter();
   const { iniciarCuenta } = useCuenta();
   const { cerrarSesion } = useSesion();
+  const whatsapp = useTelefono();
   const [valores, setValores] = useState<ValoresEmpresa>(VALORES_VACIOS);
   const [acceso, setAcceso] = useState<ValoresAcceso>(ACCESO_VACIO);
   const [aceptaDatos, setAceptaDatos] = useState(false);
@@ -61,10 +63,11 @@ export default function RegistroEmpresaScreen() {
     if (enviando) return;
     const resultado = validarEmpresa(valores);
     const nuevosErroresAcceso = validarAcceso(acceso);
+    const contacto = whatsapp.validarOpcional();
     setErrores(resultado.ok ? {} : resultado.errores);
     setErroresAcceso(nuevosErroresAcceso);
     setErrorAutorizacion(aceptaDatos ? null : MENSAJE_AUTORIZACION);
-    if (!resultado.ok || hayErrores(nuevosErroresAcceso) || !aceptaDatos) {
+    if (!resultado.ok || contacto === null || hayErrores(nuevosErroresAcceso) || !aceptaDatos) {
       avisarCamposConError();
       return;
     }
@@ -80,6 +83,10 @@ export default function RegistroEmpresaScreen() {
       }
       const respuesta = await registrarEmpresa({
         ...resultado.datos,
+        // Sin número no se envía nada
+        ...(contacto !== "vacio"
+          ? { whatsappContacto: contacto.telefono, indicativoWhatsapp: contacto.indicativo }
+          : {}),
         correo: acceso.correo.trim().toLowerCase(),
         usuario: acceso.usuario.trim(),
         clave: acceso.clave,
@@ -161,6 +168,7 @@ export default function RegistroEmpresaScreen() {
         <CamposEmpresa
           valores={valores}
           errores={errores}
+          whatsapp={whatsapp}
           onCambiar={(cambios) => {
             setValores((v) => ({ ...v, ...cambios }));
             setErrores((e) => sinErrores(e, camposCambiados(cambios)));

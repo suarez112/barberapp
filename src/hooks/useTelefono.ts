@@ -1,4 +1,4 @@
-import type { CountryCode } from "libphonenumber-js/max";
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js/max";
 import { useState } from "react";
 import {
   PAIS_POR_DEFECTO,
@@ -52,13 +52,35 @@ export function useTelefono() {
     return normalizado;
   };
 
+  // Igual que validar(), pero el campo puede quedar vacío: "vacio" = no se escribió nada
+  const validarOpcional = (): { telefono: string; indicativo: string } | "vacio" | null => {
+    if (!soloDigitos(texto)) {
+      setError(null);
+      return "vacio";
+    }
+    return validar();
+  };
+
+  // Pone un número guardado en E.164 ("+573001234567") con su país y su máscara; null lo vacía
+  const cargar = (e164: string | null | undefined) => {
+    setError(null);
+    const numero = e164 ? parsePhoneNumberFromString(e164) : undefined;
+    if (!numero?.country) {
+      setPais(PAIS_POR_DEFECTO);
+      setTexto("");
+      return;
+    }
+    setPais(numero.country);
+    setTexto(formatearMientrasEscribe(numero.country, numero.nationalNumber));
+  };
+
   const limpiar = () => {
     setPais(PAIS_POR_DEFECTO);
     setTexto("");
     setError(null);
   };
 
-  return { pais, texto, indicativo, error, setError, cambiarTexto, elegirPais, validar, limpiar };
+  return { pais, texto, indicativo, error, setError, cambiarTexto, elegirPais, validar, validarOpcional, cargar, limpiar };
 }
 
 export type EstadoTelefono = ReturnType<typeof useTelefono>;

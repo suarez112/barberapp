@@ -45,6 +45,18 @@ export type DatosEmpresa = {
   numeroEmpleados: number; // 1 a 10
 };
 
+// WhatsApp de contacto (opcional): número en E.164 y su indicativo
+export type DatosWhatsapp = { whatsappContacto?: string | null; indicativoWhatsapp?: string };
+
+// Lo que se puede cambiar en "Mi negocio" (PATCH /admin/empresa)
+export type CambiosEmpresa = Partial<DatosEmpresa> &
+  DatosWhatsapp & {
+    // Horas de anticipación mínima para que un cliente cancele o reprograme (0 a 48)
+    anticipacionCancelacionHoras?: number;
+    // Zona horaria IANA del negocio, ej. "America/Bogota"
+    zonaHoraria?: string;
+  };
+
 // Acceso de la administradora: solo en el registro
 export type AccesoAdministradora = {
   correo: string;
@@ -64,6 +76,11 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   horarioCierre: string;
   // Cada cuántos minutos pueden agendar los clientes (10, 20, 30, 40, 50 o 60)
   intervaloMinutos: number;
+  // WhatsApp de contacto en E.164 y su enlace wa.me; null si no lo configuró
+  whatsappContacto: string | null;
+  whatsappUrl: string | null;
+  anticipacionCancelacionHoras: number;
+  zonaHoraria: string;
   logoUrl: string | null;
   fotoUrl: string | null;
   colorPrimario: string | null;
@@ -126,7 +143,9 @@ export type RespuestaLoginCuenta = {
   usuario: UsuarioCuenta;
 };
 
-export const registrarEmpresa = (datos: DatosEmpresa & AccesoAdministradora & Aceptacion) =>
+export const registrarEmpresa = (
+  datos: DatosEmpresa & DatosWhatsapp & AccesoAdministradora & Aceptacion,
+) =>
   request<RespuestaRegistroEmpresa>("/api/v1/cuentas/registro/empresa", {
     method: "POST",
     body: datos,
@@ -172,7 +191,7 @@ export type Coordenadas = {
 
 export const actualizarMiEmpresa = (
   token: string,
-  cambios: Partial<DatosEmpresa> | Coordenadas,
+  cambios: CambiosEmpresa | Coordenadas,
 ) =>
   request<PerfilEmpresa>("/api/v1/admin/empresa", {
     method: "PATCH",
