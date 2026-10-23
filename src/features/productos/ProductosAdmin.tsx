@@ -222,6 +222,12 @@ export default function ProductosAdmin({ token }: { token: string }) {
           onChangeText={cambiar("descripcion")}
           multiline
         />
+        {guardando && campos.fotoNueva ? (
+          <View style={styles.subiendo} accessibilityLiveRegion="polite">
+            <ActivityIndicator color={colors.primaryText} />
+            <Text style={{ color: colors.textSecondary }}>Subiendo la foto…</Text>
+          </View>
+        ) : null}
         <BotonesFormulario
           tituloGuardar={
             guardando ? "GUARDANDO…" : enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR PRODUCTO"
@@ -281,6 +287,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
 
 const styles = StyleSheet.create({
   acordeon: { marginTop: 15 },
+  subiendo: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   botonQuitar: { minHeight: 44, justifyContent: "center" },
   tituloLista: { marginTop: 20 },
   foto: {

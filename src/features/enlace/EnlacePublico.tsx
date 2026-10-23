@@ -9,13 +9,16 @@ import { avisar } from "@/utils/dialogos";
 type Props = {
   enlace: string;
   nombreNegocio: string;
+  // Se llama al tocar Copiar o Compartir (ej. para marcar el paso de la guía inicial)
+  onCompartido?: () => void;
 };
 
 // Enlace público del negocio con sus botones Copiar y Compartir
-export default function EnlacePublico({ enlace, nombreNegocio }: Props) {
+export default function EnlacePublico({ enlace, nombreNegocio, onCompartido }: Props) {
   const { colors } = useAppTheme();
 
   const copiar = async () => {
+    onCompartido?.();
     try {
       await Clipboard.setStringAsync(enlace);
       avisar("Enlace copiado", "Ya puedes pegarlo en WhatsApp, Instagram o donde quieras.", "exito");
@@ -26,6 +29,7 @@ export default function EnlacePublico({ enlace, nombreNegocio }: Props) {
   };
 
   const compartir = async () => {
+    onCompartido?.();
     try {
       await Share.share({ message: `Reserva tu cita en ${nombreNegocio}: ${enlace}` });
     } catch (error) {

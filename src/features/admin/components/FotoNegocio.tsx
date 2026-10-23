@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -58,6 +58,12 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
             </Text>
           </View>
         )}
+        {guardando ? (
+          <View style={styles.subiendo} accessibilityLabel="Subiendo la foto" accessibilityLiveRegion="polite">
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.textoSubiendo}>Subiendo foto…</Text>
+          </View>
+        ) : null}
       </View>
 
       {pendiente ? (
@@ -99,5 +105,13 @@ const styles = StyleSheet.create({
   },
   foto: { width: "100%", height: "100%" },
   vacia: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
+  subiendo: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  textoSubiendo: { color: "#fff", fontWeight: "bold" },
   aviso: { fontSize: 12, fontWeight: "600", marginBottom: 4 },
 });

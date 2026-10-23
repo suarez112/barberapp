@@ -224,3 +224,83 @@ export const obtenerReportesCartera = async (
   ]);
   return { ocupacion, serviciosRentables, demanda };
 };
+
+// ---------- Reportes avanzados (plan Pro, función "reportes_avanzados") ----------
+
+export type ClienteDestacado = {
+  clienteId: string;
+  nombre: string;
+  visitas: number;
+  gasto: number;
+  ticketPromedio: number;
+  ultimaVisita: string | null;
+};
+
+export type ReporteMejoresClientes = {
+  totalClientes: number;
+  masGastan: ClienteDestacado[];
+  masVienen: ClienteDestacado[];
+};
+
+export type ReporteRetencion = {
+  totalClientes: number;
+  volvieron: number;
+  unaSolaVez: number;
+  porcentajeVolvieron: number;
+  porcentajeUnaSolaVez: number;
+};
+
+export type MesTendencia = {
+  mes: string; // "2026-10"
+  ventas: number;
+  citas: number;
+  completadas: number;
+  canceladas: number;
+  // %, null: no hay mes anterior con qué comparar
+  variacionVentas: number | null;
+  variacionCitas: number | null;
+};
+
+export type ReporteTendencia = { meses: MesTendencia[] };
+
+// null: el plan no incluye ese reporte (403 "funcion_no_incluida")
+export type ReportesAvanzados = {
+  mejoresClientes: ReporteMejoresClientes | null;
+  retencion: ReporteRetencion | null;
+  tendencia: ReporteTendencia | null;
+};
+
+const filtroPeriodo = (periodo: PeriodoResumen, rango: { desde: string; hasta: string } | null) =>
+  `periodo=${periodo}${
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : ""
+  }`;
+
+export const obtenerReportesAvanzados = async (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  signal?: AbortSignal,
+): Promise<ReportesAvanzados> => {
+  const pedir = <T>(ruta: string) =>
+    request<T>(`/api/v1/reportes/${ruta}?${filtroPeriodo(periodo, rango)}`, { token, signal }).catch((e) => {
+      if (esFuncionNoIncluida(e)) return null;
+      throw e;
+    });
+  const [mejoresClientes, retencion, tendencia] = await Promise.all([
+    pedir<ReporteMejoresClientes>("mejores-clientes"),
+    pedir<ReporteRetencion>("retencion-clientes"),
+    pedir<ReporteTendencia>("tendencia"),
+  ]);
+  return { mejoresClientes, retencion, tendencia };
+};
+
+export type FormatoExportacion = "xlsx" | "pdf";
+
+// Ruta de la descarga del reporte del período (plan Pro, función "exportar_reportes")
+export const rutaExportacion = (
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  formato: FormatoExportacion,
+) => `/api/v1/reportes/exportar?${filtroPeriodo(periodo, rango)}&formato=${formato}`;

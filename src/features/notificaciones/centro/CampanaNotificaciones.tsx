@@ -21,10 +21,21 @@ import { COLORES } from "@/theme/paleta";
 import { useCuenta } from "../../cuenta/CuentaProvider";
 import { useSesion } from "../../sesion/SesionProvider";
 import { useNotificaciones } from "../NotificacionesProvider";
-import { useAbrirCita } from "../useAbrirCita";
+import { useAbrirCita, useAbrirPlanes } from "../useAbrirCita";
 import { AvisoGuardado, contarNoLeidas, listarAvisos, marcarAvisoLeido } from "./api";
 
 const CADA_SEGUNDOS = 30;
+
+// Icono de cada tipo de aviso (los desconocidos usan la campana)
+const ICONO_AVISO: Record<string, keyof typeof Ionicons.glyphMap> = {
+  cita_nueva: "calendar-outline",
+  cita_cancelada: "close-circle-outline",
+  cita_cancelada_por_cliente: "close-circle-outline",
+  cita_reprogramada: "swap-horizontal-outline",
+  recordatorio: "alarm-outline",
+  recordatorio_2h: "alarm-outline",
+  prueba_resumen: "sparkles-outline",
+};
 
 const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleString("es-CO", {
@@ -49,6 +60,7 @@ function Campana({ token }: { token: string }) {
   const { top } = useSafeAreaInsets();
   const { avisosRecibidos } = useNotificaciones();
   const abrirCita = useAbrirCita();
+  const abrirPlanes = useAbrirPlanes();
   const [noLeidas, setNoLeidas] = useState(0);
   const [abierto, setAbierto] = useState(false);
   const [avisos, setAvisos] = useState<AvisoGuardado[] | null>(null);
@@ -117,7 +129,9 @@ function Campana({ token }: { token: string }) {
         actualizarNumero();
       });
     }
-    if (a.citaId) abrirCita(a.citaId);
+    // El resumen de la prueba gratuita no trae cita: lleva a Planes
+    if (a.tipo === "prueba_resumen") abrirPlanes();
+    else if (a.citaId) abrirCita(a.citaId);
   };
 
   const todoAlDia = noLeidas === 0;
@@ -199,7 +213,11 @@ function Campana({ token }: { token: string }) {
                     accessibilityRole="button"
                     accessibilityLabel={`${a.leida ? "" : "Sin leer. "}${a.titulo}. ${a.texto}`}
                     accessibilityHint={
-                      a.citaId ? "Marca como leída y abre la cita" : "Marca como leída"
+                      a.tipo === "prueba_resumen"
+                        ? "Marca como leída y abre los planes"
+                        : a.citaId
+                          ? "Marca como leída y abre la cita"
+                          : "Marca como leída"
                     }
                     style={[styles.aviso, { borderColor: colors.cardBorder }]}
                     onPress={() => tocar(a)}
@@ -209,6 +227,11 @@ function Campana({ token }: { token: string }) {
                         styles.punto,
                         { backgroundColor: a.leida ? "transparent" : COLORES.azul },
                       ]}
+                    />
+                    <Ionicons
+                      name={ICONO_AVISO[a.tipo] ?? "notifications-outline"}
+                      size={20}
+                      color={colors.primaryText}
                     />
                     <View style={styles.textos}>
                       <Text

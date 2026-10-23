@@ -19,3 +19,17 @@ export function useAbrirCita() {
     }
   };
 }
+
+// Abre Planes desde un aviso de la prueba gratuita (solo administradores)
+export function useAbrirPlanes() {
+  const router = useRouter();
+  const { barbero } = useSesion();
+  const { usuario } = useCuenta();
+  const { abrirPlanesEnPanel } = useNotificaciones();
+
+  return () => {
+    if (!barbero?.esAdmin && usuario?.rol !== "admin") return;
+    abrirPlanesEnPanel();
+    router.navigate(barbero ? "/panel" : "/admin");
+  };
+}

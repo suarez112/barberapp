@@ -21,6 +21,7 @@ import { useAvisarError } from "../sesion/useAvisarError";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 import { RefrescoPanelProvider } from "./RefrescoPanel";
 import NegocioTab from "./NegocioTab";
+import { DestinoGuia } from "../guia/PrimerosPasos";
 import PanelTabBar, { Pestana, PestanaPanel } from "./components/PanelTabBar";
 import PerfilBadge from "./components/PerfilBadge";
 import SelectorSupervision from "./components/SelectorSupervision";
@@ -29,8 +30,9 @@ import { useSalirDelPanel } from "./useSalirDelPanel";
 
 type Props = {
   personal: Personal;
-  // Contenido fijo arriba (ej. aviso de días de prueba)
-  encabezado?: ReactNode;
+  // Contenido fijo arriba (ej. aviso de días de prueba). Si es una función recibe la pestaña
+  // abierta y `irA`, que lleva a una pantalla del panel (ej. los pasos de la guía inicial)
+  encabezado?: ReactNode | ((pestana: PestanaPanel, irA: (destino: DestinoGuia) => void) => ReactNode);
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
   // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
@@ -63,6 +65,11 @@ export default function PanelNegocio({
   const salir = useSalirDelPanel();
   const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
   const [pestana, setPestana] = useState<PestanaPanel>("AGENDAMIENTOS");
+  // Sección de Equipo que se abre (cambia la llave para abrirla aunque ya estuviera en esa pestaña)
+  const [seccionEquipo, setSeccionEquipo] = useState<{ seccion: "EQUIPO" | "SERVICIOS"; n: number }>({
+    seccion: "EQUIPO",
+    n: 0,
+  });
   // Se guarda aquí para conservar el día elegido al cambiar de pestaña
   const [diaAgenda, setDiaAgenda] = useState<Dia>(diaDeHoy);
   const [supervisadoId, setSupervisadoId] = useState<string | null>(null);
@@ -146,6 +153,15 @@ export default function PanelNegocio({
     : [PESTANA_AGENDA, PESTANA_CARTERA];
   const activa = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
 
+  const irA = (destino: DestinoGuia) => {
+    if (destino === "SERVICIOS") {
+      setSeccionEquipo((a) => ({ seccion: "SERVICIOS", n: a.n + 1 }));
+      setPestana("NEGOCIO");
+    } else {
+      setPestana("MI_NEGOCIO");
+    }
+  };
+
   const sinProfesionales = (
     <TextoInfo>Aún no hay profesionales en el equipo. Agrégalos en la pestaña Equipo.</TextoInfo>
   );
@@ -204,6 +220,8 @@ export default function PanelNegocio({
       case "NEGOCIO":
         return (
           <NegocioTab
+            key={seccionEquipo.n}
+            seccionInicial={seccionEquipo.seccion}
             personal={personal}
             suscripcion={suscripcion}
             onEquipoCambiado={onEquipoCambiado}
@@ -250,7 +268,7 @@ export default function PanelNegocio({
               empresa={empresa}
             />
           ) : null}
-          {encabezado}
+          {typeof encabezado === "function" ? encabezado(activa, irA) : encabezado}
 
           {conSupervision && profesional ? (
             <SelectorSupervision

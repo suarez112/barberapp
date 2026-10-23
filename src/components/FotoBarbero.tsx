@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto as abrirGaleria, FotoElegida } from "@/utils/imagenes";
@@ -11,7 +12,8 @@ type Props = {
   size?: number;
   editable?: boolean;
   forma?: "circulo" | "rectangulo";
-  onCambiar?: (foto: FotoElegida) => void;
+  // Si devuelve una promesa, se muestra un indicador mientras se sube la foto
+  onCambiar?: (foto: FotoElegida) => void | Promise<void>;
 };
 
 export default function FotoBarbero({
@@ -24,6 +26,7 @@ export default function FotoBarbero({
   onCambiar,
 }: Props) {
   const { colors } = useAppTheme();
+  const [subiendo, setSubiendo] = useState(false);
   // Si no hay foto, se muestran las iniciales (Jhon Álvarez -> JA)
   const iniciales = nombre
     .split(" ")
@@ -33,10 +36,16 @@ export default function FotoBarbero({
     .join("");
 
   const elegirFoto = async () => {
-    if (!onCambiar) return;
+    if (!onCambiar || subiendo) return;
     // Recorte vertical, como un afiche
     const foto = await abrirGaleria({ aspecto: [4, 5], calidad: 0.6 });
-    if (foto) onCambiar(foto);
+    if (!foto) return;
+    setSubiendo(true);
+    try {
+      await onCambiar(foto);
+    } finally {
+      setSubiendo(false);
+    }
   };
 
   // ---------- FORMA RECTANGULAR (vista del cliente) ----------
@@ -111,12 +120,28 @@ export default function FotoBarbero({
     <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={`Foto de ${nombre}`}
-      accessibilityHint="Abre tu galería para cambiar la foto"
+      accessibilityHint={subiendo ? "Subiendo la foto" : "Abre tu galería para cambiar la foto"}
+      accessibilityState={{ busy: subiendo }}
       onPress={elegirFoto}
       activeOpacity={0.8}
       style={{ width: size, height: size, marginBottom: 8 }}
     >
       {circulo}
+      {subiendo ? (
+        <View
+          style={{
+            position: "absolute",
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: "rgba(0,0,0,0.55)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ActivityIndicator color={COLORES.blanco} />
+        </View>
+      ) : null}
       {/* Círculo blanco con borde e ícono oscuros: se ve igual en tema claro y oscuro */}
       <View
         style={{

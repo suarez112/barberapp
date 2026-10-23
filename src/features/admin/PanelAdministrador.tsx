@@ -1,13 +1,19 @@
+import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useRefrescoDiario } from "@/hooks/useRefrescoDiario";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { GuiaContext, useGuia } from "../guia/guiaContexto";
+import PrimerosPasos from "../guia/PrimerosPasos";
+import { useGuiaInicial } from "../guia/useGuiaInicial";
+import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
 import PanelNegocio from "../panel/PanelNegocio";
 import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import { FuncionesProvider } from "../planes/FuncionesProvider";
+import { useFunciones } from "../planes/funcionesContexto";
 import AtiendoClientes from "./components/AtiendoClientes";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
@@ -18,6 +24,33 @@ import FotoNegocio from "./components/FotoNegocio";
 import MiSuscripcion from "./components/MiSuscripcion";
 import PanelVencido from "./PanelVencido";
 import { useMiEmpresa } from "./useMiEmpresa";
+
+// Abre Planes cuando se tocó un aviso de la prueba gratuita. Va dentro de FuncionesProvider.
+function AbrirPlanesPendiente() {
+  const { planesPendiente, limpiarPlanesPendiente } = useNotificaciones();
+  const { abrirPlanes } = useFunciones();
+  useEffect(() => {
+    if (!planesPendiente) return;
+    abrirPlanes();
+    limpiarPlanesPendiente();
+  }, [planesPendiente, abrirPlanes, limpiarPlanesPendiente]);
+  return null;
+}
+
+// Vuelve a mostrar los primeros pasos si el administrador los ocultó sin terminarlos
+function MostrarGuia() {
+  const { guia, mostrar } = useGuia();
+  if (!guia?.oculta || guia.completa) return null;
+  return (
+    <Boton
+      titulo="MOSTRAR PRIMEROS PASOS"
+      ayuda="Vuelve a mostrar la guía de primeros pasos en el panel"
+      variante="secundario"
+      onPress={mostrar}
+      style={styles.mostrarGuia}
+    />
+  );
+}
 
 // Panel de cualquier administrador: la cuenta de la empresa (/admin) o un
 // integrante con rol Administrador (/panel). Los dos ven las mismas pestañas,
@@ -32,15 +65,24 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
     errorCarga,
     recargar,
     actualizarSuscripcion,
-    guardarDatos,
+    guardarDatos: guardarDatosNegocio,
     guardarFoto,
     guardarUbicacion,
     guardarIntervalo,
   } = useMiEmpresa(personal.token);
 
+  const guia = useGuiaInicial(personal.token);
+
   // Los días restantes cambian a medianoche; también puede haber cambiado
   // el plan mientras la app estaba cerrada
   useRefrescoDiario(actualizarSuscripcion);
+
+  // Guardar "Mi negocio" marca el paso del horario en la guía
+  const guardarDatos: typeof guardarDatosNegocio = async (...args) => {
+    const resultado = await guardarDatosNegocio(...args);
+    guia.refrescar();
+    return resultado;
+  };
 
   // La tarjeta del panel de la cuenta muestra el nombre de la administradora, no su correo
   const conNombre: Personal = personal.esCuentaAdmin && perfil?.nombreAdministradora
@@ -98,6 +140,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
             </Text>
           </View>
 
+          <MostrarGuia />
           {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
           {/* Solo la cuenta de la empresa: un integrante administrador usa "Atiende clientes" en Equipo */}
           {personal.esCuentaAdmin ? (
@@ -123,16 +166,24 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
   }
 
   return (
-    <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
-      <PanelNegocio
-        personal={conNombre}
-        encabezado={suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
-        miNegocio={miNegocio}
-        onSuscripcionVencida={actualizarSuscripcion}
-        suscripcion={suscripcion}
-        onEquipoCambiado={actualizarSuscripcion}
-      />
-    </FuncionesProvider>
+    <GuiaContext.Provider value={guia}>
+      <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
+        <AbrirPlanesPendiente />
+        <PanelNegocio
+          personal={conNombre}
+          encabezado={(pestana, irA) => (
+            <>
+              {suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
+              <PrimerosPasos pestana={pestana} nombreNegocio={perfil?.nombre ?? ""} onIr={irA} />
+            </>
+          )}
+          miNegocio={miNegocio}
+          onSuscripcionVencida={actualizarSuscripcion}
+          suscripcion={suscripcion}
+          onEquipoCambiado={actualizarSuscripcion}
+        />
+      </FuncionesProvider>
+    </GuiaContext.Provider>
   );
 }
 
@@ -145,6 +196,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   cargando: { marginTop: 30 },
+  mostrarGuia: { marginTop: 12 },
   codigo: {
     borderWidth: 1,
     borderRadius: 10,

@@ -7,14 +7,17 @@ import { crearDia, hoyColombiaISO, sumarDias, textoRango } from "@/utils/fechas"
 import { formatearPesos } from "@/utils/formato";
 import { Comparar, PeriodoResumen, ProfesionalResumen } from "./api";
 import EstadisticasCartera from "./EstadisticasCartera";
+import ExportarCartera from "./ExportarCartera";
 import { listarAgenda } from "../agenda/api";
 import { useAgenda } from "../agenda/AgendaProvider";
 import { useFunciones } from "../planes/funcionesContexto";
 import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera from "./ProyeccionCartera";
+import ReportesAvanzados from "./ReportesAvanzados";
 import ReportesCartera from "./ReportesCartera";
 import { periodoVisible } from "./periodoVisible";
 import { useFechaRegistro } from "./useFechaRegistro";
+import { useReportesAvanzados } from "./useReportesAvanzados";
 import { useReportesCartera } from "./useReportesCartera";
 import { useResumenCartera } from "./useResumenCartera";
 
@@ -80,11 +83,21 @@ export default function TableroCartera({ token }: { token: string }) {
   // Ocupación, servicios rentables y demanda: no tienen sentido en un solo día
   const reportes = useReportesCartera(token, consulta.periodo, consulta.desde, consulta.hasta, periodo !== "hoy");
 
+  // Mejores clientes, retención y tendencia: solo se piden si el plan los incluye
+  const avanzados = useReportesAvanzados(
+    token,
+    consulta.periodo,
+    consulta.desde,
+    consulta.hasta,
+    periodo !== "hoy" && incluida("reportes_avanzados"),
+  );
+
   // También la agenda: la proyección se calcula con las citas pendientes
   useRefrescoPanel(() =>
     Promise.all([
       refrescar(),
       periodo !== "hoy" ? reportes.refrescar() : Promise.resolve(),
+      periodo !== "hoy" && incluida("reportes_avanzados") ? avanzados.refrescar() : Promise.resolve(),
       listarAgenda(token).then(setCitas),
     ]),
   );
@@ -332,6 +345,17 @@ export default function TableroCartera({ token }: { token: string }) {
               onReintentar={reportes.refrescar}
             />
           ) : null}
+
+          {periodo !== "hoy" ? (
+            <ReportesAvanzados
+              reportes={avanzados.reportes}
+              error={avanzados.error}
+              cargando={avanzados.cargando}
+              onReintentar={avanzados.refrescar}
+            />
+          ) : null}
+
+          <ExportarCartera token={token} periodo={consulta.periodo} desde={consulta.desde} hasta={consulta.hasta} />
         </>
       ) : null}
 

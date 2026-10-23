@@ -17,16 +17,19 @@ const SECCIONES = [
 
 // Administración del negocio (solo administrador)
 export default function NegocioTab({
+  seccionInicial = "EQUIPO",
   personal,
   suscripcion,
   onEquipoCambiado,
 }: {
+  // Sección que se abre primero (ej. Servicios, desde la guía inicial)
+  seccionInicial?: Seccion;
   personal: Personal;
   // Plan y cupo del equipo (null mientras carga)
   suscripcion: Suscripcion | null;
   onEquipoCambiado?: () => void;
 }) {
-  const [seccion, setSeccion] = useState<Seccion>("EQUIPO");
+  const [seccion, setSeccion] = useState<Seccion>(seccionInicial);
   return (
     <View>
       <Selector opciones={SECCIONES} valor={seccion} onCambiar={setSeccion} />

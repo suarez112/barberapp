@@ -15,6 +15,7 @@ import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio, textoDuracion } from "@/utils/formato";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
+import { useGuia } from "../guia/guiaContexto";
 import { actualizarServicio, crearServicio, eliminarServicio } from "./api";
 
 // Duraciones que se ofrecen al crear o editar un servicio: de 10 min a 2 h 30, de 10 en 10
@@ -37,6 +38,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
   const { colors } = useAppTheme();
   const { servicios, setServicios } = useNegocio();
   const avisarError = useAvisarError();
+  const { refrescar: refrescarGuia } = useGuia();
   const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
 
@@ -63,6 +65,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
       } else {
         const nuevo = await crearServicio(token, datos);
         setServicios((prev) => [...prev, nuevo]);
+        refrescarGuia();
         avisar("¡Servicio Creado!", `${nuevo.nombre} agregado al catálogo.`, "exito");
       }
       reiniciar();
