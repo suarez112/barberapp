@@ -173,6 +173,7 @@ ${fechaLarga(c.fecha)} · ${c.hora}`,
               deshabilitado={!c.puedeReprogramar || cancelando !== null}
               onPress={() => setReprogramando(c)}
               style={styles.accion}
+              textStyle={styles.textoAccion}
             />
             <Boton
               titulo={cancelando === c.id ? "CANCELANDO…" : "CANCELAR"}
@@ -181,6 +182,7 @@ ${fechaLarga(c.fecha)} · ${c.hora}`,
               deshabilitado={cancelando !== null}
               onPress={() => cancelar(c)}
               style={styles.accion}
+              textStyle={styles.textoAccion}
             />
           </View>
         ) : (
@@ -193,6 +195,7 @@ ${fechaLarga(c.fecha)} · ${c.hora}`,
                 deshabilitado
                 onPress={() => {}}
                 style={styles.accion}
+                textStyle={styles.textoAccion}
               />
               <Boton
                 titulo="CANCELAR"
@@ -201,6 +204,7 @@ ${fechaLarga(c.fecha)} · ${c.hora}`,
                 deshabilitado
                 onPress={() => {}}
                 style={styles.accion}
+                textStyle={styles.textoAccion}
               />
             </View>
             <Text style={[styles.aviso, { color: colors.avisoTexto }]}>
@@ -293,7 +297,9 @@ const styles = StyleSheet.create({
   negocio: { fontSize: 15, fontWeight: "bold", flex: 1 },
   detalle: { fontSize: 12 },
   cancelar: { marginTop: 8 },
-  acciones: { flexDirection: "row", gap: 8, marginTop: 8 },
-  accion: { flex: 1 },
+  // En pantallas angostas los dos botones se reparten el ancho; si no caben, uno baja debajo del otro
+  acciones: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  accion: { flexGrow: 1, flexBasis: 130, marginTop: 0, minHeight: 48, paddingHorizontal: 8 },
+  textoAccion: { fontSize: 13, letterSpacing: 0.3 },
   aviso: { fontSize: 12, fontWeight: "600", marginTop: 8 },
 });

@@ -188,35 +188,39 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
           </Text>
         ) : (
           negocios.map((n) => (
-            <Tocable
+            <View
               key={n.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Reservar en ${n.nombre}`}
-              accessibilityHint="Abre el negocio para elegir profesional, servicio y hora"
               style={[
                 styles.tarjeta,
                 { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
               ]}
-              onPress={() => abrir(n)}
             >
-              {n.fotoUrl ? (
-                <Image source={{ uri: n.fotoUrl }} style={styles.foto} contentFit="cover" />
-              ) : (
-                <View style={[styles.foto, styles.sinFoto, { borderColor: colors.cardBorder }]}>
-                  <Ionicons name="storefront-outline" size={24} color={colors.primaryText} />
-                </View>
-              )}
-              <View style={styles.textos}>
-                <Text style={[styles.nombre, { color: colors.textPrimary }]}>{n.nombre}</Text>
-                <Text style={[styles.detalle, { color: colors.textSecondary }]}>
-                  {[n.categoria, n.ciudad].filter(Boolean).join(" · ") || n.codigoAcceso}
-                </Text>
-                {n.recibiendoReservas ? null : (
-                  <View style={styles.insignia}>
-                    <Insignia texto="NO RECIBE RESERVAS POR AHORA" color={COLORES.rojo} />
+              <Tocable
+                accessibilityRole="button"
+                accessibilityLabel={`Reservar en ${n.nombre}`}
+                accessibilityHint="Abre el negocio para elegir profesional, servicio y hora"
+                style={styles.zonaAbrir}
+                onPress={() => abrir(n)}
+              >
+                {n.fotoUrl ? (
+                  <Image source={{ uri: n.fotoUrl }} style={styles.foto} contentFit="cover" />
+                ) : (
+                  <View style={[styles.foto, styles.sinFoto, { borderColor: colors.cardBorder }]}>
+                    <Ionicons name="storefront-outline" size={24} color={colors.primaryText} />
                   </View>
                 )}
-              </View>
+                <View style={styles.textos}>
+                  <Text style={[styles.nombre, { color: colors.textPrimary }]}>{n.nombre}</Text>
+                  <Text style={[styles.detalle, { color: colors.textSecondary }]}>
+                    {[n.categoria, n.ciudad].filter(Boolean).join(" · ") || n.codigoAcceso}
+                  </Text>
+                  {n.recibiendoReservas ? null : (
+                    <View style={styles.insignia}>
+                      <Insignia texto="NO RECIBE RESERVAS POR AHORA" color={COLORES.rojo} />
+                    </View>
+                  )}
+                </View>
+              </Tocable>
               <BotonIcono
                 icono="trash-outline"
                 color={colors.peligroTexto}
@@ -224,7 +228,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 ayuda="Lo quita de tu lista, pide confirmación"
                 onPress={() => quitar(n)}
               />
-            </Tocable>
+            </View>
           ))
         )}
       </View>
@@ -248,6 +252,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+  zonaAbrir: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   foto: { width: 56, height: 56, borderRadius: 8 },
   sinFoto: { borderWidth: 1, alignItems: "center", justifyContent: "center" },
   textos: { flex: 1 },

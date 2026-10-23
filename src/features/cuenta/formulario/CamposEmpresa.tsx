@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -11,6 +12,7 @@ import Boton from "@/components/ui/Boton";
 import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
+import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import type { EstadoTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -24,13 +26,17 @@ import {
   copiarLunes,
   DiaFormulario,
   Errores,
+  horarioUniforme,
   limpiarCodigo,
+  unificarHorario,
   ValoresEmpresa,
 } from "./validarEmpresa";
 
 // 0 = domingo … 6 = sábado (como en el backend), mostrados de lunes a domingo
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
 const DIAS_LARGOS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+const DIAS_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 const EMPLEADOS = Array.from({ length: 10 }, (_, i) => ({
   valor: i + 1,
@@ -110,6 +116,21 @@ export default function CamposEmpresa({
 
   const cambiarDia = (dia: number, cambios: Partial<DiaFormulario>) =>
     onCambiar({ dias: valores.dias.map((d) => (d.dia === dia ? { ...d, ...cambios } : d)) });
+
+  // Por defecto un solo horario para todos los días. Si el negocio ya guardó horarios distintos,
+  // arranca desmarcada para no esconderlos; al marcar o desmarcar manualmente manda la elección.
+  const [eligioMismo, setEligioMismo] = useState<boolean | null>(null);
+  const mismoHorario = eligioMismo ?? horarioUniforme(valores.dias);
+  const diaBase = valores.dias.find((d) => d.abierto) ?? valores.dias[0];
+
+  const cambiarMismoHorario = () => {
+    const nuevo = !mismoHorario;
+    setEligioMismo(nuevo);
+    if (nuevo) onCambiar({ dias: unificarHorario(valores.dias) });
+  };
+
+  const cambiarHorarioComun = (c: { apertura?: string; cierre?: string }) =>
+    onCambiar({ dias: valores.dias.map((d) => ({ ...d, ...c })) });
 
   const copiarHorarioDelLunes = () => {
     onCambiar({ dias: copiarLunes(valores.dias) });
@@ -311,54 +332,110 @@ export default function CamposEmpresa({
           {errores.horario}
         </Text>
       ) : null}
-      {ORDEN_DIAS.map((dia) => {
-        const d = valores.dias.find((x) => x.dia === dia);
-        if (!d) return null;
-        return (
-          <View key={dia}>
-            <View
-              style={[
-                styles.tarjetaDia,
-                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-              ]}
-            >
-              <View style={styles.cabeceraDia}>
-                <Text style={[styles.nombreDia, { color: colors.textPrimary }]}>
-                  {DIAS_LARGOS[dia]}
-                </Text>
-                <Text style={[styles.estadoDia, { color: colors.textSecondary }]}>
-                  {d.abierto ? "Abierto" : "Cerrado"}
-                </Text>
-                <Switch
-                  accessibilityLabel={`${DIAS_LARGOS[dia]}: ${d.abierto ? "abierto" : "cerrado"}`}
-                  accessibilityHint="Abre o cierra el negocio este día"
-                  value={d.abierto}
-                  onValueChange={(abierto) => cambiarDia(dia, { abierto })}
-                  trackColor={{ true: colors.primary, false: colors.cardBorder }}
-                  thumbColor={COLORES.blanco}
-                />
-              </View>
-              {d.abierto
-                ? horas(
-                    d.apertura,
-                    d.cierre,
-                    (c) => cambiarDia(dia, c),
-                    ` del ${DIAS_LARGOS[dia].toLowerCase()}`,
-                  )
-                : null}
-            </View>
-            {dia === 1 ? (
-              <Boton
-                titulo="Copiar el horario del lunes a todos los días"
-                ayuda="Pone en los siete días el mismo horario del lunes, abierto o cerrado"
-                variante="secundario"
-                onPress={copiarHorarioDelLunes}
-                style={styles.copiar}
-              />
-            ) : null}
+      <Tocable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: mismoHorario }}
+        accessibilityLabel="Mismo horario todos los días"
+        accessibilityHint="Marcada, usas un solo horario de apertura y cierre. Desmarcada, eliges el horario de cada día"
+        onPress={cambiarMismoHorario}
+        style={styles.casilla}
+      >
+        <Ionicons
+          name={mismoHorario ? "checkbox" : "square-outline"}
+          size={26}
+          color={colors.primaryText}
+        />
+        <Text style={[styles.textoCasilla, { color: colors.textPrimary }]}>
+          Mismo horario todos los días
+        </Text>
+      </Tocable>
+      {mismoHorario && diaBase ? (
+        <View>
+          {horas(diaBase.apertura, diaBase.cierre, cambiarHorarioComun)}
+          <Text style={[styles.etiquetaDias, { color: colors.textPrimary }]}>Días que abre</Text>
+          <View style={styles.diasElegibles}>
+            {ORDEN_DIAS.map((dia) => {
+              const abierto = valores.dias.find((x) => x.dia === dia)?.abierto ?? false;
+              return (
+                <Tocable
+                  key={dia}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: abierto }}
+                  accessibilityLabel={DIAS_LARGOS[dia]}
+                  accessibilityHint={abierto ? "Marcado: el negocio abre este día" : "Sin marcar: el negocio cierra este día"}
+                  onPress={() => cambiarDia(dia, { abierto: !abierto })}
+                  style={[
+                    styles.diaElegible,
+                    abierto
+                      ? { backgroundColor: colors.seleccionBg, borderColor: colors.primary }
+                      : { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.textoDiaElegible,
+                      { color: abierto ? colors.seleccionTexto : colors.textPrimary },
+                    ]}
+                  >
+                    {DIAS_CORTOS[dia]}
+                  </Text>
+                </Tocable>
+              );
+            })}
           </View>
-        );
-      })}
+        </View>
+      ) : (
+        <>
+      {ORDEN_DIAS.map((dia) => {
+          const d = valores.dias.find((x) => x.dia === dia);
+          if (!d) return null;
+          return (
+            <View key={dia}>
+              <View
+                style={[
+                  styles.tarjetaDia,
+                  { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                ]}
+              >
+                <View style={styles.cabeceraDia}>
+                  <Text style={[styles.nombreDia, { color: colors.textPrimary }]}>
+                    {DIAS_LARGOS[dia]}
+                  </Text>
+                  <Text style={[styles.estadoDia, { color: colors.textSecondary }]}>
+                    {d.abierto ? "Abierto" : "Cerrado"}
+                  </Text>
+                  <Switch
+                    accessibilityLabel={`${DIAS_LARGOS[dia]}: ${d.abierto ? "abierto" : "cerrado"}`}
+                    accessibilityHint="Abre o cierra el negocio este día"
+                    value={d.abierto}
+                    onValueChange={(abierto) => cambiarDia(dia, { abierto })}
+                    trackColor={{ true: colors.primary, false: colors.cardBorder }}
+                    thumbColor={COLORES.blanco}
+                  />
+                </View>
+                {d.abierto
+                  ? horas(
+                      d.apertura,
+                      d.cierre,
+                      (c) => cambiarDia(dia, c),
+                      ` del ${DIAS_LARGOS[dia].toLowerCase()}`,
+                    )
+                  : null}
+              </View>
+              {dia === 1 ? (
+                <Boton
+                  titulo="Copiar el horario del lunes a todos los días"
+                  ayuda="Pone en los siete días el mismo horario del lunes, abierto o cerrado"
+                  variante="secundario"
+                  onPress={copiarHorarioDelLunes}
+                  style={styles.copiar}
+                />
+              ) : null}
+            </View>
+          );
+        })}
+        </>
+      )}
     </View>
   );
 }
@@ -379,4 +456,18 @@ const styles = StyleSheet.create({
   nombreDia: { flex: 1, fontSize: 14, fontWeight: "bold" },
   estadoDia: { fontSize: 12 },
   copiar: { marginBottom: 12 },
+  casilla: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, marginBottom: 6 },
+  textoCasilla: { flex: 1, fontSize: 14, fontWeight: "bold" },
+  etiquetaDias: { fontSize: 14, fontWeight: "bold", marginBottom: 6 },
+  diasElegibles: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  diaElegible: {
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textoDiaElegible: { fontSize: 13, fontWeight: "bold" },
 });

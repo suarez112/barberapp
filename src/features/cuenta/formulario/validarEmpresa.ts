@@ -30,6 +30,18 @@ export const copiarLunes = (dias: DiaFormulario[]): DiaFormulario[] => {
   return lunes ? dias.map((d) => ({ ...lunes, dia: d.dia })) : dias;
 };
 
+// Los días abiertos comparten apertura y cierre (los cerrados no cuentan)
+export const horarioUniforme = (dias: DiaFormulario[]): boolean => {
+  const abiertos = dias.filter((d) => d.abierto);
+  return abiertos.every((d) => d.apertura === abiertos[0].apertura && d.cierre === abiertos[0].cierre);
+};
+
+// Pone en los 7 días el horario del primer día abierto; conserva cuáles días abre
+export const unificarHorario = (dias: DiaFormulario[]): DiaFormulario[] => {
+  const base = dias.find((d) => d.abierto) ?? dias[0];
+  return base ? dias.map((d) => ({ ...d, apertura: base.apertura, cierre: base.cierre })) : dias;
+};
+
 export const VALORES_VACIOS: ValoresEmpresa = {
   nombre: "",
   categoria: "",

@@ -21,6 +21,8 @@ type Props = {
 const PX_POR_MIN = 1.4; // 30 min = 42 px
 const PASO = 30; // marca cada 30 minutos
 const ANCHO_HORAS = 58;
+// Android recorta lo que sobresale de una vista; por eso cada marca tiene alto propio y no 0
+const ALTO_MARCA = 20;
 const DURACION_POR_DEFECTO = 30; // si la cita no trae su duración
 
 type Bloque = { cita: Cita; ini: number; fin: number; col: number; cols: number };
@@ -151,7 +153,7 @@ export default function LineaDeTiempo({
           {marcas.map((m) => {
             const entera = m % 60 === 0;
             return (
-              <View key={m} style={[styles.marca, { top: yDe(m) }]} pointerEvents="none">
+              <View key={m} style={[styles.marca, { top: yDe(m) - ALTO_MARCA / 2 }]} pointerEvents="none">
                 <Text
                   style={[
                     styles.horaMarca,
@@ -223,7 +225,7 @@ export default function LineaDeTiempo({
           {esHoy && minAhora >= desde && minAhora <= hasta ? (
             <View
               pointerEvents="none"
-              style={[styles.ahora, { top: yDe(minAhora) }]}
+              style={[styles.ahora, { top: yDe(minAhora) - 4 }]}
               accessible
               accessibilityLabel="Hora actual"
             >
@@ -287,8 +289,8 @@ const styles = StyleSheet.create({
   marco: { borderWidth: 1, borderRadius: 10, marginTop: 4 },
   vacio: { borderWidth: 1, borderRadius: 10, padding: 16, marginTop: 4 },
   vacioTexto: { fontSize: 14, textAlign: "center" },
-  marca: { position: "absolute", left: 0, right: 0, height: 0, flexDirection: "row", alignItems: "center" },
-  horaMarca: { width: ANCHO_HORAS, fontSize: 11, textAlign: "right", paddingRight: 6, marginTop: -2 },
+  marca: { position: "absolute", left: 0, right: 0, height: ALTO_MARCA, flexDirection: "row", alignItems: "center" },
+  horaMarca: { width: ANCHO_HORAS, fontSize: 11, textAlign: "right", paddingRight: 6 },
   linea: { flex: 1, height: 1 },
   zona: { position: "absolute", top: 0, bottom: 0, left: ANCHO_HORAS + 4, right: 8 },
   cita: {
@@ -313,7 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   textoBloqueo: { fontSize: 11, fontWeight: "bold", paddingHorizontal: 6, borderRadius: 4, overflow: "hidden" },
-  ahora: { position: "absolute", left: ANCHO_HORAS - 4, right: 0, height: 0, flexDirection: "row", alignItems: "center" },
+  ahora: { position: "absolute", left: ANCHO_HORAS - 4, right: 0, height: 8, flexDirection: "row", alignItems: "center" },
   puntoAhora: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORES.rojo },
   lineaAhora: { flex: 1, height: 2, backgroundColor: COLORES.rojo },
 });

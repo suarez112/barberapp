@@ -127,8 +127,14 @@ export default function AgendaTab({
 
   return (
     <View>
-      {/* Un solo botón: muestra el ícono de la vista a la que se pasará */}
-      <View style={styles.barraVista}>
+      <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
+      <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
+
+      {/* Un solo botón a la derecha del título: muestra el ícono de la vista a la que se pasará */}
+      <View style={styles.encabezado}>
+        <TituloSeccion style={styles.tituloAgenda}>
+          {profesional.nombre.toUpperCase()} · {fechaConDia(dia.fechaFull)}
+        </TituloSeccion>
         <BotonIcono
           icono={verLinea ? "list" : "time-outline"}
           color={colors.primaryText}
@@ -136,15 +142,9 @@ export default function AgendaTab({
           ayuda="Cambia la forma de ver las citas del día"
           tamano={24}
           onPress={cambiarVista}
+          style={[styles.botonVista, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
         />
       </View>
-
-      <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
-      <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
-
-      <TituloSeccion>
-        {profesional.nombre.toUpperCase()} · {fechaConDia(dia.fechaFull)}
-      </TituloSeccion>
 
       <View style={styles.resumen}>
         <Dato titulo="Citas" valor={citasDelDia.length - contar("CANCELADA")} />
@@ -218,7 +218,15 @@ function Dato({ titulo, valor, color }: { titulo: string; valor: number; color?:
 }
 
 const styles = StyleSheet.create({
-  barraVista: { alignItems: "flex-end" },
+  encabezado: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  tituloAgenda: { flex: 1, marginTop: 0, marginBottom: 0 },
+  botonVista: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
   resumen: { flexDirection: "row", gap: 8 },
   dato: {
     flex: 1,

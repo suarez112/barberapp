@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { TipoDocumento } from "./api";
@@ -33,37 +33,33 @@ export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Prop
 
   return (
     <>
-      <Tocable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: aceptada }}
-        accessibilityLabel="Autorizo el tratamiento de mis datos personales y acepto los Términos y Condiciones"
-        accessibilityHint={[
-          error ? `Error: ${error}` : null,
-          "Toca para marcar o desmarcar. Usa las acciones para leer cada documento",
-        ]
-          .filter(Boolean)
-          .join(". ")}
-        accessibilityActions={[
-          { name: "politica", label: "Leer la política de tratamiento de datos" },
-          { name: "terminos", label: "Leer los Términos y Condiciones" },
-        ]}
-        onAccessibilityAction={(e) =>
-          setAbierto(e.nativeEvent.actionName === "politica" ? "politica-datos" : "terminos")
-        }
-        style={styles.fila}
-        onPress={() => onCambiar(!aceptada)}
-      >
-        <Ionicons
-          name={aceptada ? "checkbox" : "square-outline"}
-          size={26}
-          color={error ? colors.error : colors.primaryText}
-        />
-        <Text style={[styles.texto, { color: colors.textPrimary }]}>
-          Autorizo el tratamiento de mis datos personales según la{" "}
-          {enlace("Política de Tratamiento de Datos", "politica-datos")} y acepto los{" "}
+      {/* La casilla y el texto con enlaces son hermanos: ningún tocable queda dentro de otro */}
+      <View style={styles.fila}>
+        <Tocable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: aceptada }}
+          accessibilityLabel="Autorizo el tratamiento de mis datos personales y acepto los Términos y Condiciones"
+          accessibilityHint={[error ? `Error: ${error}` : null, "Toca para marcar o desmarcar"]
+            .filter(Boolean)
+            .join(". ")}
+          style={styles.casilla}
+          onPress={() => onCambiar(!aceptada)}
+        >
+          <Ionicons
+            name={aceptada ? "checkbox" : "square-outline"}
+            size={26}
+            color={error ? colors.error : colors.primaryText}
+          />
+        </Tocable>
+        <Text
+          style={[styles.texto, { color: colors.textPrimary }]}
+          onPress={() => onCambiar(!aceptada)}
+        >
+          Autorizo el tratamiento de mis datos según la{" "}
+          {enlace("Política de Datos", "politica-datos")} y acepto los{" "}
           {enlace("Términos y Condiciones", "terminos")}.
         </Text>
-      </Tocable>
+      </View>
       {error ? (
         <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.error }]}>
           {error}
@@ -83,14 +79,12 @@ export const MENSAJE_AUTORIZACION =
 const styles = StyleSheet.create({
   fila: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginTop: 10,
-    marginBottom: 2,
-    paddingHorizontal: 4,
-    minHeight: 44,
+    alignItems: "center",
+    gap: 2,
+    marginTop: 6,
   },
-  texto: { flex: 1, fontSize: 13, lineHeight: 20 },
-  error: { fontSize: 12, marginTop: -6, marginBottom: 8, lineHeight: 16 },
+  casilla: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  texto: { flex: 1, fontSize: 13, lineHeight: 18 },
+  error: { fontSize: 12, marginBottom: 8, lineHeight: 16 },
   enlace: { fontWeight: "bold", textDecorationLine: "underline" },
 });

@@ -19,6 +19,7 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
   const esConfirmacion = confirmaDe !== undefined;
   const { colors } = useAppTheme();
   const [visible, setVisible] = useState(false);
+  const [enfocado, setEnfocado] = useState(false);
   const valor = props.value ?? "";
   const verde = colors.exitoTexto;
 
@@ -40,6 +41,7 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
     </View>
   );
 
+  const todosCumplen = REQUISITOS_CLAVE.every((r) => r.cumple(valor));
   const coinciden = confirmaDe !== undefined && valor === confirmaDe;
 
   return (
@@ -62,6 +64,14 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
               },
             }
           : null)}
+        onFocus={(e) => {
+          setEnfocado(true);
+          props.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setEnfocado(false);
+          props.onBlur?.(e);
+        }}
         style={[styles.campo, props.style]}
         secureTextEntry={!visible}
         derecha={
@@ -82,7 +92,11 @@ export default function CampoClave({ requisitos = false, confirmaDe, ...props }:
           </Pressable>
         }
       />
-      {requisitos ? (
+      {requisitos && valor && todosCumplen ? (
+        <View accessibilityLiveRegion="polite" style={styles.requisitos}>
+          {linea(true, "Contraseña segura")}
+        </View>
+      ) : requisitos && enfocado ? (
         <View accessibilityLiveRegion="polite" style={styles.requisitos}>
           {REQUISITOS_CLAVE.map((r) => (
             <View key={r.texto}>{linea(r.cumple(valor), r.texto)}</View>

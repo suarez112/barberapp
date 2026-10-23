@@ -73,9 +73,9 @@ export default function AvisoPrivacidad() {
 }
 
 const styles = StyleSheet.create({
-  contenedor: { marginBottom: 8 },
-  enlace: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44 },
-  textoEnlace: { fontSize: 14, fontWeight: "bold", textDecorationLine: "underline" },
+  contenedor: { marginBottom: 4 },
+  enlace: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingLeft: 46 },
+  textoEnlace: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
   caja: { borderWidth: 1, borderRadius: 10, padding: 12 },
   titulo: { fontSize: 11, fontWeight: "bold", letterSpacing: 1, marginBottom: 4 },
 });
