@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F3F4F6",
+        "backgroundColor": "#000000",
         "foregroundImage": "./assets/logo.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -31,11 +31,7 @@
         {
           "image": "./assets/logo.png",
           "imageWidth": 200,
-          "backgroundColor": "#F3F4F6",
-          "dark": {
-            "image": "./assets/logo.png",
-            "backgroundColor": "#0D0D0D"
-          }
+          "backgroundColor": "#000000"
         }
       ],
       [

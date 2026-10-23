@@ -181,7 +181,7 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 
 ## Intro and help
 
-- `app/index.tsx` shows `inicio/AnimacionInicio` (logo + name, ~1.8 s, once per app launch) and then the role selection; with a saved session it redirects straight to the panel with no animation.
+- `app/index.tsx` shows `inicio/AnimacionInicio` first (once per app launch, also with a saved session) and then the role selection, or redirects straight to the panel when there is a saved session. Order: native splash (logo on black) -> intro -> role selection / panel.
 - The header menu (`MenuCabecera`) has "Ayuda" -> `/ayuda` (`features/ayuda/AyudaScreen`): PQRS (`/pqrs`, `features/pqrs`: form as guest or with the account token, `POST /api/v1/pqrs`, plus "Mis solicitudes" from `GET /api/v1/pqrs/mias` with radicado and status, account sessions only), a simple "Contacto" section (`CONTACTO.correo` from `config/app.ts` and a button that opens `mailto:`; there is no developer screen any more), "Acerca de" (`/acerca-de`: version from app.json, Política de datos and Términos) and, with an account session, "Eliminar mi cuenta" (confirm, password, final confirm, `POST /api/v1/cuentas/eliminar`; a 409 asks whether to close the business too and retries with `eliminarNegocio: true`). A wrong password is a 401 there and must not close the session.
 - No payment texts in registration or login; in Planes the plan buttons read "PAGOS DISPONIBLES PRÓXIMAMENTE".
 
@@ -209,7 +209,7 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 ## Theme, splash and documents (added)
 
 - Theme: `theme/ThemeProvider.tsx` keeps `preferencia` (`sistema` default | `claro` | `oscuro`, saved in SecureStore by `theme/preferenciaTema.ts`; memory only on web). "Tema" in `MenuCabecera` lists the three options. The native splash (`app.json` expo-splash-screen: `assets/logo.png`, light/dark background) stays until the saved theme is read.
-- Intro (`inicio/AnimacionInicio`, 1.8 s): logo with soft glow, name, slogan and a spinner. In Expo Go the native splash/icon are Expo's own (SDK 52+), only the intro shows; the splash and icon from `app.json` appear only in a development/installed build.
+- Intro (`inicio/AnimacionInicio`, 2.4 s, always dark, fixed colors): one Reanimated shared value `t` drives static `react-native-svg` layers (spark + bolts + particles, spinning rings, clouds + bolts around the logo) and a gold "Cargando..." bar with a spark at its tip. Reference image: `docs/referencias/intro-referencia.png`. With "reduce motion" on it only shows the logo with a soft glow (1.4 s). The native splash is `assets/logo.png` on black (`app.json`); in Expo Go the splash/icon are Expo's own, only the intro shows.
 - Consent (`legal/CasillaAutorizacion`): short text with links to the Política and Términos always visible; full `AvisoPrivacidad` folded below. The register / confirm buttons stay disabled until the box is checked.
 - New document version (`legal/ModalNuevaVersion`, mounted in `AppProviders`): with any session token it calls `GET /api/v1/legal/estado`; `vigente: false` shows a modal that cannot be dismissed, with the document links and the checkbox, and `POST /api/v1/legal/aceptar` on accept. A failed check never blocks the user.
 

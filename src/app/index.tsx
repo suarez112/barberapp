@@ -24,12 +24,12 @@ export default function InicioRoute() {
   if (typeof codigo === "string" && codigo.trim() !== "") {
     return <Redirect href={{ pathname: "/cliente", params: { codigo } }} />;
   }
-  // Con una sesión guardada se entra directo al panel, sin animación ni volver a iniciar sesión
-  if (lista && personal) {
+  // The intro always plays first (also with a saved session); the session is read meanwhile
+  if (!animada || !lista) return <AnimacionInicio onTerminar={terminarAnimacion} />;
+  // Con una sesión guardada se entra directo al panel, sin volver a iniciar sesión
+  if (personal) {
     return <Redirect href={personal.esCuentaAdmin ? "/admin" : "/panel"} />;
   }
-  if (lista && usuario?.rol === "cliente") return <Redirect href="/mis-negocios" />;
-  // Sin sesión: animación y luego la elección de perfil (también espera a leer la sesión guardada)
-  if (!animada || !lista) return <AnimacionInicio onTerminar={terminarAnimacion} />;
+  if (usuario?.rol === "cliente") return <Redirect href="/mis-negocios" />;
   return <SeleccionRolScreen />;
 }
