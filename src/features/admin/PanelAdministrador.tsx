@@ -144,7 +144,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
           {/* Solo la cuenta de la empresa: un integrante administrador usa "Atiende clientes" en Equipo */}
           {personal.esCuentaAdmin ? (
-            <AtiendoClientes token={personal.token} onEquipoCambiado={actualizarSuscripcion} />
+            <AtiendoClientes token={personal.token} suscripcion={suscripcion} onEquipoCambiado={actualizarSuscripcion} />
           ) : null}
           <EnlacePublicoNegocio perfil={perfil} />
           <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />

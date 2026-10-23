@@ -7,6 +7,7 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { fechaLarga } from "@/utils/fechas";
+import { formatearPesos } from "@/utils/formato";
 import { EstadoSuscripcion, Suscripcion } from "../../cuenta/api";
 import { useFunciones } from "../../planes/funcionesContexto";
 import PlanesModal from "../../planes/PlanesModal";
@@ -18,15 +19,20 @@ const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
 };
 
 const textoDias = (dias: number) => (dias === 1 ? "1 día" : `${dias} días`);
-const textoPersonas = (n: number) => (n === 1 ? "1 persona" : `${n} personas`);
+const textoProfesionales = (n: number) => (n === 1 ? "1 profesional" : `${n} profesionales`);
+const dinero = (n: number) => `$${formatearPesos(Math.round(n))}`;
 
 // Sección "Mi suscripción" de Mi negocio
 export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcion }) {
   const { colors } = useAppTheme();
   const [verPlanes, setVerPlanes] = useState(false);
   const { estado, plan, fechaPago, fechaFin, diasRestantes, diasPruebaSumados } = suscripcion;
-  const { planEquipo, cupoUsado } = suscripcion;
+  const { planEquipo, profesionalesCobrados, precioPeriodo, cargosPendientes } = suscripcion;
   const { datos: funciones } = useFunciones();
+  // En la prueba el backend no da precio del periodo: se usa el de hoy según los profesionales
+  const precioHoy =
+    precioPeriodo ?? (plan === "anual" ? funciones?.precio?.anual : funciones?.precio?.mensual) ?? null;
+  const sufijoPrecio = plan === "anual" ? "al año" : "al mes";
   const incluidas = funciones?.funciones.filter((f) => f.incluida) ?? [];
   const bloqueadas = funciones?.funciones.filter((f) => !f.incluida) ?? [];
 
@@ -65,14 +71,26 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           )}
           <Insignia texto={ESTADOS[estado].texto} color={ESTADOS[estado].color} />
         </View>
-        {fila("Plan", `${planEquipo.nombre} · hasta ${textoPersonas(planEquipo.cupo)}`)}
+        {fila("Nivel", planEquipo.nombre)}
+        {fila("Profesionales cobrados", textoProfesionales(profesionalesCobrados))}
+        {fila(
+          estado === "prueba" ? "Precio al activar" : "Precio actual",
+          precioHoy === null ? "—" : `${dinero(precioHoy)} ${sufijoPrecio}`,
+        )}
         {fila("Periodo", plan ? (plan === "anual" ? "Anual" : "Mensual") : "Prueba gratuita")}
-        {fila("Cupo usado", `${cupoUsado} de ${textoPersonas(planEquipo.cupo)}`)}
         {estado !== "prueba" ? fila("Fecha de pago", fechaPago ? fechaLarga(fechaPago) : "—") : null}
         {fila(
-          estado === "prueba" ? "La prueba termina" : "Fecha de vencimiento",
+          estado === "prueba" ? "La prueba termina" : "Fecha de renovación",
           fechaFin ? fechaLarga(fechaFin) : "Sin fecha de vencimiento",
         )}
+        {estado === "activa"
+          ? fila(
+              "Cargos pendientes",
+              cargosPendientes && cargosPendientes.cantidad > 0
+                ? `${cargosPendientes.cantidad} · ${dinero(cargosPendientes.total)}`
+                : "Ninguno",
+            )
+          : null}
         {fila("Días restantes", diasRestantes === null ? "—" : textoDias(diasRestantes))}
         {incluidas.length > 0 ? (
           <View style={[styles.funciones, { borderBottomColor: colors.cardBorder }]}>
@@ -88,7 +106,7 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
                 <Ionicons name="lock-closed" size={18} color={colors.textSecondary} />
                 <Text style={[styles.textoFuncion, { color: colors.textSecondary }]}>
                   {f.nombre}
-                  {f.planRequerido ? ` · Disponible en plan ${f.planRequerido.nombre}` : ""}
+                  {f.planRequerido ? ` · Disponible desde el nivel ${f.planRequerido.nombre}` : ""}
                 </Text>
               </View>
             ))}
@@ -108,8 +126,8 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           titulo={estado === "prueba" ? "ACTIVAR PLAN AHORA" : "CAMBIAR DE PLAN"}
           ayuda={
             estado === "prueba"
-              ? "Muestra los planes Emprendedor, Equipo y Pro. Los días de prueba que te quedan se suman al plan"
-              : "Muestra los planes Emprendedor, Equipo y Pro con sus precios"
+              ? "Muestra el precio según tus profesionales. Los días de prueba que te quedan se suman al plan"
+              : "Muestra el precio según la cantidad de profesionales"
           }
           onPress={() => setVerPlanes(true)}
           style={styles.boton}

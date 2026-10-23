@@ -5,6 +5,7 @@ import { Suscripcion } from "../cuenta/api";
 import { obtenerFunciones, RespuestaFunciones } from "./api";
 import { FuncionesContext, Valor } from "./funcionesContexto";
 import PlanesModal from "./PlanesModal";
+import { usePlanes } from "./usePlanes";
 
 type Props = {
   token: string;
@@ -19,8 +20,10 @@ export function FuncionesProvider({ token, suscripcion, children }: Props) {
   const [cargada, setCargada] = useState(false);
   const [verPlanes, setVerPlanes] = useState(false);
   const planId = suscripcion?.planEquipo.id;
+  const cobrados = suscripcion?.profesionalesCobrados;
+  const { planes } = usePlanes();
 
-  // Se vuelve a pedir cuando cambia el plan del negocio
+  // Se vuelve a pedir cuando cambia el nivel o los profesionales del negocio
   useEffect(() => {
     const controlador = new AbortController();
     obtenerFunciones(token, controlador.signal)
@@ -33,7 +36,7 @@ export function FuncionesProvider({ token, suscripcion, children }: Props) {
         if (!controlador.signal.aborted) setCargada(true);
       });
     return () => controlador.abort();
-  }, [token, planId]);
+  }, [token, planId, cobrados]);
 
   const funcion = useCallback((id: string) => datos?.funciones.find((f) => f.id === id), [datos]);
   const abrirPlanes = useCallback(() => setVerPlanes(true), []);
@@ -42,11 +45,12 @@ export function FuncionesProvider({ token, suscripcion, children }: Props) {
     () => ({
       cargada,
       datos,
+      planes,
       funcion,
       incluida: (id) => funcion(id)?.incluida ?? true,
       abrirPlanes,
     }),
-    [cargada, datos, funcion, abrirPlanes],
+    [cargada, datos, planes, funcion, abrirPlanes],
   );
 
   return (

@@ -116,7 +116,8 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
                 titulo="Suscripción"
                 filas={[
                   ["Estado guardado", SUSCRIPCION[n.suscripcion.estadoGuardado] ?? n.suscripcion.estadoGuardado],
-                  ["Plan de equipo", `${n.planEquipo.nombre} (hasta ${n.planEquipo.cupo})`],
+                  ["Nivel", n.planEquipo.nombre],
+                  ["Profesionales cobrados", String(n.cupoUsado)],
                   ["Periodo", n.plan ?? "—"],
                   ["Último pago", formatearFecha(n.suscripcion.fechaPago)],
                   ["Vence", formatearFecha(n.suscripcion.fechaFin)],
@@ -137,7 +138,7 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
               <Ficha
                 titulo="Equipo"
                 filas={[
-                  ["Personas activas", `${n.equipo.activos} de ${n.equipo.cupo}`],
+                  ["Personas activas", String(n.equipo.activos)],
                   ["Administradores", String(n.equipo.administradores)],
                   ["Empleados", String(n.equipo.empleados)],
                 ]}

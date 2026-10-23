@@ -75,11 +75,11 @@ export function describirError(
         mensaje,
       };
     case 403:
-      // El plan no incluye la función: el título dice desde qué plan se puede usar
+      // El nivel no incluye la función: el título dice desde qué nivel se puede usar
       if (esFuncionNoIncluida(error)) {
         return {
           titulo: error.datos?.planRequerido
-            ? `Disponible en plan ${error.datos.planRequerido.nombre}`
+            ? `Disponible desde el nivel ${error.datos.planRequerido.nombre}`
             : "Función no incluida",
           mensaje,
         };

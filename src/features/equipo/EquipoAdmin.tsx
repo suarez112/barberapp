@@ -31,6 +31,7 @@ import {
 import { FotoElegida } from "@/utils/imagenes";
 import { Suscripcion } from "../cuenta/api";
 import FuncionBloqueada from "../planes/FuncionBloqueada";
+import { AVISO_SIN_REEMBOLSO, calcularCargoNuevo, textoCargoNuevo } from "../planes/cobro";
 import { useFunciones } from "../planes/funcionesContexto";
 import PlanesModal from "../planes/PlanesModal";
 
@@ -75,9 +76,9 @@ const aCampos = (b: Barbero): Campos => ({
   atiendeClientes: b.atiendeClientes ?? atiendePorDefecto(rolDe(b)),
 });
 
-// 409 del backend cuando el equipo llegó al cupo de su plan
+// 409 del backend cuando el negocio ya tiene el máximo de profesionales
 const esEquipoLleno = (e: unknown) =>
-  e instanceof ApiError && e.status === 409 && /equipo ya tiene/i.test(e.message);
+  e instanceof ApiError && e.status === 409 && /hasta \d+ profesionales/i.test(e.message);
 
 type Props = {
   personal: Personal;
@@ -92,7 +93,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
   const avisarError = useAvisarError();
-  const { incluida } = useFunciones();
+  const { incluida, planes } = useFunciones();
   // Roles y comisiones son del plan Equipo en adelante; sin ellas esos campos no se envían
   const puedeRoles = incluida("roles");
   const puedeComisiones = incluida("comisiones");
@@ -127,6 +128,30 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
     if (Object.keys(nuevos).length > 0) {
       avisarCamposConError();
       return;
+    }
+
+    // Antes de guardar: si suma un profesional al cobro, mostrar cuánto; si lo quita, avisar que no hay reembolso
+    const sumaCobro = campos.atiendeClientes && (!enEdicion || enEdicion.atiendeClientes === false);
+    const restaCobro = !campos.atiendeClientes && !!enEdicion && enEdicion.atiendeClientes !== false;
+    if (sumaCobro) {
+      const cobro =
+        planes && suscripcion
+          ? textoCargoNuevo(calcularCargoNuevo(planes, suscripcion, suscripcion.profesionalesCobrados))
+          : "Esto suma un profesional a tu cobro.";
+      const ok = await confirmar({
+        titulo: "Sumar un profesional a tu cobro",
+        mensaje: `${campos.nombre.trim()} atenderá clientes y cuenta como un profesional más.
+${cobro}`,
+      });
+      if (!ok) return;
+    } else if (restaCobro) {
+      const ok = await confirmar({
+        titulo: "Dejar de cobrar a este profesional",
+        mensaje: `${campos.nombre.trim()} ya no atenderá clientes.
+${AVISO_SIN_REEMBOLSO}`,
+        destructivo: true,
+      });
+      if (!ok) return;
     }
 
     const datos = {
@@ -165,22 +190,19 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
     }
   };
 
-  // Mensaje del backend, con un botón para ver los planes
-  const avisarEquipoLleno = async (mensaje: string) => {
+  // Mensaje del backend: el negocio ya tiene el máximo de profesionales
+  const avisarEquipoLleno = (mensaje: string) => {
     onEquipoCambiado?.();
-    const ver = await confirmar({
-      titulo: "Equipo completo",
-      mensaje,
-      textoAceptar: "VER PLANES",
-      textoCancelar: "CERRAR",
-    });
-    if (ver) setVerPlanes(true);
+    avisar("Equipo completo", mensaje, "aviso");
   };
 
   const eliminar = async (b: Barbero) => {
     const ok = await confirmar({
       titulo: "Confirmar",
-      mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.`,
+      mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.${
+        b.atiendeClientes === false ? "" : `
+${AVISO_SIN_REEMBOLSO}`
+      }`,
       destructivo: true,
     });
     if (!ok) return;
@@ -217,24 +239,22 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
           ]}
         >
           <Text style={[styles.textoCupo, { color: colors.textPrimary }]}>
-            {lleno ? "⚠️ Tu equipo está completo: " : "Tu equipo: "}
-            {suscripcion.cupoUsado} de {suscripcion.planEquipo.cupo} personas del plan{" "}
-            {suscripcion.planEquipo.nombre}.
+            {lleno ? "⚠️ Llegaste al máximo: " : "Tu equipo: "}
+            {suscripcion.profesionalesCobrados} de {planes?.maximoProfesionales ?? 10} profesionales que atienden
+            clientes · nivel {suscripcion.planEquipo.nombre}.
           </Text>
-          {lleno ? (
-            <>
-              <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
-                Para agregar a alguien más, cambia a un plan más grande o retira a quien ya no
-                trabaje en el negocio.
-              </Text>
-              <Boton
-                titulo="VER PLANES"
-                ayuda="Muestra los planes Emprendedor, Equipo y Pro con su cupo y precios"
-                onPress={() => setVerPlanes(true)}
-                style={styles.botonPlanes}
-              />
-            </>
-          ) : null}
+          <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+            {lleno
+              ? "Para agregar a alguien más, retira primero a quien ya no trabaje en el negocio."
+              : "Cada profesional que atiende clientes suma a tu cobro. Los administradores que no atienden no se cobran."}
+          </Text>
+          <Boton
+            titulo="VER PLANES"
+            ayuda="Muestra el precio según la cantidad de profesionales"
+            variante="secundario"
+            onPress={() => setVerPlanes(true)}
+            style={styles.botonPlanes}
+          />
         </View>
       ) : null}
 

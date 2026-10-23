@@ -19,11 +19,16 @@ type Props = {
 // "Disponible en plan X", con un botón a los planes.
 export default function FuncionBloqueada({ funcion, nombre, titulo: tituloFijo, detalle }: Props) {
   const { colors } = useAppTheme();
-  const { funcion: buscar, abrirPlanes } = useFunciones();
+  const { funcion: buscar, planes, abrirPlanes } = useFunciones();
   const info = buscar(funcion);
   const titulo = tituloFijo ?? info?.nombre ?? nombre ?? "Esta función";
-  const plan = info?.planRequerido?.nombre;
-  const disponible = plan ? `Disponible en plan ${plan}` : "No está incluida en tu plan";
+  const plan = info?.planRequerido;
+  const desde = plan ? planes?.niveles.find((n) => n.id === plan.id)?.profesionalesDesde : undefined;
+  const disponible = plan
+    ? desde
+      ? `Disponible desde ${desde} profesionales (nivel ${plan.nombre})`
+      : `Disponible desde el nivel ${plan.nombre}`
+    : "No está incluida en tu nivel";
 
   return (
     <View

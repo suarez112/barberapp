@@ -7,7 +7,6 @@ import {
   extenderPrueba,
   NegocioDetalle,
   Periodo,
-  PlanEquipoId,
   reactivarNegocio,
   suspenderNegocio,
 } from "../api";
@@ -29,13 +28,6 @@ const PERIODOS = [
   { id: "anual", label: "Anual" },
 ] as const;
 
-const PLANES = [
-  { id: "actual", label: "El actual" },
-  { id: "emprendedor", label: "Emprendedor" },
-  { id: "equipo", label: "Equipo" },
-  { id: "pro", label: "Pro" },
-] as const;
-
 const MOTIVO_MAX = 300;
 
 type Errores = { dias?: string; motivo?: string };
@@ -45,7 +37,6 @@ type Errores = { dias?: string; motivo?: string };
 export default function AccionNegocioModal({ tipo, negocio, onCerrar, onHecho }: Props) {
   const { token, avisarError } = useSuperadmin();
   const [periodo, setPeriodo] = useState<Periodo>(negocio.plan ?? "mensual");
-  const [plan, setPlan] = useState<PlanEquipoId | "actual">("actual");
   const [dias, setDias] = useState("");
   const [motivo, setMotivo] = useState("");
   const [errores, setErrores] = useState<Errores>({});
@@ -88,7 +79,6 @@ export default function AccionNegocioModal({ tipo, negocio, onCerrar, onHecho }:
         tipo === "plan"
           ? await activarPlan(token, negocio.id, {
               periodo,
-              planEquipo: plan === "actual" ? undefined : plan,
               motivo: motivoLimpio,
             })
           : tipo === "prueba"
@@ -107,7 +97,7 @@ export default function AccionNegocioModal({ tipo, negocio, onCerrar, onHecho }:
   const textos = {
     plan: {
       titulo: "Activar plan",
-      descripcion: `Deja activo el plan de ${negocio.nombre} desde hoy. La fecha de fin cuenta desde el fin de la prueba o del plan vigente.`,
+      descripcion: `Deja activo el plan de ${negocio.nombre} desde hoy. El nivel y el precio salen de los profesionales que atienden clientes. La fecha de fin cuenta desde el fin de la prueba o del plan vigente.`,
       boton: "ACTIVAR PLAN",
       ayuda: "Activa el plan del negocio con el periodo elegido",
     },
@@ -145,7 +135,6 @@ export default function AccionNegocioModal({ tipo, negocio, onCerrar, onHecho }:
       {tipo === "plan" ? (
         <>
           <Selector opciones={PERIODOS} valor={periodo} onCambiar={setPeriodo} />
-          <Selector opciones={PLANES} valor={plan} onCambiar={setPlan} />
         </>
       ) : null}
       {tipo === "prueba" ? (

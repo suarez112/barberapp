@@ -68,7 +68,7 @@ function ListaNegocios({ onAbrir }: { onAbrir: (id: string) => void }) {
     },
     {
       clave: "plan",
-      titulo: "Plan",
+      titulo: "Nivel",
       ancho: 2,
       render: (n) => (
         <Text style={[styles.texto, { color: colors.textPrimary }]}>
@@ -97,11 +97,11 @@ function ListaNegocios({ onAbrir }: { onAbrir: (id: string) => void }) {
     },
     {
       clave: "cupo",
-      titulo: "Cupo",
+      titulo: "Profesionales",
       ancho: 1.2,
       render: (n) => (
         <Text style={[styles.texto, { color: colors.textPrimary }]}>
-          {n.cupoUsado} de {n.planEquipo.cupo}
+          {n.cupoUsado}
         </Text>
       ),
     },

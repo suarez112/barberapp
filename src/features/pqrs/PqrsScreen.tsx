@@ -37,6 +37,9 @@ const ESTADOS: Record<EstadoPqrs, { texto: string; color: string }> = {
 const esPrioritaria = (p: Pqrs) => p.prioridad < 3;
 // "2026-10-27T23:59:59.000-05:00" -> "27 de octubre de 2026" (el día que escribió el backend)
 const fechaEstimada = (p: Pqrs) => fechaLarga(p.fechaLimite.slice(0, 10));
+// "nivel Pro, 1 día hábil": el plazo que prometió el nivel del negocio al radicar
+const plazo = (p: Pqrs) =>
+  `nivel ${p.planEquipo.charAt(0).toUpperCase()}${p.planEquipo.slice(1)}, ${p.diasHabiles} ${p.diasHabiles === 1 ? "día hábil" : "días hábiles"}`;
 const sinResponder = (p: Pqrs) => p.estado === "recibida" || p.estado === "en_proceso";
 
 const nombreDelTipo = (t: TipoPqrs) => TIPOS.find((x) => x.valor === t)?.etiqueta ?? t;
@@ -112,7 +115,7 @@ export default function PqrsScreen() {
         "Solicitud enviada",
         `${respuesta.mensaje}
 
-${esPrioritaria(pqrs) ? "Es una solicitud prioritaria. " : ""}Te responderemos a más tardar el ${fechaEstimada(pqrs)}.`,
+${esPrioritaria(pqrs) ? "Es una solicitud prioritaria. " : ""}Te responderemos a más tardar el ${fechaEstimada(pqrs)} (${plazo(pqrs)}).`,
         "exito",
       );
       setTipo(null);
@@ -237,7 +240,7 @@ ${esPrioritaria(pqrs) ? "Es una solicitud prioritaria. " : ""}Te responderemos a
                   <Text style={[styles.detalle, { color: colors.textSecondary }]}>{p.mensaje}</Text>
                   {sinResponder(p) ? (
                     <Text style={[styles.detalle, { color: colors.textSecondary }]}>
-                      Respuesta estimada: {fechaEstimada(p)}
+                      Respuesta estimada: {fechaEstimada(p)} ({plazo(p)})
                     </Text>
                   ) : null}
                   {p.respuesta ? (

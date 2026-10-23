@@ -16,22 +16,27 @@ import { useNegocio } from "../../negocio/NegocioProvider";
 import FuncionBloqueada from "../../planes/FuncionBloqueada";
 import { useFunciones } from "../../planes/funcionesContexto";
 import { useAvisarError } from "../../sesion/useAvisarError";
+import { Suscripcion } from "../../cuenta/api";
+import { AVISO_SIN_REEMBOLSO, calcularCargoNuevo, textoCargoNuevo } from "../../planes/cobro";
 
 type Props = {
   token: string;
+  // Para calcular lo que suma al cobro (null mientras carga)
+  suscripcion: Suscripcion | null;
   // Se activó o desactivó: cambia el cupo del plan, hay que volver a consultarlo
   onEquipoCambiado?: () => void;
 };
 
-// 409 del backend cuando el plan no tiene cupo para que la administradora también atienda
-const esSinCupo = (e: unknown) => e instanceof ApiError && e.status === 409 && /cupo/i.test(e.message);
+// 409 del backend cuando el negocio ya llegó al máximo de profesionales
+const esSinCupo = (e: unknown) =>
+  e instanceof ApiError && e.status === 409 && /hasta \d+ profesionales|cupo/i.test(e.message);
 
 // Interruptor "Yo también atiendo clientes" de Mi negocio (solo la cuenta de administración).
 // Al activarlo crea su perfil de profesional: aparece al reservar y en el selector de la agenda.
-export default function AtiendoClientes({ token, onEquipoCambiado }: Props) {
+export default function AtiendoClientes({ token, suscripcion, onEquipoCambiado }: Props) {
   const { colors } = useAppTheme();
   const { setBarberos } = useNegocio();
-  const { incluida, abrirPlanes } = useFunciones();
+  const { incluida, planes } = useFunciones();
   const avisarError = useAvisarError();
   const [atiende, setAtiende] = useState<boolean | null>(null);
   const [perfil, setPerfil] = useState<Barbero | null>(null);
@@ -68,9 +73,21 @@ export default function AtiendoClientes({ token, onEquipoCambiado }: Props) {
     if (!valor) {
       const ok = await confirmar({
         titulo: "Dejar de atender clientes",
-        mensaje:
-          "Dejarás de aparecer al reservar y de recibir citas nuevas. Tus citas actuales se conservan.",
+        mensaje: `Dejarás de aparecer al reservar y de recibir citas nuevas. Tus citas actuales se conservan.
+${AVISO_SIN_REEMBOLSO}`,
         destructivo: true,
+      });
+      if (!ok) return;
+    } else {
+      // Antes de confirmar: cuánto se cobra por sumar a un profesional más
+      const cobro =
+        planes && suscripcion
+          ? textoCargoNuevo(calcularCargoNuevo(planes, suscripcion, suscripcion.profesionalesCobrados))
+          : "Esto suma un profesional a tu cobro.";
+      const ok = await confirmar({
+        titulo: "Sumar un profesional a tu cobro",
+        mensaje: `Atender clientes tú también cuenta como un profesional más.
+${cobro}`,
       });
       if (!ok) return;
     }
@@ -92,15 +109,9 @@ export default function AtiendoClientes({ token, onEquipoCambiado }: Props) {
     } catch (e) {
       if (esSinCupo(e)) {
         onEquipoCambiado?.();
-        const ver = await confirmar({
-          titulo: "Sin cupo en tu plan",
-          mensaje: (e as ApiError).message,
-          textoAceptar: "VER PLANES",
-          textoCancelar: "CERRAR",
-        });
-        if (ver) abrirPlanes();
+        avisar("Máximo de profesionales", (e as ApiError).message, "aviso");
       } else {
-        avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Sin cupo" });
+        avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "No se pudo activar" });
       }
     } finally {
       setGuardando(false);
@@ -165,8 +176,8 @@ export default function AtiendoClientes({ token, onEquipoCambiado }: Props) {
                 <Text style={[styles.titulo, { color: colors.textPrimary }]}>Yo también atiendo clientes</Text>
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
                   {atiende
-                    ? "Apareces como profesional al reservar y en la agenda. Ocupas un cupo de tu plan."
-                    : "Actívalo para recibir citas tú también. Ocupará un cupo de tu plan."}
+                    ? "Apareces como profesional al reservar y en la agenda. Cuentas como un profesional en tu cobro."
+                    : "Actívalo para recibir citas tú también. Suma un profesional a tu cobro."}
                 </Text>
               </View>
               <Switch

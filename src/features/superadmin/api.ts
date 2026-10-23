@@ -56,16 +56,42 @@ export type EstadisticasPlataforma = {
   };
 };
 
-// GET /superadmin/ingresos: suma del precio del plan en cada activación. NO son pagos reales.
-export type IngresosPlataforma = {
-  estimado: boolean;
-  moneda: string;
+// Cifras de un mes o un año: bruto, comisión estimada de la pasarela y neto (bruto - comisión)
+export type CifrasIngreso = {
+  bruto: number;
+  comisionPasarela: number;
+  neto: number;
   total: number;
   activaciones: number;
-  porMes: { mes: string; total: number; activaciones: number }[]; // últimos 12, el actual al final
-  porAnio: { anio: number; total: number; activaciones: number }[];
-  mejorMes: { mes: string; total: number; activaciones: number } | null;
-  mejorAnio: { anio: number; total: number; activaciones: number } | null;
+  cargosPagados: number;
+};
+
+// GET /superadmin/ingresos: suma del precio en cada activación de plan y cada cargo proporcional pagado.
+// NO son pagos reales (todavía no hay pasarela).
+export type IngresosPlataforma = CifrasIngreso & {
+  estimado: boolean;
+  moneda: string;
+  porMes: (CifrasIngreso & { mes: string })[]; // últimos 12, el actual al final
+  porAnio: (CifrasIngreso & { anio: number })[];
+  mejorMes: (CifrasIngreso & { mes: string }) | null;
+  mejorAnio: (CifrasIngreso & { anio: number }) | null;
+  profesionales: { cobradosEnTotal: number; promedioPorNegocio: number };
+  // Mensual estimado por negocio activo (el anual cuenta 1/12); null sin negocios activos
+  ingresoPromedioPorNegocio: { bruto: number; neto: number } | null;
+  negociosPorNivel: {
+    nivel: PlanEquipoId;
+    nombre: string;
+    profesionalesDesde: number;
+    profesionalesHasta: number;
+    total: number;
+    activos: number;
+  }[];
+  mensualVsAnual: { mensual: number; anual: number };
+  cargosProporcionalesDelMes: {
+    mes: string;
+    pendientes: { cantidad: number; total: number };
+    pagados: { cantidad: number; total: number };
+  };
   nota: string;
 };
 
@@ -193,7 +219,7 @@ const accion = (token: string, id: string, ruta: string, body: object) =>
 export const activarPlan = (
   token: string,
   id: string,
-  datos: { periodo: Periodo; planEquipo?: PlanEquipoId; motivo?: string },
+  datos: { periodo: Periodo; motivo?: string },
 ) => accion(token, id, "plan", datos);
 
 export const extenderPrueba = (token: string, id: string, datos: { dias: number; motivo?: string }) =>

@@ -115,8 +115,16 @@ export type Suscripcion = {
   mensaje: string | null;
   // Plan por tamaño de equipo (también en la prueba). "plan" es el periodo
   planEquipo: { id: IdPlanEquipo; nombre: string; cupo: number };
-  cupoUsado: number; // integrantes activos en Equipo
-  cupoDisponible: number; // cuántos más se pueden agregar
+  cupoUsado: number; // profesionales cobrados (los que atienden clientes)
+  cupoDisponible: number; // cuántos más se pueden agregar (hasta 10)
+  // Profesionales que atienden clientes hoy (igual a cupoUsado)
+  profesionalesCobrados: number;
+  // Profesionales que cubre lo ya pagado en el periodo
+  profesionalesPagados: number;
+  // Precio del periodo con los profesionales de hoy; null en la prueba
+  precioPeriodo: number | null;
+  // Cargos proporcionales sin pagar. El backend todavía no lo envía: la app lo muestra si llega
+  cargosPendientes?: { cantidad: number; total: number };
   fechaRegistro: string | null; // "2026-10-05", día en que se registró el negocio
 };
 

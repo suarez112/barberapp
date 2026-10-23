@@ -97,7 +97,7 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
       </TarjetaGrafico>
 
       <TarjetaGrafico
-        titulo="Negocios por plan"
+        titulo="Negocios por nivel"
         subtitulo="Con cuántos están activos"
         filas={porPlan.map((b) => [b.etiqueta, `${formatearNumero(b.valor)} (${b.detalle})`])}
       >
