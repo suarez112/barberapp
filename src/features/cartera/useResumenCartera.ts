@@ -13,10 +13,13 @@ export function useResumenCartera(
   periodo: PeriodoResumen,
   desde: string,
   hasta: string,
-  comparar: Comparar,
+  // null: el plan no incluye comparar períodos
+  comparar: Comparar | null,
+  // Falso mientras no se sabe qué funciones incluye el plan
+  habilitado = true,
 ) {
   const base = periodo === "rango" ? `rango|${desde}|${hasta}` : periodo;
-  const clave = `${base}|${comparar.tipo}|${comparar.desde}|${comparar.hasta}`;
+  const clave = comparar ? `${base}|${comparar.tipo}|${comparar.desde}|${comparar.hasta}` : `${base}|sin-comparar`;
   const [resultado, setResultado] = useState<Resultado | null>(null);
   // Último resumen recibido bien, para no dejar la pantalla vacía si falla una comparación
   const [bueno, setBueno] = useState<Resultado | null>(null);
@@ -24,12 +27,13 @@ export function useResumenCartera(
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
+    if (!habilitado) return;
     const controlador = new AbortController();
     obtenerResumenCartera(
       token,
       periodo,
       periodo === "rango" ? { desde, hasta } : null,
-      { tipo: comparar.tipo, desde: comparar.desde, hasta: comparar.hasta },
+      comparar && { tipo: comparar.tipo, desde: comparar.desde, hasta: comparar.hasta },
       controlador.signal,
     )
       .then((resumen) => {
@@ -48,7 +52,9 @@ export function useResumenCartera(
         });
       });
     return () => controlador.abort();
-  }, [token, periodo, desde, hasta, base, clave, comparar.tipo, comparar.desde, comparar.hasta, version]);
+  // `comparar` se compara por sus tres campos (el objeto cambia en cada render)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, periodo, desde, hasta, base, clave, comparar?.tipo, comparar?.desde, comparar?.hasta, version, habilitado]);
 
   // Mientras llega la respuesta, resumen y error son null ("cargando"). Si solo cambió
   // la comparación se sigue mostrando el resumen anterior del mismo período, para que

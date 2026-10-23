@@ -1,10 +1,18 @@
 import { API_BASE_URL } from "./config";
 
+// Campos extra que el backend agrega a algunos errores (ej. "funcion_no_incluida")
+export type DatosError = {
+  codigo?: string;
+  funcion?: string;
+  planRequerido?: { id: string; nombre: string };
+};
+
 // El servidor respondió, pero con un error (4xx / 5xx)
 export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly datos?: DatosError,
   ) {
     super(message);
     this.name = "ApiError";
@@ -136,8 +144,13 @@ export async function request<T>(
   const data = leerJSON(texto);
   if (!response.ok) {
     // Un error sin JSON (ej. página de un proxy) conserva su código de estado
-    const mensaje = (data as { error?: unknown } | undefined)?.error;
-    throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status);
+    const cuerpo = data as (DatosError & { error?: unknown }) | undefined;
+    const mensaje = cuerpo?.error;
+    const datos =
+      typeof cuerpo?.codigo === "string"
+        ? { codigo: cuerpo.codigo, funcion: cuerpo.funcion, planRequerido: cuerpo.planRequerido }
+        : undefined;
+    throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status, datos);
   }
   // Una respuesta exitosa que no es JSON (ej. portal cautivo) no viene del backend
   if (data === NO_ES_JSON) throw new ErrorDeConexion(texto, "respuesta-invalida");
@@ -159,3 +172,7 @@ function leerJSON(texto: string): unknown {
 // Mensaje del servidor si lo hay; si no, el texto por defecto de la pantalla
 export const mensajeDeError = (error: unknown, porDefecto: string) =>
   error instanceof ApiError && error.message ? error.message : porDefecto;
+
+// 403 del backend cuando el plan del negocio no incluye la función pedida
+export const esFuncionNoIncluida = (error: unknown) =>
+  error instanceof ApiError && error.status === 403 && error.datos?.codigo === "funcion_no_incluida";

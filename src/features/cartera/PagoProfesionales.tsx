@@ -6,7 +6,7 @@ import { EstadisticasResumen } from "./api";
 const dinero = (n: number) => `$${formatearPesos(n)}`;
 
 // Tabla "Pago a profesionales": lo que le corresponde a cada uno en el período
-export default function PagoProfesionales({ pago }: { pago: EstadisticasResumen["pagoProfesionales"] }) {
+export default function PagoProfesionales({ pago }: { pago: NonNullable<EstadisticasResumen["pagoProfesionales"]> }) {
   const { colors } = useAppTheme();
 
   if (pago.detalle.length === 0) {

@@ -11,6 +11,12 @@ export type Pqrs = {
   respuesta: string | null;
   respondidaEn: string | null;
   creadaEn: string;
+  // Según el plan del negocio al radicar: 1 (Pro), 2 (Equipo) o 3 (Emprendedor)
+  prioridad: number;
+  planEquipo: string;
+  diasHabiles: number;
+  // Fecha estimada de respuesta, con zona horaria ("2026-10-27T23:59:59.000-05:00")
+  fechaLimite: string;
 };
 
 export type DatosPqrs = {

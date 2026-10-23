@@ -1,6 +1,7 @@
 import { describirError, registrarCausa } from "@/services/api/errores";
-import { ApiError, esCancelada } from "@/services/api/http";
-import { avisar } from "@/utils/dialogos";
+import { ApiError, esCancelada, esFuncionNoIncluida } from "@/services/api/http";
+import { avisar, confirmar } from "@/utils/dialogos";
+import { useFunciones } from "../planes/funcionesContexto";
 import { useCerrarSesion } from "./useCerrarSesion";
 
 type Opciones = {
@@ -14,6 +15,7 @@ type Opciones = {
 // salir de la pantalla no es un error y no se muestra.
 export function useAvisarError() {
   const cerrarSesion = useCerrarSesion();
+  const { abrirPlanes } = useFunciones();
 
   return (
     error: unknown,
@@ -26,6 +28,16 @@ export function useAvisarError() {
     if (esCancelada(error)) return;
     registrarCausa(titulo, error);
     const aviso = describirError(error, { titulo, porDefecto, tituloConflicto });
+    // El plan no incluye la función: el mismo aviso del backend, con un botón a los planes
+    if (esFuncionNoIncluida(error)) {
+      void confirmar({
+        titulo: aviso.titulo,
+        mensaje: aviso.mensaje,
+        textoAceptar: "VER PLANES",
+        textoCancelar: "CERRAR",
+      }).then((ver) => ver && abrirPlanes());
+      return;
+    }
     avisar(aviso.titulo, aviso.mensaje, "error");
     if (error instanceof ApiError && error.status === 401) cerrarSesion();
   };

@@ -31,7 +31,7 @@ const PERIODOS = [
 
 const PLANES = [
   { id: "actual", label: "El actual" },
-  { id: "basico", label: "Básico" },
+  { id: "emprendedor", label: "Emprendedor" },
   { id: "equipo", label: "Equipo" },
   { id: "pro", label: "Pro" },
 ] as const;

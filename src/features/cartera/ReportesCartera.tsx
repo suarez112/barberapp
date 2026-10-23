@@ -11,6 +11,7 @@ import {
   ReporteServiciosRentables,
   ReportesCartera as Reportes,
 } from "./api";
+import FuncionBloqueada from "../planes/FuncionBloqueada";
 import { decimal, DIAS, horaLegible, NOMBRE_DIA } from "./EstadisticasCartera";
 
 const dinero = (n: number) => `$${formatearPesos(n)}`;
@@ -45,37 +46,49 @@ export default function ReportesCartera({ reportes, error, cargando, onReintenta
   }
 
   const { ocupacion, serviciosRentables, demanda } = reportes;
-  const sinDatos = ocupacion.calculadoHasta === null;
-  const mejor = serviciosRentables.servicios.find(
+  const sinDatos = ocupacion?.calculadoHasta === null;
+  const mejor = serviciosRentables?.servicios.find(
     (x) => x.servicioId === serviciosRentables.servicioMayorIngresoPorHora,
   );
 
   return (
     <View style={cargando ? s.actualizando : undefined}>
-      <TarjetaDesplegable
-        titulo="OCUPACIÓN"
-        valor={sinDatos ? "Aún sin datos" : porcentaje(ocupacion.total.porcentajeOcupacion)}
-      >
-        <Ocupacion ocupacion={ocupacion} />
-      </TarjetaDesplegable>
+      {ocupacion ? (
+        <TarjetaDesplegable
+          titulo="OCUPACIÓN"
+          valor={sinDatos ? "Aún sin datos" : porcentaje(ocupacion.total.porcentajeOcupacion)}
+        >
+          <Ocupacion ocupacion={ocupacion} />
+        </TarjetaDesplegable>
+      ) : (
+        <FuncionBloqueada funcion="ocupacion_profesional" nombre="Ocupación por profesional" />
+      )}
 
-      <TarjetaDesplegable
-        titulo="SERVICIOS MÁS RENTABLES"
-        valor={mejor ? `${mejor.nombre} · ${dinero(mejor.ingresoPorHora)}/h` : "Sin citas completadas"}
-      >
-        <ServiciosRentables reporte={serviciosRentables} />
-      </TarjetaDesplegable>
+      {serviciosRentables ? (
+        <TarjetaDesplegable
+          titulo="SERVICIOS MÁS RENTABLES"
+          valor={mejor ? `${mejor.nombre} · ${dinero(mejor.ingresoPorHora)}/h` : "Sin citas completadas"}
+        >
+          <ServiciosRentables reporte={serviciosRentables} />
+        </TarjetaDesplegable>
+      ) : (
+        <FuncionBloqueada funcion="servicios_rentables" nombre="Servicios más rentables" />
+      )}
 
-      <TarjetaDesplegable
-        titulo="DEMANDA POR DÍA Y HORA"
-        valor={
-          demanda.pico
-            ? `${NOMBRE_DIA[demanda.pico.dia]} ${horaLegible(`${demanda.pico.hora.slice(0, 2)}:00`)}`
-            : "Sin citas"
-        }
-      >
-        <Demanda demanda={demanda} />
-      </TarjetaDesplegable>
+      {demanda ? (
+        <TarjetaDesplegable
+          titulo="DEMANDA POR DÍA Y HORA"
+          valor={
+            demanda.pico
+              ? `${NOMBRE_DIA[demanda.pico.dia]} ${horaLegible(`${demanda.pico.hora.slice(0, 2)}:00`)}`
+              : "Sin citas"
+          }
+        >
+          <Demanda demanda={demanda} />
+        </TarjetaDesplegable>
+      ) : (
+        <FuncionBloqueada funcion="demanda" nombre="Demanda por día y hora" />
+      )}
     </View>
   );
 }

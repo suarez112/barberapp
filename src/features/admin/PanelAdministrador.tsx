@@ -7,6 +7,8 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import PanelNegocio from "../panel/PanelNegocio";
 import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
+import { FuncionesProvider } from "../planes/FuncionesProvider";
+import AtiendoClientes from "./components/AtiendoClientes";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
 import EnlacePublicoNegocio from "./components/EnlacePublicoNegocio";
@@ -97,6 +99,10 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           </View>
 
           {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
+          {/* Solo la cuenta de la empresa: un integrante administrador usa "Atiende clientes" en Equipo */}
+          {personal.esCuentaAdmin ? (
+            <AtiendoClientes token={personal.token} onEquipoCambiado={actualizarSuscripcion} />
+          ) : null}
           <EnlacePublicoNegocio perfil={perfil} />
           <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
@@ -107,19 +113,26 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
     </View>
   );
 
+  // Las funciones del plan se piden una sola vez para todo el panel (candados, Mi suscripción)
   if (suscripcion?.estado === "vencida") {
-    return <PanelVencido suscripcion={suscripcion} miNegocio={miNegocio} />;
+    return (
+      <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
+        <PanelVencido suscripcion={suscripcion} miNegocio={miNegocio} />
+      </FuncionesProvider>
+    );
   }
 
   return (
-    <PanelNegocio
-      personal={conNombre}
-      encabezado={suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
-      miNegocio={miNegocio}
-      onSuscripcionVencida={actualizarSuscripcion}
-      suscripcion={suscripcion}
-      onEquipoCambiado={actualizarSuscripcion}
-    />
+    <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
+      <PanelNegocio
+        personal={conNombre}
+        encabezado={suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
+        miNegocio={miNegocio}
+        onSuscripcionVencida={actualizarSuscripcion}
+        suscripcion={suscripcion}
+        onEquipoCambiado={actualizarSuscripcion}
+      />
+    </FuncionesProvider>
   );
 }
 

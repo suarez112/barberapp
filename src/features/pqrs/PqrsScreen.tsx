@@ -16,6 +16,7 @@ import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { avisar, avisarCamposConError } from "@/utils/dialogos";
+import { fechaLarga } from "@/utils/fechas";
 import { EstadoPqrs, Pqrs, TipoPqrs, listarMisPqrs, radicarPqrs } from "./api";
 
 const TIPOS: { valor: TipoPqrs; etiqueta: string }[] = [
@@ -31,6 +32,12 @@ const ESTADOS: Record<EstadoPqrs, { texto: string; color: string }> = {
   resuelta: { texto: "RESUELTA", color: COLORES.verde },
   cerrada: { texto: "CERRADA", color: COLORES.neutro },
 };
+
+// Equipo (2) y Pro (1) tienen respuesta prioritaria; Emprendedor (3) no
+const esPrioritaria = (p: Pqrs) => p.prioridad < 3;
+// "2026-10-27T23:59:59.000-05:00" -> "27 de octubre de 2026" (el día que escribió el backend)
+const fechaEstimada = (p: Pqrs) => fechaLarga(p.fechaLimite.slice(0, 10));
+const sinResponder = (p: Pqrs) => p.estado === "recibida" || p.estado === "en_proceso";
 
 const nombreDelTipo = (t: TipoPqrs) => TIPOS.find((x) => x.valor === t)?.etiqueta ?? t;
 
@@ -91,11 +98,23 @@ export default function PqrsScreen() {
     try {
       const respuesta = await radicarPqrs(
         usuario
-          ? { tipo, mensaje: mensaje.trim() }
+          ? {
+              tipo,
+              mensaje: mensaje.trim(),
+              // Una administradora no tiene nombre en su cuenta y el backend lo pide: se usa su usuario o correo
+              ...(usuario.nombre ? {} : { nombre: usuario.usuario ?? usuario.correo ?? "Administrador", contacto: usuario.correo ?? usuario.usuario ?? "" }),
+            }
           : { tipo, mensaje: mensaje.trim(), nombre: nombre.trim(), contacto: contacto.trim() },
         usuario ? token : undefined,
       );
-      avisar("Solicitud enviada", respuesta.mensaje, "exito");
+      const { pqrs } = respuesta;
+      avisar(
+        "Solicitud enviada",
+        `${respuesta.mensaje}
+
+${esPrioritaria(pqrs) ? "Es una solicitud prioritaria. " : ""}Te responderemos a más tardar el ${fechaEstimada(pqrs)}.`,
+        "exito",
+      );
       setTipo(null);
       setMensaje("");
       cargar();
@@ -209,8 +228,18 @@ export default function PqrsScreen() {
                     <Text style={[styles.radicado, { color: colors.textPrimary }]}>{p.radicado}</Text>
                     <Insignia texto={ESTADOS[p.estado].texto} color={ESTADOS[p.estado].color} />
                   </View>
+                  {esPrioritaria(p) ? (
+                    <View style={styles.prioritaria}>
+                      <Insignia texto="PRIORITARIA" color={COLORES.naranja} />
+                    </View>
+                  ) : null}
                   <Text style={[styles.detalle, { color: colors.primaryText }]}>{nombreDelTipo(p.tipo)}</Text>
                   <Text style={[styles.detalle, { color: colors.textSecondary }]}>{p.mensaje}</Text>
+                  {sinResponder(p) ? (
+                    <Text style={[styles.detalle, { color: colors.textSecondary }]}>
+                      Respuesta estimada: {fechaEstimada(p)}
+                    </Text>
+                  ) : null}
                   {p.respuesta ? (
                     <Text style={[styles.respuesta, { color: colors.textPrimary }]}>
                       Respuesta: {p.respuesta}
@@ -237,5 +266,6 @@ const styles = StyleSheet.create({
   encabezado: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
   radicado: { fontSize: 14, fontWeight: "bold", flexShrink: 1 },
   detalle: { fontSize: 13, marginTop: 6 },
+  prioritaria: { alignSelf: "flex-start", marginTop: 8 },
   respuesta: { fontSize: 13, marginTop: 8, fontWeight: "600" },
 });

@@ -120,7 +120,7 @@ export type Suscripcion = {
   fechaRegistro: string | null; // "2026-10-05", día en que se registró el negocio
 };
 
-export type IdPlanEquipo = "basico" | "equipo" | "pro";
+export type IdPlanEquipo = "emprendedor" | "equipo" | "pro";
 
 export type RespuestaRegistroEmpresa = {
   mensaje: string;

@@ -9,6 +9,7 @@ import { Comparar, PeriodoResumen, ProfesionalResumen } from "./api";
 import EstadisticasCartera from "./EstadisticasCartera";
 import { listarAgenda } from "../agenda/api";
 import { useAgenda } from "../agenda/AgendaProvider";
+import { useFunciones } from "../planes/funcionesContexto";
 import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera from "./ProyeccionCartera";
 import ReportesCartera from "./ReportesCartera";
@@ -53,6 +54,8 @@ export default function TableroCartera({ token }: { token: string }) {
   const [atras, setAtras] = useState(0);
   // Con qué se compara en "Comparado con" (se vuelve al período anterior al cambiar de período)
   const [comparar, setComparar] = useState<Comparar>(COMPARAR_ANTERIOR);
+  const { cargada, incluida } = useFunciones();
+  const puedeComparar = incluida("comparar_periodos");
   const registro = useFechaRegistro(token);
   const hoy = hoyColombiaISO();
 
@@ -69,7 +72,9 @@ export default function TableroCartera({ token }: { token: string }) {
     consulta.periodo,
     consulta.desde,
     consulta.hasta,
-    comparar,
+    // Sin la función en el plan, el backend rechazaría el pedido: se pide el resumen sin comparar
+    puedeComparar ? comparar : null,
+    cargada,
   );
 
   // Ocupación, servicios rentables y demanda: no tienen sentido en un solo día
@@ -180,8 +185,13 @@ export default function TableroCartera({ token }: { token: string }) {
         [
           ["Citas completadas", String(p.citas)],
           ["Ventas", dinero(p.ventas)],
-          ["Ganancia del profesional", dinero(p.ganancia)],
-          ["Para el negocio", dinero(p.ventas - p.ganancia)],
+          // Sin comisiones en el plan no hay reparto: el backend no manda la ganancia
+          ...(p.ganancia === undefined
+            ? []
+            : ([
+                ["Ganancia del profesional", dinero(p.ganancia)],
+                ["Para el negocio", dinero(p.ventas - p.ganancia)],
+              ] as const)),
         ] as const
       ).map(([etiqueta, valor]) => (
         <View key={etiqueta} style={s.filaDetalle}>

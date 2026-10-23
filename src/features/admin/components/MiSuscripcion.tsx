@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
@@ -7,6 +8,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { fechaLarga } from "@/utils/fechas";
 import { EstadoSuscripcion, Suscripcion } from "../../cuenta/api";
+import { useFunciones } from "../../planes/funcionesContexto";
 import PlanesModal from "../../planes/PlanesModal";
 
 const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
@@ -24,6 +26,9 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
   const [verPlanes, setVerPlanes] = useState(false);
   const { estado, plan, fechaPago, fechaFin, diasRestantes, diasPruebaSumados } = suscripcion;
   const { planEquipo, cupoUsado } = suscripcion;
+  const { datos: funciones } = useFunciones();
+  const incluidas = funciones?.funciones.filter((f) => f.incluida) ?? [];
+  const bloqueadas = funciones?.funciones.filter((f) => !f.incluida) ?? [];
 
   // "Plan mensual · Activo"; la prueba y los vencidos llevan su insignia
   const titulo =
@@ -61,6 +66,7 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           <Insignia texto={ESTADOS[estado].texto} color={ESTADOS[estado].color} />
         </View>
         {fila("Plan", `${planEquipo.nombre} · hasta ${textoPersonas(planEquipo.cupo)}`)}
+        {fila("Periodo", plan ? (plan === "anual" ? "Anual" : "Mensual") : "Prueba gratuita")}
         {fila("Cupo usado", `${cupoUsado} de ${textoPersonas(planEquipo.cupo)}`)}
         {estado !== "prueba" ? fila("Fecha de pago", fechaPago ? fechaLarga(fechaPago) : "—") : null}
         {fila(
@@ -68,6 +74,26 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           fechaFin ? fechaLarga(fechaFin) : "Sin fecha de vencimiento",
         )}
         {fila("Días restantes", diasRestantes === null ? "—" : textoDias(diasRestantes))}
+        {incluidas.length > 0 ? (
+          <View style={[styles.funciones, { borderBottomColor: colors.cardBorder }]}>
+            <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Funciones incluidas</Text>
+            {incluidas.map((f) => (
+              <View key={f.id} style={styles.funcion}>
+                <Ionicons name="checkmark-circle" size={18} color={COLORES.verde} />
+                <Text style={[styles.textoFuncion, { color: colors.textPrimary }]}>{f.nombre}</Text>
+              </View>
+            ))}
+            {bloqueadas.map((f) => (
+              <View key={f.id} style={styles.funcion}>
+                <Ionicons name="lock-closed" size={18} color={colors.textSecondary} />
+                <Text style={[styles.textoFuncion, { color: colors.textSecondary }]}>
+                  {f.nombre}
+                  {f.planRequerido ? ` · Disponible en plan ${f.planRequerido.nombre}` : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {estado === "activa" && diasPruebaSumados ? (
           <Text style={[styles.mensaje, { color: colors.textPrimary }]}>
             Incluye {textoDias(diasPruebaSumados)} de prueba que te quedaban.
@@ -82,8 +108,8 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
           titulo={estado === "prueba" ? "ACTIVAR PLAN AHORA" : "CAMBIAR DE PLAN"}
           ayuda={
             estado === "prueba"
-              ? "Muestra los planes Básico, Equipo y Pro. Los días de prueba que te quedan se suman al plan"
-              : "Muestra los planes Básico, Equipo y Pro con sus precios"
+              ? "Muestra los planes Emprendedor, Equipo y Pro. Los días de prueba que te quedan se suman al plan"
+              : "Muestra los planes Emprendedor, Equipo y Pro con sus precios"
           }
           onPress={() => setVerPlanes(true)}
           style={styles.boton}
@@ -117,6 +143,9 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 15, fontWeight: "bold", flexShrink: 1, marginRight: 10 },
   etiqueta: { fontSize: 13 },
   valor: { fontSize: 13, fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 10 },
+  funciones: { paddingVertical: 10, gap: 6, borderBottomWidth: StyleSheet.hairlineWidth },
+  funcion: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 28 },
+  textoFuncion: { flex: 1, fontSize: 13 },
   mensaje: { fontSize: 12, lineHeight: 17, paddingTop: 10 },
   boton: { marginTop: 12, marginBottom: 10 },
 });

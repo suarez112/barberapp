@@ -6,7 +6,8 @@ import { FotoElegida, formularioFoto } from "../../utils/imagenes";
 type Profesional = {
   id: string;
   nombre: string;
-  usuario: string;
+  // null: el perfil de la administradora entra con su cuenta de siempre
+  usuario: string | null;
   rol: RolEquipo;
   esAdmin: boolean;
   atiendeClientes: boolean;
@@ -19,14 +20,16 @@ export type DatosProfesional = {
   nombre: string;
   usuario: string;
   clave?: string; // obligatoria al crear; al editar, solo si se cambia
-  rol: RolEquipo;
+  // El plan Emprendedor no incluye roles ni comisiones: el backend rechazaría esos campos
+  rol?: RolEquipo;
   atiendeClientes: boolean;
   especialidad: string | null;
-  porcentajeGanancia: number;
+  porcentajeGanancia?: number;
 };
 
 const aBarbero = (p: Profesional): Barbero => ({
   ...p,
+  usuario: p.usuario ?? "",
   especialidad: p.especialidad ?? "",
   foto: p.foto ?? undefined,
 });
@@ -53,3 +56,31 @@ export const subirFotoProfesional = (token: string, id: string, foto: FotoElegid
     body: formularioFoto(foto),
     token,
   });
+
+// "Yo también atiendo clientes": solo la cuenta de la administradora (la de correo)
+export type EstadoYoAtiendo = {
+  atiendeClientes: boolean;
+  // Su perfil como profesional (null si nunca lo activó)
+  barberoId: string | null;
+  perfil: Barbero | null;
+};
+
+type RespuestaYoAtiendo = Omit<EstadoYoAtiendo, "perfil"> & { perfil: Profesional | null; mensaje?: string };
+
+const aEstado = (r: RespuestaYoAtiendo): EstadoYoAtiendo => ({
+  atiendeClientes: r.atiendeClientes,
+  barberoId: r.barberoId,
+  perfil: r.perfil ? aBarbero(r.perfil) : null,
+});
+
+export const obtenerYoAtiendo = async (token: string, signal?: AbortSignal) =>
+  aEstado(await request<RespuestaYoAtiendo>("/api/v1/equipo/yo-atiendo", { token, signal }));
+
+export const cambiarYoAtiendo = async (token: string, atiende: boolean) =>
+  aEstado(
+    await request<RespuestaYoAtiendo>("/api/v1/equipo/yo-atiendo", {
+      method: "PUT",
+      body: { atiende },
+      token,
+    }),
+  );

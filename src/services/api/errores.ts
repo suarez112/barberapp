@@ -1,4 +1,4 @@
-import { ApiError, ErrorDeConexion, ErrorDeEnvio, MotivoConexion, esCancelada } from "./http";
+import { ApiError, ErrorDeConexion, ErrorDeEnvio, MotivoConexion, esCancelada, esFuncionNoIncluida } from "./http";
 
 export type Aviso = { titulo: string; mensaje: string };
 
@@ -75,6 +75,15 @@ export function describirError(
         mensaje,
       };
     case 403:
+      // El plan no incluye la función: el título dice desde qué plan se puede usar
+      if (esFuncionNoIncluida(error)) {
+        return {
+          titulo: error.datos?.planRequerido
+            ? `Disponible en plan ${error.datos.planRequerido.nombre}`
+            : "Función no incluida",
+          mensaje,
+        };
+      }
       return {
         titulo: "Sin permiso",
         mensaje: error.message || "No tienes permiso para hacer esto.",

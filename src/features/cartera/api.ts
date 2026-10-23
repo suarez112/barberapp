@@ -1,4 +1,4 @@
-import { request } from "../../services/api/http";
+import { esFuncionNoIncluida, request } from "../../services/api/http";
 
 export type GananciaProfesional = {
   barberoId: string;
@@ -56,7 +56,8 @@ export type ProfesionalResumen = {
   activo: boolean;
   citas: number;
   ventas: number;
-  ganancia: number; // lo que ganó el profesional en el período
+  // Lo que ganó el profesional en el período; no llega si el plan no incluye comisiones
+  ganancia?: number;
 };
 
 // GET /cartera/resumen: totales de un período con fechas de Colombia
@@ -82,6 +83,7 @@ export type VariacionResumen = {
 // Campos de estadísticas del mismo GET /cartera/resumen
 export type EstadisticasResumen = {
   ticketPromedio: number; // totalVentas / citasCompletadas (0 si no hubo citas)
+  // null en los tres: el plan no incluye comparar períodos, demanda o comisiones
   comparacion: {
     tipo: TipoComparacion;
     // Texto si el rango de comparación empieza antes del registro del negocio
@@ -95,7 +97,7 @@ export type EstadisticasResumen = {
       citasCompletadas: number;
     };
     variacionPorcentaje: VariacionResumen;
-  };
+  } | null;
   ventasPorDia: { fecha: string; ventas: number; citas: number }[]; // todos los días, con ceros
   serviciosMasVendidos: { servicioId: string; nombre: string; cantidad: number; ventas: number }[];
   ocupacion: {
@@ -103,7 +105,7 @@ export type EstadisticasResumen = {
     horas: { hora: string; citas: number }[]; // solo las horas con citas
     diaMasOcupado: number | null;
     horaMasOcupada: string | null;
-  };
+  } | null;
   cancelaciones: { totalCitas: number; canceladas: number; tasaPorcentaje: number };
   clientes: { nuevos: number; recurrentes: number };
   pagoProfesionales: {
@@ -117,7 +119,7 @@ export type EstadisticasResumen = {
       ventas: number;
       aPagar: number;
     }[];
-  };
+  } | null; // null: el plan no incluye comisiones
 };
 
 // hoy, semana (lunes a domingo), mes, o rango con desde y hasta ("2026-10-01").
@@ -126,15 +128,17 @@ export const obtenerResumenCartera = (
   token: string,
   periodo: PeriodoResumen,
   rango: { desde: string; hasta: string } | null,
-  comparar: Comparar,
+  // null: no se pide comparación (el plan no la incluye y el backend respondería 403)
+  comparar: Comparar | null,
   signal?: AbortSignal,
 ) => {
   const fechas =
     periodo === "rango" && rango
       ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
       : "";
-  const con =
-    comparar.tipo === "personalizado"
+  const con = !comparar
+    ? ""
+    : comparar.tipo === "personalizado"
       ? `&comparar=personalizado&compararDesde=${encodeURIComponent(comparar.desde)}&compararHasta=${encodeURIComponent(comparar.hasta)}`
       : `&comparar=${comparar.tipo}`;
   return request<ResumenCartera>(`/api/v1/cartera/resumen?periodo=${periodo}${fechas}${con}`, {
@@ -189,10 +193,11 @@ export type ReporteDemanda = {
   pico: CeldaDemanda | null;
 };
 
+// null: el plan no incluye ese reporte (el backend responde 403 "funcion_no_incluida")
 export type ReportesCartera = {
-  ocupacion: ReporteOcupacion;
-  serviciosRentables: ReporteServiciosRentables;
-  demanda: ReporteDemanda;
+  ocupacion: ReporteOcupacion | null;
+  serviciosRentables: ReporteServiciosRentables | null;
+  demanda: ReporteDemanda | null;
 };
 
 // Los tres reportes de un período (semana, mes o rango) a la vez
@@ -206,8 +211,12 @@ export const obtenerReportesCartera = async (
     periodo === "rango" && rango
       ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
       : "";
+  // Un reporte que el plan no incluye no tumba a los demás: llega null y se muestra con candado
   const pedir = <T>(ruta: string) =>
-    request<T>(`/api/v1/reportes/${ruta}?periodo=${periodo}${fechas}`, { token, signal });
+    request<T>(`/api/v1/reportes/${ruta}?periodo=${periodo}${fechas}`, { token, signal }).catch((e) => {
+      if (esFuncionNoIncluida(e)) return null;
+      throw e;
+    });
   const [ocupacion, serviciosRentables, demanda] = await Promise.all([
     pedir<ReporteOcupacion>("ocupacion"),
     pedir<ReporteServiciosRentables>("servicios-rentables"),

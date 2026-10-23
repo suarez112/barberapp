@@ -126,8 +126,10 @@ export default function PanelNegocio({
     : null;
   const esAdmin = yo ? yo.esAdmin : personal.esAdmin;
   // El admin elige de quién ver agenda y bloqueos; un integrante ve lo suyo
+  // Solo aparecen quienes reciben citas (la administradora, si activó "Yo también atiendo clientes")
+  const atienden = barberos.filter((b) => b.atiendeClientes !== false);
   const profesional = esAdmin
-    ? (barberos.find((b) => b.id === supervisadoId) ?? yo ?? barberos[0] ?? null)
+    ? (barberos.find((b) => b.id === supervisadoId) ?? yo ?? atienden[0] ?? barberos[0] ?? null)
     : yo;
 
   // Todos los administradores (cuenta o integrante) ven las mismas pestañas;
@@ -229,7 +231,7 @@ export default function PanelNegocio({
   }
 
   const conSupervision =
-    esAdmin && barberos.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
+    esAdmin && atienden.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
 
   return (
     <Pantalla
@@ -252,7 +254,7 @@ export default function PanelNegocio({
 
           {conSupervision && profesional ? (
             <SelectorSupervision
-              barberos={barberos}
+              barberos={atienden}
               seleccionadoId={profesional.id}
               onSeleccionar={(b) => setSupervisadoId(b.id)}
             />

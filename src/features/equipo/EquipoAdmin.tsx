@@ -30,6 +30,8 @@ import {
 } from "./api";
 import { FotoElegida } from "@/utils/imagenes";
 import { Suscripcion } from "../cuenta/api";
+import FuncionBloqueada from "../planes/FuncionBloqueada";
+import { useFunciones } from "../planes/funcionesContexto";
 import PlanesModal from "../planes/PlanesModal";
 
 const ROLES = [
@@ -90,6 +92,10 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
   const avisarError = useAvisarError();
+  const { incluida } = useFunciones();
+  // Roles y comisiones son del plan Equipo en adelante; sin ellas esos campos no se envían
+  const puedeRoles = incluida("roles");
+  const puedeComisiones = incluida("comisiones");
   const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
   const [verPlanes, setVerPlanes] = useState(false);
@@ -113,7 +119,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
         : clave && !claveValida(clave)
           ? { clave: MENSAJE_CLAVE }
           : {}),
-      ...(isNaN(pct) || pct < 0 || pct > 100
+      ...(puedeComisiones && (isNaN(pct) || pct < 0 || pct > 100)
         ? { porcentaje: "Escribe un número de 0 a 100, por ejemplo 50." }
         : {}),
     };
@@ -127,8 +133,9 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
       nombre: campos.nombre.trim(),
       usuario: campos.usuario.trim().toLowerCase(),
       especialidad: campos.especialidad.trim() || null,
-      porcentajeGanancia: pct,
-      rol: campos.rol,
+      ...(puedeComisiones ? { porcentajeGanancia: pct } : {}),
+      // Sin roles todos son empleados; al editar no se toca el rol que ya tenían
+      ...(puedeRoles ? { rol: campos.rol } : enEdicion ? {} : { rol: "empleado" as const }),
       atiendeClientes: campos.atiendeClientes,
       // Al editar, la contraseña vacía deja la actual
       ...(clave ? { clave } : {}),
@@ -144,7 +151,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
         onEquipoCambiado?.();
         avisar(
           "¡Éxito!",
-          `${nuevo.nombre} registrado con ${nuevo.porcentajeGanancia}% de ganancia. Entra con el usuario "${nuevo.usuario}".`,
+          `${nuevo.nombre} registrado${puedeComisiones ? ` con ${nuevo.porcentajeGanancia}% de ganancia` : ""}. Entra con el usuario "${nuevo.usuario}".`,
           "exito",
         );
       }
@@ -222,7 +229,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
               </Text>
               <Boton
                 titulo="VER PLANES"
-                ayuda="Muestra los planes Básico, Equipo y Pro con su cupo y precios"
+                ayuda="Muestra los planes Emprendedor, Equipo y Pro con su cupo y precios"
                 onPress={() => setVerPlanes(true)}
                 style={styles.botonPlanes}
               />
@@ -281,26 +288,36 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
           value={campos.clave}
           onChangeText={cambiar("clave")}
         />
-        <Desplegable
-          etiqueta="Rol"
-          ayuda="Administrador maneja todo el negocio; Empleado solo su agenda y su cartera"
-          titulo="Rol"
-          placeholder="Rol"
-          opciones={ROLES}
-          valor={campos.rol}
-          // Nadie se quita a sí mismo el rol de administrador
-          deshabilitado={enEdicion ? soyYo(enEdicion.id) : false}
-          onCambiar={(rol) => {
-            cambiar("rol")(rol);
-            // En un integrante nuevo, el interruptor sigue el valor por defecto del rol
-            if (!enEdicion) cambiar("atiendeClientes")(atiendePorDefecto(rol));
-          }}
-        />
-        <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
-          {campos.rol === "admin"
-            ? "Administrador: maneja todo el negocio, igual que la cuenta de la empresa."
-            : "Empleado: solo ve su agenda y su cartera."}
-        </Text>
+        {puedeRoles ? (
+          <>
+            <Desplegable
+              etiqueta="Rol"
+              ayuda="Administrador maneja todo el negocio; Empleado solo su agenda y su cartera"
+              titulo="Rol"
+              placeholder="Rol"
+              opciones={ROLES}
+              valor={campos.rol}
+              // Nadie se quita a sí mismo el rol de administrador
+              deshabilitado={enEdicion ? soyYo(enEdicion.id) : false}
+              onCambiar={(rol) => {
+                cambiar("rol")(rol);
+                // En un integrante nuevo, el interruptor sigue el valor por defecto del rol
+                if (!enEdicion) cambiar("atiendeClientes")(atiendePorDefecto(rol));
+              }}
+            />
+            <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+              {campos.rol === "admin"
+                ? "Administrador: maneja todo el negocio, igual que la cuenta de la empresa."
+                : "Empleado: solo ve su agenda y su cartera."}
+            </Text>
+          </>
+        ) : (
+          <FuncionBloqueada
+            funcion="roles"
+            nombre="Roles de administrador y empleado"
+            detalle="Mientras tanto, todos los integrantes son empleados."
+          />
+        )}
         <View
           style={[styles.interruptor, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder }]}
         >
@@ -332,16 +349,24 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
           value={campos.especialidad}
           onChangeText={cambiar("especialidad")}
         />
-        <CampoTexto
-          etiqueta="Comisión (%)"
-          error={errores.porcentaje}
-          ayuda="Porcentaje de cada servicio que gana el integrante, de 0 a 100. Vacío = 50"
-          placeholder="ej: 50"
-          keyboardType="numeric"
-          maxLength={3}
-          value={campos.porcentaje}
-          onChangeText={cambiar("porcentaje")}
-        />
+        {puedeComisiones ? (
+          <CampoTexto
+            etiqueta="Comisión (%)"
+            error={errores.porcentaje}
+            ayuda="Porcentaje de cada servicio que gana el integrante, de 0 a 100. Vacío = 50"
+            placeholder="ej: 50"
+            keyboardType="numeric"
+            maxLength={3}
+            value={campos.porcentaje}
+            onChangeText={cambiar("porcentaje")}
+          />
+        ) : (
+          <FuncionBloqueada
+            funcion="comisiones"
+            nombre="Comisiones y pago a profesionales"
+            detalle="Mientras tanto, la comisión de cada integrante queda en el valor inicial (50 %)."
+          />
+        )}
         <BotonesFormulario
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "REGISTRAR INTEGRANTE"}
           ayudaGuardar={enEdicion ? "Guarda los cambios del integrante" : "Agrega al integrante al equipo"}
@@ -371,7 +396,8 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
               {b.atiendeClientes === false ? " · No atiende clientes" : " · Atiende clientes"}
             </Text>
             <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-              {b.especialidad || "Sin especialidad"} · Comisión: {b.porcentajeGanancia}%
+              {b.especialidad || "Sin especialidad"}
+              {puedeComisiones ? ` · Comisión: ${b.porcentajeGanancia}%` : ""}
             </Text>
             <Text style={[styles.usuario, { color: colors.textSecondary }]}>
               Usuario: {b.usuario}

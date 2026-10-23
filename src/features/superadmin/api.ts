@@ -5,7 +5,7 @@ const BASE = "/api/v1/superadmin";
 export type EstadoNegocio = "prueba" | "activo" | "vencido" | "suspendido";
 // "por_vencer" solo existe como filtro de la lista
 export type FiltroEstado = EstadoNegocio | "por_vencer";
-export type PlanEquipoId = "basico" | "equipo" | "pro";
+export type PlanEquipoId = "emprendedor" | "equipo" | "pro";
 export type Periodo = "mensual" | "anual";
 
 export type Pagina<T> = { total: number; pagina: number; limite: number; datos: T[] };

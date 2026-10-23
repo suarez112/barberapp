@@ -7,6 +7,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { crearDia, sumarDias, textoRango } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
 import { Comparar, ResumenCartera, TipoComparacion } from "./api";
+import FuncionBloqueada from "../planes/FuncionBloqueada";
 import { BarrasHorizontales, BarraFila, diaCorto, VentasPorDia } from "./GraficosCartera";
 import PagoProfesionales from "./PagoProfesionales";
 
@@ -69,8 +70,9 @@ export default function EstadisticasCartera({
 }: Props) {
   const { colors } = useAppTheme();
   const { comparacion, ocupacion, cancelaciones, clientes } = resumen;
-  const anterior = comparacion.periodoAnterior;
-  const variacion = comparacion.variacionPorcentaje;
+  // Sin las funciones del plan (comparar, demanda, comisiones) el backend manda null: se muestra el candado
+  const anterior = comparacion?.periodoAnterior;
+  const variacion = comparacion?.variacionPorcentaje;
 
   // Texto corto de una variación: "+20%", "−5%", "Nuevo" o "Sin cambios"
   const textoVariacion = (v: number | null) =>
@@ -114,7 +116,7 @@ export default function EstadisticasCartera({
   const cambiarTipo = (tipo: TipoComparacion) => {
     if (tipo === "personalizado") {
       // Parte del período con el que se estaba comparando
-      onCambiarComparar({ tipo, desde: anterior.desde, hasta: anterior.hasta });
+      onCambiarComparar({ tipo, desde: anterior?.desde ?? comparar.desde, hasta: anterior?.hasta ?? comparar.hasta });
     } else {
       onCambiarComparar({ ...comparar, tipo });
     }
@@ -138,15 +140,15 @@ export default function EstadisticasCartera({
   const porDia: BarraFila[] = DIAS.map(({ dia, nombre }) => ({
     clave: String(dia),
     etiqueta: nombre,
-    valor: ocupacion.diasSemana.find((d) => d.dia === dia)?.citas ?? 0,
-    destacada: dia === ocupacion.diaMasOcupado,
+    valor: ocupacion?.diasSemana.find((d) => d.dia === dia)?.citas ?? 0,
+    destacada: dia === ocupacion?.diaMasOcupado,
   }));
 
-  const porHora: BarraFila[] = ocupacion.horas.map((h) => ({
+  const porHora: BarraFila[] = (ocupacion?.horas ?? []).map((h) => ({
     clave: h.hora,
     etiqueta: horaLegible(h.hora),
     valor: h.citas,
-    destacada: h.hora === ocupacion.horaMasOcupada,
+    destacada: h.hora === ocupacion?.horaMasOcupada,
   }));
 
   // Cifras clave de las tarjetas cerradas
@@ -165,57 +167,61 @@ export default function EstadisticasCartera({
         📊 ESTADÍSTICAS DEL PERÍODO
       </Text>
 
-      <TarjetaDesplegable
-        titulo="COMPARADO CON"
-        valor={`Ventas ${textoVariacion(variacion.ventas)}`}
-        colorValor={colorVariacion(variacion.ventas)}
-      >
-        <Desplegable
-          etiqueta="Comparar con"
-          ayuda="Elige con qué período se comparan las ventas, la ganancia y las citas"
-          placeholder="Elige con qué comparar"
-          opciones={OPCIONES_COMPARAR}
-          valor={comparar.tipo}
-          onCambiar={cambiarTipo}
-        />
-        {comparar.tipo === "personalizado" ? (
-          <View>
-            <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Desde</Text>
-            <SelectorDias
-              seleccionado={crearDia(comparar.desde)}
-              onSeleccionar={(d) => cambiarDesde(d.fechaFull)}
-              desde={minimoComparar}
-              hasta={hoy}
-            />
-            <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Hasta</Text>
-            <SelectorDias
-              // Al cambiar "desde" el selector vuelve a abrir en el mes de "hasta"
-              key={comparar.desde}
-              seleccionado={crearDia(comparar.hasta)}
-              onSeleccionar={(d) => onCambiarComparar({ ...comparar, hasta: d.fechaFull })}
-              desde={comparar.desde}
-              hasta={maxHasta}
-            />
+      {comparacion && anterior && variacion ? (
+        <TarjetaDesplegable
+          titulo="COMPARADO CON"
+          valor={`Ventas ${textoVariacion(variacion.ventas)}`}
+          colorValor={colorVariacion(variacion.ventas)}
+        >
+          <Desplegable
+            etiqueta="Comparar con"
+            ayuda="Elige con qué período se comparan las ventas, la ganancia y las citas"
+            placeholder="Elige con qué comparar"
+            opciones={OPCIONES_COMPARAR}
+            valor={comparar.tipo}
+            onCambiar={cambiarTipo}
+          />
+          {comparar.tipo === "personalizado" ? (
+            <View>
+              <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Desde</Text>
+              <SelectorDias
+                seleccionado={crearDia(comparar.desde)}
+                onSeleccionar={(d) => cambiarDesde(d.fechaFull)}
+                desde={minimoComparar}
+                hasta={hoy}
+              />
+              <Text style={[s.etiquetaRango, { color: colors.textSecondary }]}>Hasta</Text>
+              <SelectorDias
+                // Al cambiar "desde" el selector vuelve a abrir en el mes de "hasta"
+                key={comparar.desde}
+                seleccionado={crearDia(comparar.hasta)}
+                onSeleccionar={(d) => onCambiarComparar({ ...comparar, hasta: d.fechaFull })}
+                desde={comparar.desde}
+                hasta={maxHasta}
+              />
+            </View>
+          ) : null}
+          <Text accessibilityLiveRegion="polite" style={[s.rangoAnterior, { color: colors.textSecondary }]}>
+            {actualizando ? "Actualizando…" : textoRango(anterior.desde, anterior.hasta)}
+          </Text>
+          {comparacion.aviso ? (
+            <Text style={[s.aviso, { color: colors.avisoTexto }]}>{comparacion.aviso}</Text>
+          ) : null}
+          <View style={[s.bloque, actualizando && s.actualizando]}>
+            {cambio("Ventas totales", dinero(resumen.totalVentas), dinero(anterior.totalVentas), variacion.ventas)}
+            {cambio(
+              "Ganancia del negocio",
+              dinero(resumen.gananciaNegocio),
+              dinero(anterior.gananciaNegocio),
+              variacion.gananciaNegocio,
+            )}
+            {cambio("Citas completadas", String(resumen.citasCompletadas), String(anterior.citasCompletadas), variacion.citas)}
           </View>
-        ) : null}
-        <Text accessibilityLiveRegion="polite" style={[s.rangoAnterior, { color: colors.textSecondary }]}>
-          {actualizando ? "Actualizando…" : textoRango(anterior.desde, anterior.hasta)}
-        </Text>
-        {comparacion.aviso ? (
-          <Text style={[s.aviso, { color: colors.avisoTexto }]}>{comparacion.aviso}</Text>
-        ) : null}
-        <View style={[s.bloque, actualizando && s.actualizando]}>
-          {cambio("Ventas totales", dinero(resumen.totalVentas), dinero(anterior.totalVentas), variacion.ventas)}
-          {cambio(
-            "Ganancia del negocio",
-            dinero(resumen.gananciaNegocio),
-            dinero(anterior.gananciaNegocio),
-            variacion.gananciaNegocio,
-          )}
-          {cambio("Citas completadas", String(resumen.citasCompletadas), String(anterior.citasCompletadas), variacion.citas)}
-        </View>
-        {ayuda("Si el período actual aún no termina, se compara con el período completo.")}
-      </TarjetaDesplegable>
+          {ayuda("Si el período actual aún no termina, se compara con el período completo.")}
+        </TarjetaDesplegable>
+      ) : (
+        <FuncionBloqueada funcion="comparar_periodos" nombre="Comparar con otros períodos" />
+      )}
 
       {esDia ? null : (
         <TarjetaDesplegable
@@ -238,7 +244,13 @@ export default function EstadisticasCartera({
         />
       </TarjetaDesplegable>
 
-      {esDia ? null : (
+      {esDia ? null : !ocupacion ? (
+        <FuncionBloqueada
+          funcion="demanda"
+          nombre="Demanda por día y hora"
+          detalle="Con ella ves los días y las horas con más citas."
+        />
+      ) : (
         <>
           <TarjetaDesplegable
             titulo="DÍAS CON MÁS CITAS"
@@ -312,9 +324,17 @@ export default function EstadisticasCartera({
         </Text>
       </TarjetaDesplegable>
 
-      <TarjetaDesplegable titulo="PAGO A PROFESIONALES" valor={dinero(resumen.pagoProfesionales.total)}>
-        <PagoProfesionales pago={resumen.pagoProfesionales} />
-      </TarjetaDesplegable>
+      {resumen.pagoProfesionales ? (
+        <TarjetaDesplegable titulo="PAGO A PROFESIONALES" valor={dinero(resumen.pagoProfesionales.total)}>
+          <PagoProfesionales pago={resumen.pagoProfesionales} />
+        </TarjetaDesplegable>
+      ) : (
+        <FuncionBloqueada
+          funcion="comisiones"
+          nombre="Comisiones y pago a profesionales"
+          detalle="Con ella ves cuánto pagarle a cada profesional."
+        />
+      )}
     </View>
   );
 }
