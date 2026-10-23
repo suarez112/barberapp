@@ -290,7 +290,7 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
       <Boton
         titulo={enviando ? "CREANDO…" : "CREAR CUENTA"}
         ayuda="Crea tu cuenta de cliente e inicia sesión"
-        deshabilitado={enviando}
+        deshabilitado={enviando || !aceptaDatos}
         onPress={crear}
       />
     </View>

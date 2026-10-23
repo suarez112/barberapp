@@ -23,3 +23,20 @@ const TIEMPO_LIMITE_MS = 10_000;
 
 export const obtenerDocumentoLegal = (tipo: TipoDocumento, signal?: AbortSignal) =>
   request<DocumentoLegal>(`/api/v1/legal/${tipo}`, { signal, tiempoLimiteMs: TIEMPO_LIMITE_MS });
+
+// Estado de la aceptación de quien tiene sesión (administrador, equipo o cliente)
+export type EstadoLegal = {
+  vigente: boolean;
+  versionPolitica: string;
+  versionTerminos: string;
+};
+
+export const obtenerEstadoLegal = (token: string, signal?: AbortSignal) =>
+  request<EstadoLegal>("/api/v1/legal/estado", { token, signal, tiempoLimiteMs: TIEMPO_LIMITE_MS });
+
+export const aceptarVersionVigente = (token: string) =>
+  request<EstadoLegal & { mensaje: string }>("/api/v1/legal/aceptar", {
+    method: "POST",
+    body: ACEPTACION,
+    token,
+  });

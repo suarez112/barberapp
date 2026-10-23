@@ -15,8 +15,8 @@ type Props = {
 };
 
 // Casilla obligatoria (empieza sin marcar) para autorizar el tratamiento de datos
-// y aceptar los Términos. Encima va el Aviso de privacidad corto y cada enlace abre
-// su documento en un modal.
+// y aceptar los Términos. El texto corto con los enlaces siempre se ve; el Aviso de
+// privacidad completo va plegado debajo y cada enlace abre su documento en un modal.
 export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Props) {
   const { colors } = useAppTheme();
   const [abierto, setAbierto] = useState<TipoDocumento | null>(null);
@@ -33,7 +33,6 @@ export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Prop
 
   return (
     <>
-      <AvisoPrivacidad />
       <Tocable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: aceptada }}
@@ -60,8 +59,9 @@ export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Prop
           color={error ? colors.error : colors.primaryText}
         />
         <Text style={[styles.texto, { color: colors.textPrimary }]}>
-          Autorizo el {enlace("tratamiento de mis datos personales", "politica-datos")} y
-          acepto los {enlace("Términos y Condiciones", "terminos")}
+          Autorizo el tratamiento de mis datos personales según la{" "}
+          {enlace("Política de Tratamiento de Datos", "politica-datos")} y acepto los{" "}
+          {enlace("Términos y Condiciones", "terminos")}.
         </Text>
       </Tocable>
       {error ? (
@@ -69,6 +69,8 @@ export default function CasillaAutorizacion({ aceptada, onCambiar, error }: Prop
           {error}
         </Text>
       ) : null}
+      {/* El aviso completo va plegado debajo de la casilla */}
+      <AvisoPrivacidad />
       <DocumentoLegalModal tipo={abierto} onCerrar={() => setAbierto(null)} />
     </>
   );
@@ -81,13 +83,14 @@ export const MENSAJE_AUTORIZACION =
 const styles = StyleSheet.create({
   fila: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 10,
-    marginVertical: 10,
+    marginTop: 10,
+    marginBottom: 2,
     paddingHorizontal: 4,
     minHeight: 44,
   },
-  texto: { flex: 1, fontSize: 13, lineHeight: 18 },
+  texto: { flex: 1, fontSize: 13, lineHeight: 20 },
   error: { fontSize: 12, marginTop: -6, marginBottom: 8, lineHeight: 16 },
   enlace: { fontWeight: "bold", textDecorationLine: "underline" },
 });

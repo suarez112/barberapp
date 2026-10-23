@@ -223,7 +223,7 @@ export default function RegistroEmpresaScreen() {
         <Boton
           titulo={enviando ? "REGISTRANDO…" : "REGISTRAR EMPRESA"}
           ayuda="Crea tu negocio y empieza la prueba gratuita de 15 días"
-          deshabilitado={enviando}
+          deshabilitado={enviando || !aceptaDatos}
           onPress={registrar}
           style={styles.boton}
         />

@@ -3,6 +3,7 @@ import DialogoHost from "@/components/ui/DialogoHost";
 import { AgendaProvider } from "@/features/agenda/AgendaProvider";
 import { CuentaProvider } from "@/features/cuenta/CuentaProvider";
 import { NegocioProvider } from "@/features/negocio/NegocioProvider";
+import ModalNuevaVersion from "@/features/legal/ModalNuevaVersion";
 import ManejadorNotificaciones from "@/features/notificaciones/ManejadorNotificaciones";
 import { NotificacionesProvider } from "@/features/notificaciones/NotificacionesProvider";
 import { RestaurarSesionProvider } from "@/features/sesion/RestaurarSesionProvider";
@@ -26,6 +27,8 @@ export default function AppProviders({ children }: { children: ReactNode }) {
                   <ManejadorNotificaciones />
                   {/* Avisos y confirmaciones de toda la app */}
                   <DialogoHost />
+                  {/* Obliga a aceptar la versión nueva de la política y los términos */}
+                  <ModalNuevaVersion />
                 </AgendaProvider>
               </NotificacionesProvider>
             </RestaurarSesionProvider>

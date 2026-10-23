@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ComponentProps } from "react";
+import { ComponentProps, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Tocable from "@/components/ui/Tocable";
 import { useNotificaciones } from "@/features/notificaciones/NotificacionesProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { PreferenciaTema } from "@/theme/preferenciaTema";
 
 type Props = {
   visible: boolean;
@@ -22,22 +23,26 @@ type Opcion = {
   onPress: () => void;
 };
 
+const TEMAS: { valor: PreferenciaTema; texto: string }[] = [
+  { valor: "sistema", texto: "Predeterminado del sistema" },
+  { valor: "claro", texto: "Siempre claro" },
+  { valor: "oscuro", texto: "Siempre oscuro" },
+];
+
 // Hoja que sube desde abajo con las opciones de la cabecera
 export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
-  const { colors, esOscuro, alternarTema } = useAppTheme();
+  const { colors, esOscuro, preferencia, elegirTema } = useAppTheme();
+  const [verTemas, setVerTemas] = useState(false);
   const { bottom } = useSafeAreaInsets();
   const { push } = useRouter();
   const notificaciones = useNotificaciones();
 
   const opciones: Opcion[] = [
     {
-      icono: esOscuro ? "sunny-outline" : "moon-outline",
-      texto: esOscuro ? "Tema claro" : "Tema oscuro",
-      ayuda: esOscuro ? "Cambia la app a colores claros" : "Cambia la app a colores oscuros",
-      onPress: () => {
-        alternarTema();
-        onCerrar();
-      },
+      icono: esOscuro ? "moon-outline" : "sunny-outline",
+      texto: "Tema",
+      ayuda: verTemas ? "Oculta las opciones de tema" : "Muestra las opciones de tema",
+      onPress: () => setVerTemas(!verTemas),
     },
     ...(notificaciones.visible
       ? [
@@ -103,8 +108,8 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
         <View style={[styles.asa, { backgroundColor: colors.cardBorder }]} />
         <Text style={[styles.titulo, { color: colors.textSecondary }]}>MENÚ</Text>
         {opciones.map((o) => (
+          <View key={o.texto}>
           <Tocable
-            key={o.texto}
             accessibilityRole="button"
             accessibilityLabel={o.texto}
             accessibilityHint={o.ayuda}
@@ -115,7 +120,38 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
             <Text style={[styles.textoOpcion, { color: o.color ?? colors.textPrimary }]}>
               {o.texto}
             </Text>
+            {o.texto === "Tema" ? (
+              <Ionicons
+                name={verTemas ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.textSecondary}
+              />
+            ) : null}
           </Tocable>
+          {o.texto === "Tema" && verTemas
+            ? TEMAS.map((t) => (
+                <Tocable
+                  key={t.valor}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: preferencia === t.valor }}
+                  accessibilityLabel={t.texto}
+                  accessibilityHint="Cambia el tema de la app y lo guarda en este celular"
+                  style={styles.tema}
+                  onPress={() => {
+                    elegirTema(t.valor);
+                    onCerrar();
+                  }}
+                >
+                  <Ionicons
+                    name={preferencia === t.valor ? "radio-button-on" : "radio-button-off"}
+                    size={22}
+                    color={colors.primaryText}
+                  />
+                  <Text style={[styles.textoTema, { color: colors.textPrimary }]}>{t.texto}</Text>
+                </Tocable>
+              ))
+            : null}
+          </View>
         ))}
       </View>
     </Modal>
@@ -135,5 +171,7 @@ const styles = StyleSheet.create({
   asa: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, marginBottom: 8 },
   titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 4 },
   opcion: { flexDirection: "row", alignItems: "center", gap: 14, minHeight: 52 },
-  textoOpcion: { fontSize: 16, fontWeight: "600" },
+  textoOpcion: { fontSize: 16, fontWeight: "600", flex: 1 },
+  tema: { flexDirection: "row", alignItems: "center", gap: 14, minHeight: 48, paddingLeft: 36 },
+  textoTema: { fontSize: 15 },
 });

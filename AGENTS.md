@@ -90,7 +90,7 @@ src/
     admin.tsx      -> features/admin/AdminPanelScreen (company account, account token) ->
                    features/admin/PanelAdministrador (PanelNegocio + subscription banner + "Mi negocio";
                    expired subscription: PanelVencido with only "Planes" and "Mi negocio")
-  config/app.ts    APP_NOMBRE (name shown in the intro animation, header, "Acerca de" and the superadmin panel; now the test name "AgendaYa") and CONTACTO (`correo` of the developer shown in Help > "Contacto"; an empty value hides the section)
+  config/app.ts    APP_NOMBRE (name shown in the intro animation, header, "Acerca de" and the superadmin panel; "Agendality" and the slogan `APP_LEMA`) and CONTACTO (`correo` of the developer shown in Help > "Contacto"; an empty value hides the section)
   features/cuenta/formulario/ business form shared by registration and "Mi negocio": CamposEmpresa (code with live availability,
                    department/municipality from GET /api/v1/ubicaciones, schedule as 7 rows with Abierto/Cerrado switch and
                    opening/closing dropdowns, "Copiar el horario del lunes a todos los días" = `copiarLunes`), validarEmpresa
@@ -205,3 +205,10 @@ Start the backend first (`npm run dev` in the backend folder) so API calls work.
 - `features/panel/RefrescoPanel.tsx` `useRefrescoPanel(refrescar)` is used by Agenda, Bloqueos, Clientes and Cartera: the open tab reloads silently on pull-to-refresh (`Pantalla` `alRefrescar`, errors shown), when the app returns to the foreground, every 30 s while open and when a push for a cita arrives with the app open (`avisosRecibidos` in `NotificacionesProvider`). A failed automatic reload keeps what was on screen.
 - Bloqueos (`bloqueos/BloqueoSemanal.tsx`) reads `GET /api/v1/bloqueos/calendario?desde&hasta&barberoId` for the shown week: cells follow `intervaloMinutos`, appointments are green over their real start/end (partial fill when they cover part of a cell) and a cell with a cita cannot be blocked ("Hay una cita en ese horario").
 - `FotoBarbero` camera badge: white circle with dark border and icon in both themes.
+
+## Theme, splash and documents (added)
+
+- Theme: `theme/ThemeProvider.tsx` keeps `preferencia` (`sistema` default | `claro` | `oscuro`, saved in SecureStore by `theme/preferenciaTema.ts`; memory only on web). "Tema" in `MenuCabecera` lists the three options. The native splash (`app.json` expo-splash-screen: `assets/logo.png`, light/dark background) stays until the saved theme is read.
+- Intro (`inicio/AnimacionInicio`, 1.8 s): logo with soft glow, name, slogan and a spinner. In Expo Go the native splash/icon are Expo's own (SDK 52+), only the intro shows; the splash and icon from `app.json` appear only in a development/installed build.
+- Consent (`legal/CasillaAutorizacion`): short text with links to the Política and Términos always visible; full `AvisoPrivacidad` folded below. The register / confirm buttons stay disabled until the box is checked.
+- New document version (`legal/ModalNuevaVersion`, mounted in `AppProviders`): with any session token it calls `GET /api/v1/legal/estado`; `vigente: false` shows a modal that cannot be dismissed, with the document links and the checkbox, and `POST /api/v1/legal/aceptar` on accept. A failed check never blocks the user.
