@@ -16,6 +16,8 @@ type ValorNotificaciones = {
   visible: boolean;
   // La persona las quiere y el celular dio el permiso
   activas: boolean;
+  // Este celular puede recibirlas (falso en Expo Go y en la web)
+  disponibles: boolean;
   // Activa o desactiva los avisos de este celular (opción del menú)
   alternar: () => Promise<void>;
   // Borra el token de este celular en el servidor; se llama antes de cerrar la sesión
@@ -144,7 +146,7 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
         "Notificaciones no disponibles",
         Platform.OS === "web"
           ? "Los avisos solo funcionan en la app del celular."
-          : "Los avisos no funcionan en Expo Go. Instala la versión de desarrollo de la app para probarlos.",
+          : "Las notificaciones requieren la app instalada. No funcionan en Expo Go.",
         "aviso",
       );
       return;
@@ -174,6 +176,7 @@ export function NotificacionesProvider({ children }: { children: ReactNode }) {
       value={{
         visible: Platform.OS !== "web" && !!tokenSesion,
         activas: !!preferencia && permiso && !!tokenSesion,
+        disponibles: notificacionesDisponibles,
         alternar,
         desregistrar,
         citaPendiente,

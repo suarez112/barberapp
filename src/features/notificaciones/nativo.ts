@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from "expo";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Platform } from "react-native";
 
@@ -5,26 +6,38 @@ export type ModuloNotificaciones = typeof import("expo-notifications");
 
 // Expo Go no trae las notificaciones push (Android, desde el SDK 53) y la web no
 // las usa: en esos casos el módulo ni se carga, así la app sigue abriendo igual.
-export const notificacionesDisponibles =
-  Platform.OS !== "web" && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+// Se detecta por tres señales; con una basta (la app instalada no cumple ninguna).
+export const enExpoGo =
+  Constants.appOwnership === "expo" ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  // En Android, expo-notifications necesita este módulo nativo y Expo Go no lo trae
+  (Platform.OS === "android" && !requireOptionalNativeModule("ExpoTopicSubscriptionModule"));
 
-let carga: Promise<ModuloNotificaciones> | null = null;
+export const notificacionesDisponibles = Platform.OS !== "web" && !enExpoGo;
 
-// Carga expo-notifications la primera vez que se pide (null si no está disponible)
+let carga: Promise<ModuloNotificaciones | null> | null = null;
+
+// Carga expo-notifications la primera vez que se pide (null si no está disponible
+// o si falla al cargar: nunca rompe la app)
 export function cargarNotificaciones(): Promise<ModuloNotificaciones | null> {
   if (!notificacionesDisponibles) return Promise.resolve(null);
-  carga ??= import("expo-notifications").then((N) => {
-    // Con la app abierta también se muestra el aviso
-    N.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+  carga ??= import("expo-notifications")
+    .then((N) => {
+      // Con la app abierta también se muestra el aviso
+      N.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        }),
+      });
+      return N;
+    })
+    .catch((e) => {
+      console.log("No se pudo cargar expo-notifications", String(e));
+      return null;
     });
-    return N;
-  });
   return carga;
 }
 

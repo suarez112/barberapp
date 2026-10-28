@@ -13,10 +13,6 @@
         "foregroundImage": "./assets/logo.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "navigationBar": {
-        "backgroundColor": "#0D0D0D",
-        "barStyle": "light-content"
-      },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.app"
     },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ScrollView, type ScrollViewInstance, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES, textoSobre } from "@/theme/paleta";
@@ -80,7 +80,7 @@ export default function LineaDeTiempo({
 }: Props) {
   const { colors } = useAppTheme();
   const { height } = useWindowDimensions();
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const [ahora, setAhora] = useState(() => new Date());
 
   // La línea roja de la hora actual avanza sola

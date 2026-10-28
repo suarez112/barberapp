@@ -62,7 +62,7 @@ const paginaMapa = (punto: Punto | null, color: string) => `<!DOCTYPE html>
 // Tocar el mapa también mueve el pin. Funciona en Expo Go y sin clave de Google.
 export default function MapaUbicacion({ punto, centrar, onMover }: PropsMapa) {
   const { colors } = useAppTheme();
-  const web = useRef<WebView>(null);
+  const web = useRef<WebView<object>>(null);
   const [estado, setEstado] = useState<"cargando" | "listo" | "error">("cargando");
   // La página se arma una sola vez: después el pin se mueve con ponerPin
   const [html] = useState(() => paginaMapa(punto, colors.primary));
@@ -90,7 +90,7 @@ export default function MapaUbicacion({ punto, centrar, onMover }: PropsMapa) {
 
   return (
     <View style={[styles.caja, { borderColor: colors.cardBorder }]}>
-      <WebView
+      <WebView<object>
         ref={web}
         accessibilityLabel="Mapa con la ubicación del negocio. Arrastra el pin o toca el mapa para moverlo"
         source={{ html }}

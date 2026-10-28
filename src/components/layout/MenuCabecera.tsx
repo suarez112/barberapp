@@ -50,12 +50,16 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
             icono: notificaciones.activas
               ? ("notifications-outline" as const)
               : ("notifications-off-outline" as const),
-            texto: notificaciones.activas
-              ? "Notificaciones: activadas"
-              : "Notificaciones: desactivadas",
-            ayuda: notificaciones.activas
-              ? "Desactiva los avisos de citas en este celular"
-              : "Activa los avisos de citas en este celular",
+            texto: !notificaciones.disponibles
+              ? "Las notificaciones requieren la app instalada"
+              : notificaciones.activas
+                ? "Notificaciones: activadas"
+                : "Notificaciones: desactivadas",
+            ayuda: !notificaciones.disponibles
+              ? "Las notificaciones no funcionan en Expo Go, solo en la app instalada"
+              : notificaciones.activas
+                ? "Desactiva los avisos de citas en este celular"
+                : "Activa los avisos de citas en este celular",
             onPress: () => {
               onCerrar();
               notificaciones.alternar();

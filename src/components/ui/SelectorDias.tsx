@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, type ScrollViewInstance, StyleSheet, Text, View } from "react-native";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { Dia } from "../../types";
@@ -46,7 +46,7 @@ export default function SelectorDias({
 
   // Al abrir (y al cambiar de mes) la lista se desplaza sola hasta hoy, o hasta
   // el día elegido si hoy no está en este mes, dejando visible el día anterior.
-  const lista = useRef<ScrollView>(null);
+  const lista = useRef<ScrollViewInstance>(null);
   const hoy = diaDeHoy().fechaFull;
   const indiceHoy = dias.findIndex((d) => d.fechaFull === hoy);
   const indiceInicial =

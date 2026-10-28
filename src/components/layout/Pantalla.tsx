@@ -36,10 +36,7 @@ export default function Pantalla({ children, cabecera, pie, alRefrescar }: Props
   };
   return (
     <SafeAreaView style={[styles.contenedor, { backgroundColor: colors.bg }]}>
-      <StatusBar
-        barStyle={esOscuro ? "light-content" : "dark-content"}
-        backgroundColor={colors.bg}
-      />
+      <StatusBar barStyle={esOscuro ? "light-content" : "dark-content"} />
       <AppHeader {...cabecera} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
