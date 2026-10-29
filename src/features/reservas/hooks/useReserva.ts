@@ -113,11 +113,12 @@ export function useReserva() {
 
   // Cambiar profesional, servicio o día invalida la hora elegida
   const elegirBarbero = (b: Barbero) => {
-    setBarbero(b);
+    // Tocar el profesional elegido lo deselecciona
+    setBarbero((actual) => (actual?.id === b.id ? null : b));
     setHora("");
   };
   const elegirServicio = (s: Servicio) => {
-    setServicio(s);
+    setServicio((actual) => (actual?.id === s.id ? null : s));
     setHora("");
   };
   const elegirDia = (d: Dia) => {

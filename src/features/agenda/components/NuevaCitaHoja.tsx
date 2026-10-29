@@ -529,7 +529,7 @@ export default function NuevaCitaHoja({
               titulo={enviando ? "AGENDANDO..." : "AGENDAR"}
               ayuda="Agenda la cita con los datos de la hoja"
               onPress={agendar}
-              deshabilitado={enviando}
+              deshabilitado={enviando || !hora}
               style={styles.agendar}
             />
           </ScrollView>

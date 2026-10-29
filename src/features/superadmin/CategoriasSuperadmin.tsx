@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Switch, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
+import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
 import Insignia from "@/components/ui/Insignia";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -88,38 +89,34 @@ export default function CategoriasSuperadmin() {
       ancho: 2,
       render: (c) => (
         <View style={styles.insignia}>
-          <Insignia
-            texto={c.activa ? "ACTIVA" : "INACTIVA"}
-            color={c.activa ? COLORES.verde : COLORES.neutro}
-          />
+          <Insignia texto={c.activa ? "ACTIVA" : "INACTIVA"} color={c.activa ? COLORES.verde : COLORES.neutro} suave />
         </View>
       ),
     },
     {
       clave: "acciones",
       titulo: "Acciones",
-      ancho: 4,
+      ancho: 3,
       render: (c) => (
         <View style={styles.acciones}>
-          <Boton
-            titulo="EDITAR"
+          <BotonIcono
+            icono="create-outline"
+            color={colors.primaryText}
             etiqueta={`Editar ${c.nombre}`}
             ayuda="Cambia el nombre de la categoría"
-            variante="secundario"
             onPress={() => setEdicion({ id: c.id, nombre: c.nombre })}
-            style={styles.botonFila}
           />
-          <Boton
-            titulo={c.activa ? "DESACTIVAR" : "REACTIVAR"}
-            etiqueta={`${c.activa ? "Desactivar" : "Reactivar"} ${c.nombre}`}
-            ayuda={
+          <Switch
+            value={c.activa}
+            onValueChange={() => cambiarEstado(c)}
+            accessibilityLabel={`${c.nombre}: ${c.activa ? "activa" : "inactiva"}`}
+            accessibilityHint={
               c.activa
-                ? "La categoría deja de ofrecerse al registrar negocios"
-                : "La categoría vuelve a ofrecerse al registrar negocios"
+                ? "Desactiva la categoría: deja de ofrecerse al registrar negocios"
+                : "Reactiva la categoría: vuelve a ofrecerse al registrar negocios"
             }
-            variante={c.activa ? "peligro" : "primario"}
-            onPress={() => cambiarEstado(c)}
-            style={styles.botonFila}
+            trackColor={{ false: colors.inputBorder, true: COLORES.verde }}
+            thumbColor="#FFFFFF"
           />
         </View>
       ),
@@ -185,7 +182,6 @@ export default function CategoriasSuperadmin() {
 const styles = StyleSheet.create({
   principal: { fontSize: 14, fontWeight: "bold" },
   insignia: { alignSelf: "flex-start" },
-  acciones: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  botonFila: { minWidth: 120 },
-  nueva: { minWidth: 200 },
+  acciones: { flexDirection: "row", alignItems: "center", gap: 8 },
+  nueva: { minWidth: 0, paddingHorizontal: 16 },
 });

@@ -6,7 +6,9 @@ import { CifrasIngreso, IngresosPlataforma, obtenerIngresos } from "./api";
 import EstadoCarga from "./components/EstadoCarga";
 import { formatearMes, formatearNumero, formatearPesos } from "./formato";
 import GraficoBarras from "./graficos/GraficoBarras";
+import { useColoresGrafico } from "./graficos/colores";
 import GraficoColumnas from "./graficos/GraficoColumnas";
+import Leyenda from "./graficos/Leyenda";
 import TarjetaGrafico from "./graficos/TarjetaGrafico";
 import { useCargar } from "./useCargar";
 
@@ -45,7 +47,9 @@ const sumar = (filas: CifrasIngreso[]) =>
 
 function Graficos({ i }: { i: IngresosPlataforma }) {
   const { colors } = useAppTheme();
-  const estimado = i.estimado ? <Insignia texto="ESTIMADO" color={COLORES.naranja} /> : null;
+  const { paleta, color } = useColoresGrafico();
+  const leyendaColumnas = <Leyenda items={[{ nombre: "Ingreso bruto", color: paleta[0] }, { nombre: "Mayor ingreso", color: paleta[5] }]} />;
+  const estimado = i.estimado ? <Insignia texto="ESTIMADO" color={COLORES.neutro} suave /> : null;
 
   const meses = i.porMes.map((m) => ({
     etiqueta: formatearMes(m.mes),
@@ -58,11 +62,13 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
     destacada: a.anio === i.mejorAnio?.anio,
   }));
   const totalMeses = sumar(i.porMes);
-  const porNivel = i.negociosPorNivel.map((n) => ({
-    etiqueta: n.nombre,
-    valor: n.total,
-    detalle: `${n.profesionalesDesde === n.profesionalesHasta ? n.profesionalesDesde : `${n.profesionalesDesde} a ${n.profesionalesHasta}`} prof. · ${formatearNumero(n.activos)} ${n.activos === 1 ? "activo" : "activos"}`,
+  const porProfesionales = i.negociosPorProfesionales.map((g, n) => ({
+    etiqueta: `${g.profesionales} ${g.profesionales === 1 ? "profesional" : "profesionales"}`,
+    valor: g.negocios,
+    color: color(n),
+    detalle: `${formatearNumero(g.activos)} ${g.activos === 1 ? "activo" : "activos"} · deja ${formatearPesos(g.ingresoMensual.bruto)} al mes`,
   }));
+  const ingresoGrupos = i.negociosPorProfesionales.reduce((t, g) => t + g.ingresoMensual.bruto, 0);
   const { mensual, anual } = i.mensualVsAnual;
   const cargos = i.cargosProporcionalesDelMes;
 
@@ -110,6 +116,16 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
 
       <TarjetaGrafico
         ancha
+        titulo="Negocios por número de profesionales"
+        subtitulo={`Cuántos negocios hay de 1 a 10 profesionales cobrados y cuánto deja cada grupo · ${formatearPesos(ingresoGrupos)} al mes en total`}
+        filas={porProfesionales.map((b) => [b.etiqueta, `${formatearNumero(b.valor)} (${b.detalle})`])}
+      >
+        <View style={styles.estimadoArriba}>{estimado}</View>
+        <GraficoBarras datos={porProfesionales} vacio="Aún no hay negocios." anchoEtiqueta={230} />
+      </TarjetaGrafico>
+
+      <TarjetaGrafico
+        ancha
         titulo="Ingresos estimados por mes"
         subtitulo="Últimos 12 meses (columnas = ingreso bruto)"
         filas={i.porMes.map((m) => [formatearMes(m.mes), `${resumenFila(m)} · ${movimientos(m)}`])}
@@ -121,6 +137,7 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
             {formatearPesos(totalMeses.comisionPasarela)} · neto {formatearPesos(totalMeses.neto)}
           </Text>
         </View>
+        {leyendaColumnas}
         <GraficoColumnas
           datos={meses}
           descripcion={`Ingreso bruto estimado por mes en los últimos 12 meses: ${formatearPesos(totalMeses.bruto)} en total, ${formatearPesos(totalMeses.neto)} neto.${
@@ -152,6 +169,7 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
             {formatearPesos(i.neto)}
           </Text>
         </View>
+        {leyendaColumnas}
         <GraficoColumnas
           datos={anios}
           descripcion={`Ingreso bruto estimado por año: ${formatearPesos(i.bruto)} en total, ${formatearPesos(i.neto)} neto.${
@@ -191,14 +209,6 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
       </View>
 
       <TarjetaGrafico
-        titulo="Negocios por nivel"
-        subtitulo="Según los profesionales cobrados de cada negocio"
-        filas={porNivel.map((b) => [b.etiqueta, `${formatearNumero(b.valor)} (${b.detalle})`])}
-      >
-        <GraficoBarras datos={porNivel} vacio="Aún no hay negocios." />
-      </TarjetaGrafico>
-
-      <TarjetaGrafico
         titulo="Mensual vs. anual"
         subtitulo="Negocios activos por periodo de pago"
         filas={[
@@ -234,5 +244,6 @@ const styles = StyleSheet.create({
   mejorValor: { fontSize: 24, fontWeight: "bold", marginTop: 2 },
   mejorDetalle: { fontSize: 13, marginTop: 2 },
   pie: { fontSize: 12, marginTop: 12 },
+  estimadoArriba: { marginBottom: 10, alignItems: "flex-start" },
   estimadoPie: { marginTop: 10, alignItems: "flex-start" },
 });

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearNumero } from "../formato";
+import { useColoresGrafico } from "./colores";
 
 export type BarraDato = {
   etiqueta: string;
@@ -10,12 +11,15 @@ export type BarraDato = {
   color?: string;
 };
 
-type Props = { datos: BarraDato[]; vacio?: string };
+type Props = { datos: BarraDato[]; vacio?: string; formatoValor?: (valor: number) => string;
+  anchoEtiqueta?: number;
+};
 
 // Barras horizontales dibujadas con Views: la etiqueta y el número van siempre escritos,
 // así que el color nunca es lo único que dice qué es cada barra.
-export default function GraficoBarras({ datos, vacio = "Aún no hay datos." }: Props) {
+export default function GraficoBarras({ datos, vacio = "Aún no hay datos.", formatoValor = formatearNumero, anchoEtiqueta = 120 }: Props) {
   const { colors } = useAppTheme();
+  const { color } = useColoresGrafico();
   const maximo = Math.max(1, ...datos.map((d) => d.valor));
 
   if (datos.length === 0 || datos.every((d) => d.valor === 0)) {
@@ -28,10 +32,10 @@ export default function GraficoBarras({ datos, vacio = "Aún no hay datos." }: P
         <View
           key={`${d.etiqueta}-${i}`}
           accessible
-          accessibilityLabel={`${d.etiqueta}: ${formatearNumero(d.valor)}${d.detalle ? `, ${d.detalle}` : ""}`}
+          accessibilityLabel={`${d.etiqueta}: ${formatoValor(d.valor)}${d.detalle ? `, ${d.detalle}` : ""}`}
           style={styles.fila}
         >
-          <View style={styles.etiqueta}>
+          <View style={[styles.etiqueta, { width: anchoEtiqueta }]}>
             <Text numberOfLines={1} style={[styles.texto, { color: colors.textPrimary }]}>
               {d.etiqueta}
             </Text>
@@ -42,12 +46,12 @@ export default function GraficoBarras({ datos, vacio = "Aún no hay datos." }: P
               <View
                 style={[
                   styles.barra,
-                  { width: `${(d.valor / maximo) * 100}%`, backgroundColor: d.color ?? colors.primaryText },
+                  { width: `${(d.valor / maximo) * 100}%`, backgroundColor: d.color ?? color(i) },
                 ]}
               />
             ) : null}
           </View>
-          <Text style={[styles.valor, { color: colors.textPrimary }]}>{formatearNumero(d.valor)}</Text>
+          <Text style={[styles.valor, { color: colors.textPrimary }]}>{formatoValor(d.valor)}</Text>
         </View>
       ))}
     </View>
@@ -63,6 +67,6 @@ const styles = StyleSheet.create({
   pista: { flex: 1, height: 14, justifyContent: "center" },
   // Barra fina con el extremo de los datos redondeado
   barra: { height: 12, minWidth: 3, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
-  valor: { width: 44, fontSize: 13, fontWeight: "600", textAlign: "right" },
+  valor: { minWidth: 44, fontSize: 13, fontWeight: "600", textAlign: "right" },
   vacio: { fontSize: 13, paddingVertical: 24, textAlign: "center" },
 });

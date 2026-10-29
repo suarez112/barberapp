@@ -78,13 +78,14 @@ export type IngresosPlataforma = CifrasIngreso & {
   profesionales: { cobradosEnTotal: number; promedioPorNegocio: number };
   // Mensual estimado por negocio activo (el anual cuenta 1/12); null sin negocios activos
   ingresoPromedioPorNegocio: { bruto: number; neto: number } | null;
-  negociosPorNivel: {
+  // Un grupo por cada número de 1 a 10 profesionales cobrados; "ingresoMensual" es estimado
+  // y cuenta solo los negocios activos del grupo (el anual cuenta 1/12)
+  negociosPorProfesionales: {
+    profesionales: number;
     nivel: PlanEquipoId;
-    nombre: string;
-    profesionalesDesde: number;
-    profesionalesHasta: number;
-    total: number;
+    negocios: number;
     activos: number;
+    ingresoMensual: { bruto: number; comisionPasarela: number; neto: number };
   }[];
   mensualVsAnual: { mensual: number; anual: number };
   cargosProporcionalesDelMes: {

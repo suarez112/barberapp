@@ -167,7 +167,7 @@ export default function FormularioReserva({ reserva }: Props) {
       <Boton
         titulo="CONFIRMAR RESERVA"
         ayuda="Envía la reserva con el profesional, servicio, día y hora elegidos"
-        deshabilitado={pedirAutorizacion && !aceptaDatos}
+        deshabilitado={!hora || (pedirAutorizacion && !aceptaDatos)}
         onPress={agendar}
       />
     </View>

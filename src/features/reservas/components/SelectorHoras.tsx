@@ -131,8 +131,9 @@ export default function SelectorHoras({
                       accessibilityRole="button"
                       accessibilityState={{ selected: esSel }}
                       accessibilityLabel={`${h.hora}${h.pegada ? ", recomendada" : ""}`}
-                      accessibilityHint="Elige esta hora para la cita"
-                      onPress={() => onSeleccionar(h.hora)}
+                      accessibilityHint={esSel ? "Quita la hora elegida" : "Elige esta hora para la cita"}
+                      // Tocar la hora elegida la deselecciona
+                      onPress={() => onSeleccionar(esSel ? "" : h.hora)}
                     >
                       <Text
                         style={[

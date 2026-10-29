@@ -2,6 +2,7 @@ import { PointerEvent, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearNumero } from "../formato";
+import { useColoresGrafico } from "./colores";
 
 export type PuntoLinea = { etiqueta: string; valor: number };
 
@@ -10,6 +11,8 @@ type Props = {
   // Resumen para lectores de pantalla (el gráfico en sí es solo dibujo)
   descripcion: string;
   alto?: number;
+  // Color de la serie (por defecto el primero de la paleta)
+  color?: string;
 };
 
 const MARGEN = { izq: 40, der: 12, arriba: 12, abajo: 26 };
@@ -26,8 +29,10 @@ const topeLindo = (maximo: number) => {
 // Línea con área suave. El panel es solo web, así que se dibuja con SVG directo
 // (sin librerías nuevas): línea de 2 px, guías tenues y, al pasar el ratón, una línea
 // vertical con el valor de ese punto.
-export default function GraficoLinea({ puntos, descripcion, alto = 220 }: Props) {
+export default function GraficoLinea({ puntos, descripcion, alto = 220, color }: Props) {
   const { colors } = useAppTheme();
+  const { paleta } = useColoresGrafico();
+  const serie = color ?? paleta[0];
   const [ancho, setAncho] = useState(0);
   const [activo, setActivo] = useState<number | null>(null);
 
@@ -89,11 +94,11 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220 }: Props)
               {puntos[i].etiqueta}
             </text>
           ))}
-          {puntos.length > 1 ? <polygon points={area} fill={colors.primaryText} opacity={0.12} /> : null}
+          {puntos.length > 1 ? <polygon points={area} fill={serie} opacity={0.15} /> : null}
           <polyline
             points={trazo}
             fill="none"
-            stroke={colors.primaryText}
+            stroke={serie}
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -109,7 +114,7 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220 }: Props)
                 strokeWidth={1}
                 strokeDasharray="3 3"
               />
-              <circle cx={x(activo)} cy={y(seleccion.valor)} r={5} fill={colors.primaryText} stroke={colors.cardBg} strokeWidth={2} />
+              <circle cx={x(activo)} cy={y(seleccion.valor)} r={5} fill={serie} stroke={colors.cardBg} strokeWidth={2} />
             </g>
           ) : null}
         </svg>

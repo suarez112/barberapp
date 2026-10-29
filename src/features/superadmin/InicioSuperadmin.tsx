@@ -60,8 +60,9 @@ export default function InicioSuperadmin({ onVerNegocio }: Props) {
           </View>
         ) : null}
       </EstadoCarga>
-      <EstadisticasSuperadmin onVerNegocio={onVerNegocio} />
+      {/* Lo importante arriba: ingresos y negocios por profesionales; después el resto */}
       <IngresosSuperadmin />
+      <EstadisticasSuperadmin onVerNegocio={onVerNegocio} />
     </View>
   );
 }

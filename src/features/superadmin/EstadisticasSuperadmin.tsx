@@ -1,13 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-import Insignia from "@/components/ui/Insignia";
 import Tocable from "@/components/ui/Tocable";
-import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { EstadisticasPlataforma, EstadoNegocio, obtenerEstadisticas } from "./api";
 import EstadoCarga from "./components/EstadoCarga";
-import { formatearDiaMes, formatearMes, formatearNumero, formatearPesos } from "./formato";
+import { formatearDiaMes, formatearMes, formatearNumero } from "./formato";
 import GraficoBarras, { BarraDato } from "./graficos/GraficoBarras";
+import { useColoresGrafico } from "./graficos/colores";
 import GraficoLinea from "./graficos/GraficoLinea";
 import TarjetaGrafico from "./graficos/TarjetaGrafico";
 import { useCargar } from "./useCargar";
@@ -18,8 +17,6 @@ const ETIQUETA_ESTADO: Record<EstadoNegocio, string> = {
   vencido: "Vencidos",
   suspendido: "Suspendidos",
 };
-
-const NOMBRE_PERIODO = { mensual: "mensual", anual: "anual" } as const;
 
 type Props = { onVerNegocio: (id: string) => void };
 
@@ -36,6 +33,7 @@ export default function EstadisticasSuperadmin({ onVerNegocio }: Props) {
 
 function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio: (id: string) => void }) {
   const { colors } = useAppTheme();
+  const { paleta } = useColoresGrafico();
 
   // Un color por estado, legible en el tema actual; además cada barra lleva su nombre escrito
   const colorEstado: Record<EstadoNegocio, string> = {
@@ -52,17 +50,10 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
     valor: f.total,
     color: colorEstado[f.estado],
   }));
-  const porPlan: BarraDato[] = e.negociosPorPlan.map((f) => ({
-    etiqueta: f.nombre,
-    valor: f.total,
-    detalle: `${formatearNumero(f.activos)} ${f.activos === 1 ? "activo" : "activos"}`,
-  }));
   const departamentos: BarraDato[] = e.topDepartamentos.map((f) => ({ etiqueta: f.departamento, valor: f.total }));
 
   const total = (serie: { valor: number }[]) => serie.reduce((suma, p) => suma + p.valor, 0);
   const conversion = e.conversionPruebaAPlan;
-  const ingreso = e.ingresoMensualEstimado;
-  const nombrePlan = (id: string) => e.negociosPorPlan.find((p) => p.plan === id)?.nombre ?? id;
   const vencen = e.vencenEn7Dias;
 
   return (
@@ -73,19 +64,9 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
         filas={nuevosPorMes.map((p) => [p.etiqueta, formatearNumero(p.valor)])}
       >
         <GraficoLinea
+          color={paleta[0]}
           puntos={nuevosPorMes}
           descripcion={`Negocios nuevos por mes en los últimos 12 meses: ${formatearNumero(total(nuevosPorMes))} en total`}
-        />
-      </TarjetaGrafico>
-
-      <TarjetaGrafico
-        titulo="Citas por día"
-        subtitulo="Últimos 30 días, sin contar las canceladas"
-        filas={citasPorDia.map((p) => [p.etiqueta, formatearNumero(p.valor)])}
-      >
-        <GraficoLinea
-          puntos={citasPorDia}
-          descripcion={`Citas por día en los últimos 30 días: ${formatearNumero(total(citasPorDia))} en total`}
         />
       </TarjetaGrafico>
 
@@ -94,14 +75,6 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
         filas={porEstado.map((b) => [b.etiqueta, formatearNumero(b.valor)])}
       >
         <GraficoBarras datos={porEstado} vacio="Aún no hay negocios." />
-      </TarjetaGrafico>
-
-      <TarjetaGrafico
-        titulo="Negocios por nivel"
-        subtitulo="Con cuántos están activos"
-        filas={porPlan.map((b) => [b.etiqueta, `${formatearNumero(b.valor)} (${b.detalle})`])}
-      >
-        <GraficoBarras datos={porPlan} vacio="Aún no hay negocios." />
       </TarjetaGrafico>
 
       <TarjetaGrafico
@@ -131,29 +104,6 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
             </Text>
           </View>
         )}
-      </TarjetaGrafico>
-
-      <TarjetaGrafico titulo="Ingreso mensual estimado" subtitulo="Negocios con plan activo">
-        <View style={styles.filaIngreso}>
-          <Text
-            accessibilityLabel={`${formatearPesos(ingreso.total)} ${ingreso.moneda} al mes, estimado`}
-            style={[styles.grande, { color: colors.textPrimary }]}
-          >
-            {formatearPesos(ingreso.total)}
-          </Text>
-          {ingreso.estimado ? <Insignia texto="ESTIMADO" color={COLORES.naranja} /> : null}
-        </View>
-        <Text style={[styles.nota, { color: colors.textSecondary }]}>{ingreso.moneda} al mes</Text>
-        {ingreso.detalle.map((f) => (
-          <View key={`${f.plan}-${f.periodo}`} style={styles.detalle}>
-            <Text style={[styles.textoDetalle, { color: colors.textSecondary }]}>
-              {nombrePlan(f.plan)} · {NOMBRE_PERIODO[f.periodo]} ({formatearNumero(f.negocios)}{" "}
-              {f.negocios === 1 ? "negocio" : "negocios"})
-            </Text>
-            <Text style={[styles.textoDetalle, { color: colors.textPrimary }]}>{formatearPesos(f.ingreso)}</Text>
-          </View>
-        ))}
-        <Text style={[styles.pie, { color: colors.textSecondary }]}>{ingreso.nota}</Text>
       </TarjetaGrafico>
 
       <TarjetaGrafico
@@ -200,6 +150,21 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
           </Text>
         ) : null}
       </TarjetaGrafico>
+
+      <TarjetaGrafico
+        ancha
+        titulo="Citas por día"
+        subtitulo="Últimos 30 días, sin contar las canceladas"
+        filas={citasPorDia.map((p) => [p.etiqueta, formatearNumero(p.valor)])}
+      >
+        <GraficoLinea
+          alto={140}
+          color={paleta[1]}
+          puntos={citasPorDia}
+          descripcion={`Citas por día en los últimos 30 días: ${formatearNumero(total(citasPorDia))} en total`}
+        />
+      </TarjetaGrafico>
+
     </View>
   );
 }
@@ -209,9 +174,6 @@ const styles = StyleSheet.create({
   grande: { fontSize: 40, fontWeight: "bold" },
   nota: { fontSize: 14, marginTop: 4 },
   pie: { fontSize: 12, marginTop: 12 },
-  filaIngreso: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
-  detalle: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginTop: 8 },
-  textoDetalle: { fontSize: 13 },
   negocio: {
     flexDirection: "row",
     alignItems: "center",

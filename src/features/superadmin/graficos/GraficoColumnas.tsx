@@ -2,6 +2,7 @@ import { PointerEvent, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearPesos } from "../formato";
+import { useColoresGrafico } from "./colores";
 
 export type ColumnaDato = { etiqueta: string; valor: number; destacada?: boolean };
 
@@ -24,10 +25,11 @@ const topeLindo = (maximo: number) => {
 };
 
 // Columnas en pesos dibujadas con SVG (el panel es solo web). La columna destacada
-// (mejor mes o año) lleva el color de acento; las demás un tono más suave. Al pasar el
+// (mejor mes o año) va en verde y las demás en azul (ver la leyenda de la tarjeta). Al pasar el
 // ratón sale el valor exacto de cada columna.
 export default function GraficoColumnas({ datos, descripcion, alto = 240 }: Props) {
   const { colors } = useAppTheme();
+  const { paleta } = useColoresGrafico();
   const [ancho, setAncho] = useState(0);
   const [activo, setActivo] = useState<number | null>(null);
 
@@ -82,8 +84,8 @@ export default function GraficoColumnas({ datos, descripcion, alto = 240 }: Prop
                   width={anchoColumna}
                   height={base - y(d.valor)}
                   rx={3}
-                  fill={colors.primaryText}
-                  opacity={d.destacada ? 1 : activo === i ? 0.7 : 0.4}
+                  fill={d.destacada ? paleta[5] : paleta[0]}
+                  opacity={activo === i ? 0.75 : 1}
                 />
               ) : null}
               {i % cadaCuantas === 0 ? (
