@@ -56,6 +56,33 @@ export const COLORES = {
   whatsapp: "#25D366",
 } as const;
 
+// Colores fijos de la página principal web (features/landing). Es un diseño claro propio,
+// igual en ambos temas del sistema.
+export const COLORES_LANDING = {
+  amarillo: "#FACC15",
+  amarilloOscuro: "#EAB308",
+  amarilloClaro: "#FEF3C7",
+  amarilloSuave: "#FFFBEB",
+  oscuro: "#111827",
+  oscuro2: "#1F2937",
+  bordeOscuro: "#374151",
+  bordeBoton: "#4B5563",
+  texto: "#111827",
+  textoSuave: "#374151",
+  gris: "#6B7280",
+  grisClaro: "#9CA3AF",
+  grisMuyClaro: "#D1D5DB",
+  fondoGris: "#F3F4F6",
+  borde: "#E5E7EB",
+  blanco: "#FFFFFF",
+  etiqueta: "#A16207",
+  verde: "#16A34A",
+  verdeOscuro: "#15803D",
+  verdeFondo: "#DCFCE7",
+  azul: "#1D4ED8",
+  azulFondo: "#DBEAFE",
+} as const;
+
 // Contraste WCAG entre dos colores "#RRGGBB" o "#RGB"
 const aRgb = (hex: string): number[] | null => {
   const h = hex.replace("#", "");
