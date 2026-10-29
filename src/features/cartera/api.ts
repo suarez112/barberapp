@@ -1,0 +1,306 @@
+import { esFuncionNoIncluida, request } from "../../services/api/http";
+
+export type GananciaProfesional = {
+  barberoId: string;
+  nombre: string;
+  activo: boolean;
+  porcentajeGanancia: number; // porcentaje actual (informativo)
+  citas: number;
+  ventas: number;
+  ganancia: number; // con el porcentaje que tenía cada cita al completarse
+};
+
+export type Cartera = {
+  desde: string;
+  hasta: string;
+  barberoId: string | null; // filtro aplicado; null = todo el negocio
+  totalCitas: number;
+  totalVentas: number;
+  gananciaEquipo: number;
+  gananciaNegocio: number;
+  porProfesional: GananciaProfesional[];
+};
+
+// Citas completadas entre desde y hasta ("2026-10-01"), incluidas.
+// Admin: todo el negocio; integrante: solo lo suyo.
+// barberoId: un integrante (solo admin); sin él, todo el negocio
+export const obtenerCartera = (
+  token: string,
+  desde: string,
+  hasta: string,
+  barberoId?: string | null,
+  signal?: AbortSignal,
+) => {
+  const filtro = barberoId ? `&barberoId=${encodeURIComponent(barberoId)}` : "";
+  return request<Cartera>(
+    `/api/v1/cartera?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}${filtro}`,
+    { token, signal },
+  );
+};
+
+export type PeriodoResumen = "hoy" | "semana" | "mes" | "rango";
+
+// Con qué se compara el período (parámetro "comparar" del backend)
+export type TipoComparacion = "anterior" | "mes_pasado" | "anio_pasado" | "personalizado";
+
+export type Comparar = {
+  tipo: TipoComparacion;
+  // Solo se usan con "personalizado"
+  desde: string;
+  hasta: string;
+};
+
+export type ProfesionalResumen = {
+  barberoId: string;
+  nombre: string;
+  activo: boolean;
+  citas: number;
+  ventas: number;
+  // Lo que ganó el profesional en el período; no llega si el plan no incluye comisiones
+  ganancia?: number;
+};
+
+// GET /cartera/resumen: totales de un período con fechas de Colombia
+export type ResumenCartera = {
+  periodo: PeriodoResumen;
+  desde: string;
+  hasta: string;
+  barberoId: string | null;
+  totalVentas: number;
+  gananciaNegocio: number; // ventas − lo que ganó el equipo
+  citasCompletadas: number;
+  porProfesional: ProfesionalResumen[]; // de mayor a menor en ventas
+} & EstadisticasResumen;
+
+// Variación en % contra el período anterior: null = antes era 0 y ahora no (no hay % que calcular)
+export type VariacionResumen = {
+  ventas: number | null;
+  gananciaNegocio: number | null;
+  gananciaEquipo: number | null;
+  citas: number | null;
+};
+
+// Campos de estadísticas del mismo GET /cartera/resumen
+export type EstadisticasResumen = {
+  ticketPromedio: number; // totalVentas / citasCompletadas (0 si no hubo citas)
+  // null en los tres: el plan no incluye comparar períodos, demanda o comisiones
+  comparacion: {
+    tipo: TipoComparacion;
+    // Texto si el rango de comparación empieza antes del registro del negocio
+    aviso: string | null;
+    periodoAnterior: {
+      desde: string;
+      hasta: string;
+      totalVentas: number;
+      gananciaNegocio: number;
+      gananciaEquipo: number;
+      citasCompletadas: number;
+    };
+    variacionPorcentaje: VariacionResumen;
+  } | null;
+  ventasPorDia: { fecha: string; ventas: number; citas: number }[]; // todos los días, con ceros
+  serviciosMasVendidos: { servicioId: string; nombre: string; cantidad: number; ventas: number }[];
+  ocupacion: {
+    diasSemana: { dia: number; citas: number }[]; // 0 = domingo … 6 = sábado
+    horas: { hora: string; citas: number }[]; // solo las horas con citas
+    diaMasOcupado: number | null;
+    horaMasOcupada: string | null;
+  } | null;
+  cancelaciones: { totalCitas: number; canceladas: number; tasaPorcentaje: number };
+  clientes: { nuevos: number; recurrentes: number };
+  pagoProfesionales: {
+    total: number;
+    detalle: {
+      barberoId: string;
+      nombre: string;
+      activo: boolean;
+      porcentajeGanancia: number;
+      citas: number;
+      ventas: number;
+      aPagar: number;
+    }[];
+  } | null; // null: el plan no incluye comisiones
+};
+
+// hoy, semana (lunes a domingo), mes, o rango con desde y hasta ("2026-10-01").
+// comparar: con qué período se compara
+export const obtenerResumenCartera = (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  // null: no se pide comparación (el plan no la incluye y el backend respondería 403)
+  comparar: Comparar | null,
+  signal?: AbortSignal,
+) => {
+  const fechas =
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : "";
+  const con = !comparar
+    ? ""
+    : comparar.tipo === "personalizado"
+      ? `&comparar=personalizado&compararDesde=${encodeURIComponent(comparar.desde)}&compararHasta=${encodeURIComponent(comparar.hasta)}`
+      : `&comparar=${comparar.tipo}`;
+  return request<ResumenCartera>(`/api/v1/cartera/resumen?periodo=${periodo}${fechas}${con}`, {
+    token,
+    signal,
+  });
+};
+
+// Reportes del administrador (/api/v1/reportes): mismos filtros de período que la cartera
+export type OcupacionProfesional = {
+  barberoId: string;
+  nombre: string;
+  horasDisponibles: number;
+  horasOcupadas: number;
+  porcentajeOcupacion: number;
+};
+
+export type ReporteOcupacion = {
+  desde: string;
+  hasta: string;
+  // Solo se mide hasta hoy; null si el período aún no empieza
+  calculadoHasta: string | null;
+  total: { horasDisponibles: number; horasOcupadas: number; porcentajeOcupacion: number };
+  porProfesional: OcupacionProfesional[];
+};
+
+export type ServicioRentable = {
+  servicioId: string;
+  nombre: string;
+  citas: number;
+  ingresos: number;
+  horasTrabajadas: number;
+  ingresoPorHora: number;
+  ticketPromedio: number;
+};
+
+export type ReporteServiciosRentables = {
+  total: { citas: number; ingresos: number; horasTrabajadas: number; ingresoPorHora: number };
+  // Ids de los servicios destacados; null si no hubo citas completadas
+  servicioMayorIngreso: string | null;
+  servicioMayorIngresoPorHora: string | null;
+  servicios: ServicioRentable[]; // de mayor a menor ingreso
+};
+
+export type CeldaDemanda = { dia: number; hora: string; citas: number }; // dia: 0 = domingo
+
+export type ReporteDemanda = {
+  totalCitas: number;
+  mapa: CeldaDemanda[];
+  diaMasDemandado: number | null;
+  horaMasDemandada: string | null;
+  pico: CeldaDemanda | null;
+};
+
+// null: el plan no incluye ese reporte (el backend responde 403 "funcion_no_incluida")
+export type ReportesCartera = {
+  ocupacion: ReporteOcupacion | null;
+  serviciosRentables: ReporteServiciosRentables | null;
+  demanda: ReporteDemanda | null;
+};
+
+// Los tres reportes de un período (semana, mes o rango) a la vez
+export const obtenerReportesCartera = async (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  signal?: AbortSignal,
+): Promise<ReportesCartera> => {
+  const fechas =
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : "";
+  // Un reporte que el plan no incluye no tumba a los demás: llega null y se muestra con candado
+  const pedir = <T>(ruta: string) =>
+    request<T>(`/api/v1/reportes/${ruta}?periodo=${periodo}${fechas}`, { token, signal }).catch((e) => {
+      if (esFuncionNoIncluida(e)) return null;
+      throw e;
+    });
+  const [ocupacion, serviciosRentables, demanda] = await Promise.all([
+    pedir<ReporteOcupacion>("ocupacion"),
+    pedir<ReporteServiciosRentables>("servicios-rentables"),
+    pedir<ReporteDemanda>("demanda"),
+  ]);
+  return { ocupacion, serviciosRentables, demanda };
+};
+
+// ---------- Reportes avanzados (plan Pro, función "reportes_avanzados") ----------
+
+export type ClienteDestacado = {
+  clienteId: string;
+  nombre: string;
+  visitas: number;
+  gasto: number;
+  ticketPromedio: number;
+  ultimaVisita: string | null;
+};
+
+export type ReporteMejoresClientes = {
+  totalClientes: number;
+  masGastan: ClienteDestacado[];
+  masVienen: ClienteDestacado[];
+};
+
+export type ReporteRetencion = {
+  totalClientes: number;
+  volvieron: number;
+  unaSolaVez: number;
+  porcentajeVolvieron: number;
+  porcentajeUnaSolaVez: number;
+};
+
+export type MesTendencia = {
+  mes: string; // "2026-10"
+  ventas: number;
+  citas: number;
+  completadas: number;
+  canceladas: number;
+  // %, null: no hay mes anterior con qué comparar
+  variacionVentas: number | null;
+  variacionCitas: number | null;
+};
+
+export type ReporteTendencia = { meses: MesTendencia[] };
+
+// null: el plan no incluye ese reporte (403 "funcion_no_incluida")
+export type ReportesAvanzados = {
+  mejoresClientes: ReporteMejoresClientes | null;
+  retencion: ReporteRetencion | null;
+  tendencia: ReporteTendencia | null;
+};
+
+const filtroPeriodo = (periodo: PeriodoResumen, rango: { desde: string; hasta: string } | null) =>
+  `periodo=${periodo}${
+    periodo === "rango" && rango
+      ? `&desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`
+      : ""
+  }`;
+
+export const obtenerReportesAvanzados = async (
+  token: string,
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  signal?: AbortSignal,
+): Promise<ReportesAvanzados> => {
+  const pedir = <T>(ruta: string) =>
+    request<T>(`/api/v1/reportes/${ruta}?${filtroPeriodo(periodo, rango)}`, { token, signal }).catch((e) => {
+      if (esFuncionNoIncluida(e)) return null;
+      throw e;
+    });
+  const [mejoresClientes, retencion, tendencia] = await Promise.all([
+    pedir<ReporteMejoresClientes>("mejores-clientes"),
+    pedir<ReporteRetencion>("retencion-clientes"),
+    pedir<ReporteTendencia>("tendencia"),
+  ]);
+  return { mejoresClientes, retencion, tendencia };
+};
+
+export type FormatoExportacion = "xlsx" | "pdf";
+
+// Ruta de la descarga del reporte del período (plan Pro, función "exportar_reportes")
+export const rutaExportacion = (
+  periodo: PeriodoResumen,
+  rango: { desde: string; hasta: string } | null,
+  formato: FormatoExportacion,
+) => `/api/v1/reportes/exportar?${filtroPeriodo(periodo, rango)}&formato=${formato}`;

@@ -1,0 +1,178 @@
+import { API_BASE_URL } from "./config";
+
+// Campos extra que el backend agrega a algunos errores (ej. "funcion_no_incluida")
+export type DatosError = {
+  codigo?: string;
+  funcion?: string;
+  planRequerido?: { id: string; nombre: string };
+};
+
+// El servidor respondió, pero con un error (4xx / 5xx)
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly datos?: DatosError,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+// Por qué no hubo una respuesta válida del servidor
+export type MotivoConexion =
+  | "sin-conexion" // apagado, sin red, IP incorrecta
+  | "tiempo-agotado" // el servidor no respondió a tiempo
+  | "respuesta-invalida"; // respondió algo que no es la API (ej. portal cautivo)
+
+export class ErrorDeConexion extends Error {
+  constructor(
+    readonly causa: unknown,
+    readonly motivo: MotivoConexion = "sin-conexion",
+  ) {
+    super("No se pudo conectar con el servidor.");
+    this.name = "ErrorDeConexion";
+  }
+}
+
+// La app no pudo armar la solicitud (ej. un archivo que no se pudo leer).
+// No es un problema de red: no se debe decir "sin conexión".
+export class ErrorDeEnvio extends Error {
+  constructor(readonly causa: unknown) {
+    super("No se pudo preparar el envío.");
+    this.name = "ErrorDeEnvio";
+  }
+}
+
+// La pantalla que la pidió ya no la necesita (ej. se salió de ella).
+// No es un error: nunca se muestra a la persona.
+export class PeticionCancelada extends Error {
+  constructor() {
+    super("Petición cancelada");
+    this.name = "PeticionCancelada";
+  }
+}
+
+export const esCancelada = (error: unknown) => error instanceof PeticionCancelada;
+
+type Opciones = {
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+  body?: unknown;
+  token?: string;
+  // Cancela la petición (ej. al salir de la pantalla); lanza PeticionCancelada
+  signal?: AbortSignal;
+  // Cuánto esperar la respuesta completa antes de rendirse (por defecto 15 s)
+  tiempoLimiteMs?: number;
+};
+
+const TIEMPO_LIMITE_MS = 15_000;
+// Una foto en una red lenta tarda más que un JSON
+const TIEMPO_LIMITE_ARCHIVOS_MS = 60_000;
+
+// Los fallos de red llegan como TypeError (web: "Failed to fetch") o como
+// FetchError de expo/fetch ("fetch failed: ..."). Cualquier otro error ocurrió
+// antes de enviar, al preparar el cuerpo.
+const esFalloDeRed = (error: unknown) =>
+  error instanceof TypeError ||
+  (error instanceof Error && /fetch failed|network/i.test(error.message));
+
+export async function request<T>(
+  ruta: string,
+  { method = "GET", body, token, signal, tiempoLimiteMs }: Opciones = {},
+): Promise<T> {
+  if (signal?.aborted) throw new PeticionCancelada();
+  // Un FormData (ej. una foto) se envía tal cual: fetch arma su Content-Type
+  const esFormulario = body instanceof FormData;
+  const headers: Record<string, string> = {};
+  if (body !== undefined && !esFormulario)
+    headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  // Un servidor que no responde se corta en lugar de dejar la pantalla esperando
+  // expo/fetch avisa las dos cancelaciones igual ("Fetch request has been
+  // canceled"), así que aquí se recuerda cuál fue.
+  const controlador = new AbortController();
+  let agotado = false;
+  // expo/fetch lee el cuerpo con text() nativo, que no se detiene con abort():
+  // si la lectura se atasca, solo este rechazo saca a la pantalla de la espera.
+  let rendirse: (motivo: Error) => void = () => {};
+  const limite = new Promise<never>((_, rechazar) => {
+    rendirse = rechazar;
+  });
+  const temporizador = setTimeout(
+    () => {
+      agotado = true;
+      controlador.abort();
+      rendirse(new Error("Tiempo agotado"));
+    },
+    tiempoLimiteMs ?? (esFormulario ? TIEMPO_LIMITE_ARCHIVOS_MS : TIEMPO_LIMITE_MS),
+  );
+  const cancelar = () => {
+    controlador.abort();
+    rendirse(new Error("Cancelada"));
+  };
+  signal?.addEventListener("abort", cancelar);
+
+  const descargar = async () => {
+    const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
+      method,
+      headers,
+      body: esFormulario
+        ? body
+        : body !== undefined
+          ? JSON.stringify(body)
+          : undefined,
+      signal: controlador.signal,
+    });
+    return { respuesta, texto: await respuesta.text() };
+  };
+
+  let response: Response;
+  let texto: string;
+  try {
+    ({ respuesta: response, texto } = await Promise.race([descargar(), limite]));
+  } catch (error) {
+    if (agotado) throw new ErrorDeConexion(error, "tiempo-agotado");
+    if (signal?.aborted) throw new PeticionCancelada();
+    if (esFalloDeRed(error)) throw new ErrorDeConexion(error, "sin-conexion");
+    throw new ErrorDeEnvio(error);
+  } finally {
+    clearTimeout(temporizador);
+    signal?.removeEventListener("abort", cancelar);
+  }
+
+  const data = leerJSON(texto);
+  if (!response.ok) {
+    // Un error sin JSON (ej. página de un proxy) conserva su código de estado
+    const cuerpo = data as (DatosError & { error?: unknown }) | undefined;
+    const mensaje = cuerpo?.error;
+    const datos =
+      typeof cuerpo?.codigo === "string"
+        ? { codigo: cuerpo.codigo, funcion: cuerpo.funcion, planRequerido: cuerpo.planRequerido }
+        : undefined;
+    throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status, datos);
+  }
+  // Una respuesta exitosa que no es JSON (ej. portal cautivo) no viene del backend
+  if (data === NO_ES_JSON) throw new ErrorDeConexion(texto, "respuesta-invalida");
+  return data as T;
+}
+
+const NO_ES_JSON = Symbol("NO_ES_JSON");
+
+// Cuerpo vacío (ej. 204 No Content) → undefined
+function leerJSON(texto: string): unknown {
+  if (!texto.trim()) return undefined;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return NO_ES_JSON;
+  }
+}
+
+// Mensaje del servidor si lo hay; si no, el texto por defecto de la pantalla
+export const mensajeDeError = (error: unknown, porDefecto: string) =>
+  error instanceof ApiError && error.message ? error.message : porDefecto;
+
+// 403 del backend cuando el plan del negocio no incluye la función pedida
+export const esFuncionNoIncluida = (error: unknown) =>
+  error instanceof ApiError && error.status === 403 && error.datos?.codigo === "funcion_no_incluida";

@@ -1,11 +1,16 @@
+export type RolEquipo = "admin" | "empleado";
+
 export interface Barbero {
   id: string;
   nombre: string;
   usuario: string;
-  clave: string;
+  // Igual a rol === "admin"
   esAdmin: boolean;
+  rol?: RolEquipo;
+  // Recibe reservas como profesional (los que no, no aparecen al reservar)
+  atiendeClientes?: boolean;
   especialidad: string;
-  equipo: string;
+  equipo?: string;
   porcentajeGanancia: number;
   foto?: string;
 }
@@ -13,45 +18,85 @@ export interface Barbero {
 export interface Servicio {
   id: string;
   nombre: string;
-  duracion: string;
+  duracion: string; // ej: "40 min"
+  duracionMin?: number;
   precio: number;
 }
 
-export interface EmpresaConfig {
+export interface Empresa {
   id: string;
   codigoAcceso: string;
   nombre: string;
   colorPrimario: string;
   colorSecundario: string;
-  barberos: Barbero[];
-  servicios: Servicio[];
+  horarioApertura: string; // apertura más temprana de la semana, ej: "09:00"
+  horarioCierre: string; // cierre más tardío de la semana, ej: "20:00"
+  // Horario real de cada día (0 = domingo … 6 = sábado)
+  horario?: DiaHorario[];
+  // false si la suscripción del negocio venció (vista pública de /empresas/validar)
+  recibiendoReservas?: boolean;
 }
 
-export interface ClienteRegistrado {
-  telefono: string;
-  nombre: string;
-  fechaUltimaCita?: string;
-  totalCitas?: number;
+// Horario de un día del negocio. Cerrado: apertura y cierre null.
+export interface DiaHorario {
+  dia: number;
+  abierto: boolean;
+  apertura: string | null; // "08:00"
+  cierre: string | null; // "19:00"
 }
 
-export interface ElementoListaNegra {
+export interface Producto {
   id: string;
   nombre: string;
-  telefono: string;
+  descripcion: string | null;
+  precio: number;
+  fotoUrl: string | null;
 }
 
-export interface BloqueoHorario {
-  id: string;
+export type EstadoCita = "CONFIRMADA" | "COMPLETADA" | "CANCELADA";
+
+// Lo mínimo que se necesita para saber si un horario está ocupado
+export interface HorarioOcupado {
   barberoId: string;
-  fechaBase: string;
-  diasSemana: string[];
-  hora: string;
-  frecuencia: "PUNTUAL" | "SEMANAL_RECURRENTE";
+  fecha: string; // "2026-10-15"
+  hora: string; // "09:40 AM"
+  duracionMin?: number;
+  estado: EstadoCita;
 }
 
-export interface NotificacionCliente {
+export interface Cita extends HorarioOcupado {
   id: string;
-  titulo: string;
-  mensaje: string;
-  fecha: string;
+  cliente: string;
+  telefono: string;
+  indicativo?: string;
+  servicio: string;
+  barberoNombre: string;
+  empresaId: string;
+  precio: number;
+  completadaEn?: string;
+  completadaPor?: string;
+  canceladaEn?: string;
+  canceladaPor?: string;
+}
+
+// Un día del calendario que se muestra en los selectores
+export interface Dia {
+  id: string;
+  diaNom: string; // "JUE"
+  num: string; // "15"
+  fechaFull: string; // "2026-10-15"
+  diaNumero: number;
+}
+
+// Horario en que un profesional no atiende (vista pública, sin motivo).
+// "semanal": se repite cada semana (diaSemana: 0 = domingo … 6 = sábado).
+// "fecha": solo ese día (fecha "2026-10-21"). todoElDia llega como "00:00"–"24:00".
+export interface BloqueoHorario {
+  barberoId: string;
+  tipo?: "semanal" | "fecha";
+  diaSemana: number | null;
+  fecha: string | null;
+  todoElDia?: boolean;
+  horaInicio: string; // "12:00"
+  horaFin: string; // "13:00"
 }

@@ -1,0 +1,27 @@
+// Zonas horarias que el backend asigna según el país (src/config/zonas.ts). Un negocio
+// puede tener otra zona IANA: en ese caso se agrega a la lista al mostrarla.
+export const ZONAS_HORARIAS: readonly { valor: string; etiqueta: string }[] = [
+  { valor: "America/Argentina/Buenos_Aires", etiqueta: "Argentina · Buenos Aires" },
+  { valor: "America/La_Paz", etiqueta: "Bolivia · La Paz" },
+  { valor: "America/Sao_Paulo", etiqueta: "Brasil · São Paulo" },
+  { valor: "America/Toronto", etiqueta: "Canadá · Toronto" },
+  { valor: "America/Santiago", etiqueta: "Chile · Santiago" },
+  { valor: "America/Bogota", etiqueta: "Colombia · Bogotá" },
+  { valor: "America/Costa_Rica", etiqueta: "Costa Rica" },
+  { valor: "America/Havana", etiqueta: "Cuba · La Habana" },
+  { valor: "America/Guayaquil", etiqueta: "Ecuador · Guayaquil" },
+  { valor: "America/El_Salvador", etiqueta: "El Salvador" },
+  { valor: "Europe/Madrid", etiqueta: "España · Madrid" },
+  { valor: "America/New_York", etiqueta: "Estados Unidos · Nueva York" },
+  { valor: "America/Guatemala", etiqueta: "Guatemala" },
+  { valor: "America/Tegucigalpa", etiqueta: "Honduras · Tegucigalpa" },
+  { valor: "America/Mexico_City", etiqueta: "México · Ciudad de México" },
+  { valor: "America/Managua", etiqueta: "Nicaragua · Managua" },
+  { valor: "America/Panama", etiqueta: "Panamá" },
+  { valor: "America/Asuncion", etiqueta: "Paraguay · Asunción" },
+  { valor: "America/Lima", etiqueta: "Perú · Lima" },
+  { valor: "America/Puerto_Rico", etiqueta: "Puerto Rico" },
+  { valor: "America/Santo_Domingo", etiqueta: "República Dominicana · Santo Domingo" },
+  { valor: "America/Montevideo", etiqueta: "Uruguay · Montevideo" },
+  { valor: "America/Caracas", etiqueta: "Venezuela · Caracas" },
+];
