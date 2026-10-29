@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import Desplegable from "@/components/ui/Desplegable";
+import SeccionPlegable from "@/components/ui/SeccionPlegable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { ZONAS_HORARIAS } from "@/data/zonasHorarias";
 import { useTelefono } from "@/hooks/useTelefono";
@@ -132,7 +133,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
 
   if (edicion) {
     return (
-      <View>
+      <SeccionPlegable titulo="Datos del negocio" icono="storefront-outline" abiertaAlInicio>
         <CamposEmpresa
           valores={edicion}
           codigoActual={perfil.codigoAcceso}
@@ -174,7 +175,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
           variante="secundario"
           onPress={() => editar(null)}
         />
-      </View>
+      </SeccionPlegable>
     );
   }
 
@@ -192,50 +193,63 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
         ? telefonoMostrado(perfil.whatsappContacto).texto
         : "Sin configurar",
     ],
-    ["Cancelar o reprogramar", textoAnticipacion(perfil.anticipacionCancelacionHoras)],
-    ["Zona horaria", nombreZona(perfil.zonaHoraria)],
   ];
 
-  return (
-    <View>
-      <TituloSeccion>DATOS DEL NEGOCIO</TituloSeccion>
-      <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-        {filas.map(([etiqueta, valor]) => (
-          <View key={etiqueta} style={styles.fila}>
-            <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{etiqueta}</Text>
-            <Text style={[styles.valor, { color: colors.textPrimary }]}>{valor}</Text>
-          </View>
-        ))}
-      </View>
-
-      <TituloSeccion>HORARIO</TituloSeccion>
-      <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-        {ORDEN_DIAS.map((dia) => {
-          const h = perfil.horario.find((x) => x.dia === dia);
-          return (
-            <View key={dia} style={styles.fila}>
-              <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
-                {DIAS_LARGOS[dia]}
-              </Text>
-              <Text style={[styles.valor, { color: h?.abierto ? colors.textPrimary : colors.textSecondary }]}>
-                {h?.abierto ? `${hora(h.apertura)} a ${hora(h.cierre)}` : "Cerrado"}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-
-      {!perfil.departamento ? (
-        <Text style={[styles.nota, { color: colors.primaryText }]}>
-          Completa el departamento y el municipio de tu negocio en &quot;Editar datos&quot;.
-        </Text>
-      ) : null}
-      <Boton
-        titulo="EDITAR DATOS"
-        ayuda="Abre el formulario para cambiar los datos y el horario del negocio"
-        onPress={() => editar(valoresDesdePerfil(perfil))}
-      />
+  const tarjeta = (children: ReactNode) => (
+    <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
+      {children}
     </View>
+  );
+  const fila = (etiqueta: string, valor: string, color = colors.textPrimary) => (
+    <View key={etiqueta} style={styles.fila}>
+      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{etiqueta}</Text>
+      <Text style={[styles.valor, { color }]}>{valor}</Text>
+    </View>
+  );
+
+  return (
+    <>
+      <SeccionPlegable titulo="Datos del negocio" icono="storefront-outline" abiertaAlInicio>
+        {tarjeta(filas.map(([etiqueta, valor]) => fila(etiqueta, valor)))}
+        {!perfil.departamento ? (
+          <Text style={[styles.nota, { color: colors.primaryText }]}>
+            Completa el departamento y el municipio de tu negocio en &quot;Editar datos&quot;.
+          </Text>
+        ) : null}
+        <Boton
+          titulo="EDITAR DATOS"
+          ayuda="Abre el formulario para cambiar los datos y el horario del negocio"
+          onPress={() => editar(valoresDesdePerfil(perfil))}
+        />
+      </SeccionPlegable>
+
+      <SeccionPlegable titulo="Horario" icono="time-outline" abiertaAlInicio>
+        {tarjeta(
+          ORDEN_DIAS.map((dia) => {
+            const h = perfil.horario.find((x) => x.dia === dia);
+            return fila(
+              DIAS_LARGOS[dia],
+              h?.abierto ? `${hora(h.apertura)} a ${hora(h.cierre)}` : "Cerrado",
+              h?.abierto ? colors.textPrimary : colors.textSecondary,
+            );
+          }),
+        )}
+      </SeccionPlegable>
+
+      <SeccionPlegable titulo="Cancelaciones" icono="close-circle-outline">
+        {tarjeta(fila("Cancelar o reprogramar", textoAnticipacion(perfil.anticipacionCancelacionHoras)))}
+        <Text style={[styles.nota, { color: colors.textSecondary }]}>
+          Para cambiarlo toca &quot;Editar datos&quot; en Datos del negocio.
+        </Text>
+      </SeccionPlegable>
+
+      <SeccionPlegable titulo="Zona horaria" icono="globe-outline">
+        {tarjeta(fila("Zona horaria", nombreZona(perfil.zonaHoraria)))}
+        <Text style={[styles.nota, { color: colors.textSecondary }]}>
+          Para cambiarla toca &quot;Editar datos&quot; en Datos del negocio.
+        </Text>
+      </SeccionPlegable>
+    </>
   );
 }
 

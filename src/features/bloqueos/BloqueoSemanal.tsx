@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
 import { ComponentProps, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BotonIcono from "@/components/ui/BotonIcono";
@@ -441,9 +442,9 @@ export default function BloqueoSemanal({
               accessibilityState={{ disabled: semanas <= 0 }}
               disabled={semanas <= 0}
               onPress={() => setSemanas(semanas - 1)}
-              style={[s.flecha, { opacity: semanas <= 0 ? 0.3 : 1 }]}
+              style={[s.flecha, estiloBotonPagina(colors, semanas > 0)]}
             >
-              <Ionicons name="chevron-back" size={22} color={colors.primaryText} />
+              <Ionicons name="chevron-back" size={22} color={colorIconoPagina(colors, semanas > 0)} />
             </TouchableOpacity>
             <View style={s.centro}>
               <Text style={[s.textoSemana, { color: colors.textPrimary }]}>
@@ -458,9 +459,9 @@ export default function BloqueoSemanal({
               accessibilityLabel="Semana siguiente"
               accessibilityHint="Muestra la semana siguiente"
               onPress={() => setSemanas(semanas + 1)}
-              style={s.flecha}
+              style={[s.flecha, estiloBotonPagina(colors, true)]}
             >
-              <Ionicons name="chevron-forward" size={22} color={colors.primaryText} />
+              <Ionicons name="chevron-forward" size={22} color={colorIconoPagina(colors, true)} />
             </TouchableOpacity>
           </View>
 

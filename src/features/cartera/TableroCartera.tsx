@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import SelectorDias from "@/components/ui/SelectorDias";
@@ -272,9 +273,9 @@ export default function TableroCartera({ token }: { token: string }) {
             accessibilityState={{ disabled: !visible.hayAnterior }}
             disabled={!visible.hayAnterior}
             onPress={() => setAtras((n) => n + 1)}
-            style={[s.flecha, !visible.hayAnterior && s.flechaApagada]}
+            style={[s.flecha, estiloBotonPagina(colors, visible.hayAnterior)]}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={colorIconoPagina(colors, visible.hayAnterior)} />
           </Pressable>
           <Text
             accessibilityLiveRegion="polite"
@@ -289,9 +290,9 @@ export default function TableroCartera({ token }: { token: string }) {
             accessibilityState={{ disabled: !visible.haySiguiente }}
             disabled={!visible.haySiguiente}
             onPress={() => setAtras((n) => Math.max(0, n - 1))}
-            style={[s.flecha, !visible.haySiguiente && s.flechaApagada]}
+            style={[s.flecha, estiloBotonPagina(colors, visible.haySiguiente)]}
           >
-            <Ionicons name="chevron-forward" size={24} color={colors.textPrimary} />
+            <Ionicons name="chevron-forward" size={24} color={colorIconoPagina(colors, visible.haySiguiente)} />
           </Pressable>
         </View>
       ) : (
@@ -388,7 +389,6 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
-  flechaApagada: { opacity: 0.25 },
   textoNavegador: { flex: 1, fontSize: 14, fontWeight: "bold", textAlign: "center" },
   cargando: { marginVertical: 20 },
   error: { fontSize: 13, marginVertical: 10 },

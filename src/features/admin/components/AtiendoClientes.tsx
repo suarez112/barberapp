@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native"
 import FotoBarbero from "@/components/FotoBarbero";
 import Boton from "@/components/ui/Boton";
 import CampoTexto from "@/components/ui/CampoTexto";
-import TituloSeccion from "@/components/ui/TituloSeccion";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError, esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -74,11 +74,11 @@ export default function AtiendoClientes({ token, suscripcion, onEquipoCambiado }
       const ok = await confirmar({
         titulo: "Dejar de atender clientes",
         mensaje: `Dejarás de aparecer al reservar y de recibir citas nuevas. Tus citas actuales se conservan.
-${AVISO_SIN_REEMBOLSO}`,
+${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`.trim(),
         destructivo: true,
       });
       if (!ok) return;
-    } else {
+    } else if (PAGOS_EN_APP) {
       // Antes de confirmar: cuánto se cobra por sumar a un profesional más
       const cobro =
         planes && suscripcion
@@ -151,8 +151,7 @@ ${cobro}`,
   };
 
   return (
-    <View>
-      <TituloSeccion>YO TAMBIÉN ATIENDO</TituloSeccion>
+    <View style={styles.raiz}>
       <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
         {errorCarga ? (
           <View>
@@ -173,11 +172,12 @@ ${cobro}`,
           <>
             <View style={styles.fila}>
               <View style={styles.flex}>
+                <Text style={[styles.rol, { color: colors.primaryText }]}>Tú: Administrador</Text>
                 <Text style={[styles.titulo, { color: colors.textPrimary }]}>Yo también atiendo clientes</Text>
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
                   {atiende
-                    ? "Apareces como profesional al reservar y en la agenda. Cuentas como un profesional en tu cobro."
-                    : "Actívalo para recibir citas tú también. Suma un profesional a tu cobro."}
+                    ? `Apareces como profesional al reservar y en la agenda.${PAGOS_EN_APP ? " Cuentas como un profesional en tu cobro." : ""}`
+                    : `Actívalo para recibir citas tú también.${PAGOS_EN_APP ? " Suma un profesional a tu cobro." : ""}`}
                 </Text>
               </View>
               <Switch
@@ -238,10 +238,12 @@ ${cobro}`,
 }
 
 const styles = StyleSheet.create({
+  raiz: { marginTop: 15 },
   tarjeta: { borderWidth: 1, borderRadius: 10, padding: 14 },
   cargando: { marginVertical: 10 },
   fila: { flexDirection: "row", alignItems: "center", gap: 10 },
   flex: { flex: 1 },
+  rol: { fontSize: 12, fontWeight: "bold", letterSpacing: 0.5, marginBottom: 2 },
   titulo: { fontSize: 15, fontWeight: "bold" },
   ayuda: { fontSize: 12, lineHeight: 17, marginTop: 2 },
   perfil: { marginTop: 14, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, alignItems: "stretch" },

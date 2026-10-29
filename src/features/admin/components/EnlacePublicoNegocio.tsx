@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View } from "react-native";
-import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { PerfilEmpresa } from "../../cuenta/api";
 import CodigoQr from "../../enlace/CodigoQr";
@@ -13,7 +12,6 @@ export default function EnlacePublicoNegocio({ perfil }: { perfil: PerfilEmpresa
   if (!perfil.enlacePublico) return null;
   return (
     <View>
-      <TituloSeccion>TU ENLACE PÚBLICO</TituloSeccion>
       <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
         Tus clientes lo abren y entran directo a reservar en tu negocio. Si cambias el código, el
         enlace cambia con él.

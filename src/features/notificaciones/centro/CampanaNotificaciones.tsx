@@ -22,7 +22,7 @@ import { useCuenta } from "../../cuenta/CuentaProvider";
 import { useSesion } from "../../sesion/SesionProvider";
 import { useNotificaciones } from "../NotificacionesProvider";
 import { useAbrirCita, useAbrirPlanes } from "../useAbrirCita";
-import { AvisoGuardado, contarNoLeidas, listarAvisos, marcarAvisoLeido } from "./api";
+import { AvisoGuardado, contarNoLeidas, listarAvisos, marcarAvisoLeido, marcarTodasLeidas } from "./api";
 
 const CADA_SEGUNDOS = 30;
 
@@ -90,8 +90,16 @@ function Campana({ token }: { token: string }) {
     listarAvisos(token)
       .then((r) => {
         if (!vigente.current) return;
+        // La lista conserva los puntos de "sin leer" mientras está abierta; el número se quita
+        // y el backend las marca todas como leídas
         setAvisos(r.datos);
-        setNoLeidas(r.noLeidas);
+        if (r.noLeidas > 0) {
+          setNoLeidas(0);
+          marcarTodasLeidas(token).catch((e) => {
+            if (!esCancelada(e)) registrarCausa("Marcar todas las notificaciones", e);
+            actualizarNumero();
+          });
+        }
       })
       .catch((e) => {
         if (esCancelada(e) || !vigente.current) return;
@@ -99,7 +107,7 @@ function Campana({ token }: { token: string }) {
         setError("No se pudieron cargar tus notificaciones.");
       })
       .finally(() => vigente.current && setCargando(false));
-  }, [token]);
+  }, [token, actualizarNumero]);
 
   // Al abrir la sesión, cada 30 s, al volver a la app y cuando llega un aviso con la app abierta
   useEffect(() => {
@@ -134,7 +142,7 @@ function Campana({ token }: { token: string }) {
     else if (a.citaId) abrirCita(a.citaId);
   };
 
-  const todoAlDia = noLeidas === 0;
+  const todoAlDia = !avisos?.some((a) => !a.leida);
 
   return (
     <>
@@ -219,7 +227,7 @@ function Campana({ token }: { token: string }) {
                           ? "Marca como leída y abre la cita"
                           : "Marca como leída"
                     }
-                    style={[styles.aviso, { borderColor: colors.cardBorder }]}
+                    style={[styles.aviso, { borderColor: colors.inputBorder }]}
                     onPress={() => tocar(a)}
                   >
                     <View

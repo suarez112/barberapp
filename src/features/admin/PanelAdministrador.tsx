@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
+import SeccionPlegable from "@/components/ui/SeccionPlegable";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useRefrescoDiario } from "@/hooks/useRefrescoDiario";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -14,7 +15,6 @@ import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import { FuncionesProvider } from "../planes/FuncionesProvider";
 import { useFunciones } from "../planes/funcionesContexto";
-import AtiendoClientes from "./components/AtiendoClientes";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
 import EnlacePublicoNegocio from "./components/EnlacePublicoNegocio";
@@ -141,16 +141,23 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
           </View>
 
           <MostrarGuia />
-          {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
-          {/* Solo la cuenta de la empresa: un integrante administrador usa "Atiende clientes" en Equipo */}
-          {personal.esCuentaAdmin ? (
-            <AtiendoClientes token={personal.token} suscripcion={suscripcion} onEquipoCambiado={actualizarSuscripcion} />
-          ) : null}
-          <EnlacePublicoNegocio perfil={perfil} />
-          <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
+          {/* "Yo también atiendo clientes" ahora está al inicio de Equipo */}
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
-          <HorariosReserva perfil={perfil} onGuardar={guardarIntervalo} />
-          <UbicacionNegocio perfil={perfil} onGuardar={guardarUbicacion} />
+          <SeccionPlegable titulo="Horarios de reserva" icono="calendar-outline" abiertaAlInicio>
+            <HorariosReserva perfil={perfil} onGuardar={guardarIntervalo} />
+          </SeccionPlegable>
+          <SeccionPlegable titulo="Ubicación" icono="location-outline">
+            <UbicacionNegocio perfil={perfil} onGuardar={guardarUbicacion} />
+          </SeccionPlegable>
+          {perfil.enlacePublico ? (
+            <SeccionPlegable titulo="Enlace y QR" icono="qr-code-outline">
+              <EnlacePublicoNegocio perfil={perfil} />
+            </SeccionPlegable>
+          ) : null}
+          <SeccionPlegable titulo="Foto" icono="image-outline">
+            <FotoNegocio fotoUrl={perfil.fotoUrl} onGuardar={guardarFoto} />
+          </SeccionPlegable>
+          {suscripcion ? <MiSuscripcion suscripcion={suscripcion} /> : null}
         </>
       ) : null}
     </View>

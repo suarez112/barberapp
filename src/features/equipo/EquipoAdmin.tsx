@@ -34,6 +34,8 @@ import FuncionBloqueada from "../planes/FuncionBloqueada";
 import { AVISO_SIN_REEMBOLSO, calcularCargoNuevo, textoCargoNuevo } from "../planes/cobro";
 import { useFunciones } from "../planes/funcionesContexto";
 import PlanesModal from "../planes/PlanesModal";
+import AtiendoClientes from "../admin/components/AtiendoClientes";
+import { PAGOS_EN_APP } from "@/config/pagos";
 
 const ROLES = [
   { valor: "admin", etiqueta: "Administrador" },
@@ -133,7 +135,9 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
     // Antes de guardar: si suma un profesional al cobro, mostrar cuánto; si lo quita, avisar que no hay reembolso
     const sumaCobro = campos.atiendeClientes && (!enEdicion || enEdicion.atiendeClientes === false);
     const restaCobro = !campos.atiendeClientes && !!enEdicion && enEdicion.atiendeClientes !== false;
-    if (sumaCobro) {
+    if (!PAGOS_EN_APP) {
+      // En el celular no se habla de cobros
+    } else if (sumaCobro) {
       const cobro =
         planes && suscripcion
           ? textoCargoNuevo(calcularCargoNuevo(planes, suscripcion, suscripcion.profesionalesCobrados))
@@ -201,8 +205,8 @@ ${AVISO_SIN_REEMBOLSO}`,
       titulo: "Confirmar",
       mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.${
         b.atiendeClientes === false ? "" : `
-${AVISO_SIN_REEMBOLSO}`
-      }`,
+${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
+      }`.trim(),
       destructivo: true,
     });
     if (!ok) return;
@@ -231,6 +235,11 @@ ${AVISO_SIN_REEMBOLSO}`
 
   return (
     <>
+      {/* Solo la cuenta de la empresa; un integrante administrador usa "Atiende clientes" más abajo */}
+      {personal.esCuentaAdmin ? (
+        <AtiendoClientes token={token} suscripcion={suscripcion} onEquipoCambiado={onEquipoCambiado} />
+      ) : null}
+
       {suscripcion ? (
         <View
           style={[
@@ -246,19 +255,25 @@ ${AVISO_SIN_REEMBOLSO}`
           <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
             {lleno
               ? "Para agregar a alguien más, retira primero a quien ya no trabaje en el negocio."
-              : "Cada profesional que atiende clientes suma a tu cobro. Los administradores que no atienden no se cobran."}
+              : PAGOS_EN_APP
+                ? "Cada profesional que atiende clientes suma a tu cobro. Los administradores que no atienden no se cobran."
+                : "Solo cuentan los profesionales que atienden clientes."}
           </Text>
-          <Boton
-            titulo="VER PLANES"
-            ayuda="Muestra el precio según la cantidad de profesionales"
-            variante="secundario"
-            onPress={() => setVerPlanes(true)}
-            style={styles.botonPlanes}
-          />
+          {PAGOS_EN_APP ? (
+            <Boton
+              titulo="VER PLANES"
+              ayuda="Muestra el precio según la cantidad de profesionales"
+              variante="secundario"
+              onPress={() => setVerPlanes(true)}
+              style={styles.botonPlanes}
+            />
+          ) : null}
         </View>
       ) : null}
 
-      <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+      {PAGOS_EN_APP ? (
+        <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+      ) : null}
 
       <Acordeon
         titulo={enEdicion ? "✏️ EDITANDO INTEGRANTE" : "➕ REGISTRAR NUEVO INTEGRANTE"}

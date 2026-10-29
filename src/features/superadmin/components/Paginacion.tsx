@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
@@ -24,13 +25,9 @@ export default function Paginacion({ total, pagina, limite, onCambiar }: Props) 
       accessibilityState={{ disabled: !activo }}
       disabled={!activo}
       onPress={() => onCambiar(destino)}
-      style={[
-        styles.boton,
-        { borderColor: colors.cardBorder, backgroundColor: colors.cardBg },
-        !activo && styles.apagado,
-      ]}
+      style={[styles.boton, estiloBotonPagina(colors, activo)]}
     >
-      <Text style={[styles.textoBoton, { color: colors.textPrimary }]}>{texto}</Text>
+      <Text style={[styles.textoBoton, { color: activo ? colors.textPrimary : colors.textSecondary }]}>{texto}</Text>
     </Tocable>
   );
 
@@ -61,11 +58,8 @@ const styles = StyleSheet.create({
   boton: {
     minHeight: 44,
     paddingHorizontal: 16,
-    borderWidth: 1,
-    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   textoBoton: { fontSize: 14, fontWeight: "600" },
-  apagado: { opacity: 0.4 },
 });

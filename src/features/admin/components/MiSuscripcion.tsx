@@ -3,7 +3,8 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import Insignia from "@/components/ui/Insignia";
-import TituloSeccion from "@/components/ui/TituloSeccion";
+import SeccionPlegable from "@/components/ui/SeccionPlegable";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { fechaLarga } from "@/utils/fechas";
@@ -57,44 +58,83 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
     </View>
   );
 
+  // En el celular no se habla de planes ni de dinero: solo el estado y los días
+  const tituloMovil = estado === "prueba" ? "Prueba gratuita" : estado === "activa" ? "Suscripción activa" : "Suscripción vencida";
+  const resumenFunciones = funciones
+    ? `Nivel ${planEquipo.nombre} · ${incluidas.length} ${incluidas.length === 1 ? "función" : "funciones"}`
+    : undefined;
+
   return (
-    <View>
-      <TituloSeccion>MI SUSCRIPCIÓN</TituloSeccion>
-      <View
-        style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
-      >
-        <View style={[styles.fila, { borderBottomColor: colors.cardBorder }]}>
-          {titulo ? (
-            <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
-          ) : (
-            <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Estado</Text>
+    <>
+      <SeccionPlegable titulo="Suscripción" icono="card-outline">
+        <View
+          style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+        >
+          <View style={[styles.fila, { borderBottomColor: colors.cardBorder }]}>
+            {PAGOS_EN_APP && titulo ? (
+              <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
+            ) : !PAGOS_EN_APP ? (
+              <Text style={[styles.titulo, { color: colors.textPrimary }]}>{tituloMovil}</Text>
+            ) : (
+              <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Estado</Text>
+            )}
+            <Insignia texto={ESTADOS[estado].texto} color={ESTADOS[estado].color} />
+          </View>
+          {fila("Nivel", planEquipo.nombre)}
+          {PAGOS_EN_APP ? fila("Profesionales cobrados", textoProfesionales(profesionalesCobrados)) : null}
+          {PAGOS_EN_APP
+            ? fila(
+                estado === "prueba" ? "Precio al activar" : "Precio actual",
+                precioHoy === null ? "—" : `${dinero(precioHoy)} ${sufijoPrecio}`,
+              )
+            : null}
+          {PAGOS_EN_APP ? fila("Periodo", plan ? (plan === "anual" ? "Anual" : "Mensual") : "Prueba gratuita") : null}
+          {PAGOS_EN_APP && estado !== "prueba"
+            ? fila("Fecha de pago", fechaPago ? fechaLarga(fechaPago) : "—")
+            : null}
+          {fila(
+            estado === "prueba" ? "La prueba termina" : "Fecha de renovación",
+            fechaFin ? fechaLarga(fechaFin) : "Sin fecha de vencimiento",
           )}
-          <Insignia texto={ESTADOS[estado].texto} color={ESTADOS[estado].color} />
+          {PAGOS_EN_APP && estado === "activa"
+            ? fila(
+                "Cargos pendientes",
+                cargosPendientes && cargosPendientes.cantidad > 0
+                  ? `${cargosPendientes.cantidad} · ${dinero(cargosPendientes.total)}`
+                  : "Ninguno",
+              )
+            : null}
+          {fila("Días restantes", diasRestantes === null ? "—" : textoDias(diasRestantes))}
+          {PAGOS_EN_APP && estado === "activa" && diasPruebaSumados ? (
+            <Text style={[styles.mensaje, { color: colors.textPrimary }]}>
+              Incluye {textoDias(diasPruebaSumados)} de prueba que te quedaban.
+            </Text>
+          ) : null}
+          {PAGOS_EN_APP && suscripcion.mensaje ? (
+            <Text style={[styles.mensaje, { color: colors.textSecondary }]}>
+              {suscripcion.mensaje}
+            </Text>
+          ) : null}
+          {PAGOS_EN_APP ? (
+            <Boton
+              titulo={estado === "prueba" ? "ACTIVAR PLAN AHORA" : "CAMBIAR DE PLAN"}
+              ayuda={
+                estado === "prueba"
+                  ? "Muestra el precio según tus profesionales. Los días de prueba que te quedan se suman al plan"
+                  : "Muestra el precio según la cantidad de profesionales"
+              }
+              onPress={() => setVerPlanes(true)}
+              style={styles.boton}
+            />
+          ) : null}
         </View>
-        {fila("Nivel", planEquipo.nombre)}
-        {fila("Profesionales cobrados", textoProfesionales(profesionalesCobrados))}
-        {fila(
-          estado === "prueba" ? "Precio al activar" : "Precio actual",
-          precioHoy === null ? "—" : `${dinero(precioHoy)} ${sufijoPrecio}`,
-        )}
-        {fila("Periodo", plan ? (plan === "anual" ? "Anual" : "Mensual") : "Prueba gratuita")}
-        {estado !== "prueba" ? fila("Fecha de pago", fechaPago ? fechaLarga(fechaPago) : "—") : null}
-        {fila(
-          estado === "prueba" ? "La prueba termina" : "Fecha de renovación",
-          fechaFin ? fechaLarga(fechaFin) : "Sin fecha de vencimiento",
-        )}
-        {estado === "activa"
-          ? fila(
-              "Cargos pendientes",
-              cargosPendientes && cargosPendientes.cantidad > 0
-                ? `${cargosPendientes.cantidad} · ${dinero(cargosPendientes.total)}`
-                : "Ninguno",
-            )
-          : null}
-        {fila("Días restantes", diasRestantes === null ? "—" : textoDias(diasRestantes))}
-        {incluidas.length > 0 ? (
-          <View style={[styles.funciones, { borderBottomColor: colors.cardBorder }]}>
-            <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Funciones incluidas</Text>
+      </SeccionPlegable>
+
+      {incluidas.length > 0 ? (
+        <SeccionPlegable titulo="Funciones incluidas" icono="checkmark-done-outline" resumen={resumenFunciones}>
+          <View
+            style={[styles.tarjeta, styles.funciones, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          >
             {incluidas.map((f) => (
               <View key={f.id} style={styles.funcion}>
                 <Ionicons name="checkmark-circle" size={18} color={COLORES.verde} />
@@ -106,45 +146,27 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
                 <Ionicons name="lock-closed" size={18} color={colors.textSecondary} />
                 <Text style={[styles.textoFuncion, { color: colors.textSecondary }]}>
                   {f.nombre}
-                  {f.planRequerido ? ` · Disponible desde el nivel ${f.planRequerido.nombre}` : ""}
+                  {PAGOS_EN_APP && f.planRequerido ? ` · Disponible desde el nivel ${f.planRequerido.nombre}` : ""}
                 </Text>
               </View>
             ))}
           </View>
-        ) : null}
-        {estado === "activa" && diasPruebaSumados ? (
-          <Text style={[styles.mensaje, { color: colors.textPrimary }]}>
-            Incluye {textoDias(diasPruebaSumados)} de prueba que te quedaban.
-          </Text>
-        ) : null}
-        {suscripcion.mensaje ? (
-          <Text style={[styles.mensaje, { color: colors.textSecondary }]}>
-            {suscripcion.mensaje}
-          </Text>
-        ) : null}
-        <Boton
-          titulo={estado === "prueba" ? "ACTIVAR PLAN AHORA" : "CAMBIAR DE PLAN"}
-          ayuda={
-            estado === "prueba"
-              ? "Muestra el precio según tus profesionales. Los días de prueba que te quedan se suman al plan"
-              : "Muestra el precio según la cantidad de profesionales"
-          }
-          onPress={() => setVerPlanes(true)}
-          style={styles.boton}
-        />
-      </View>
+        </SeccionPlegable>
+      ) : null}
 
-      <PlanesModal
-        visible={verPlanes}
-        onCerrar={() => setVerPlanes(false)}
-        suscripcion={suscripcion}
-        nota={
-          estado === "prueba"
-            ? "Si activas un plan durante la prueba, los días gratis que te quedan se suman al plan."
-            : undefined
-        }
-      />
-    </View>
+      {PAGOS_EN_APP ? (
+        <PlanesModal
+          visible={verPlanes}
+          onCerrar={() => setVerPlanes(false)}
+          suscripcion={suscripcion}
+          nota={
+            estado === "prueba"
+              ? "Si activas un plan durante la prueba, los días gratis que te quedan se suman al plan."
+              : undefined
+          }
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -161,7 +183,7 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 15, fontWeight: "bold", flexShrink: 1, marginRight: 10 },
   etiqueta: { fontSize: 13 },
   valor: { fontSize: 13, fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 10 },
-  funciones: { paddingVertical: 10, gap: 6, borderBottomWidth: StyleSheet.hairlineWidth },
+  funciones: { paddingVertical: 10, gap: 6 },
   funcion: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 28 },
   textoFuncion: { flex: 1, fontSize: 13 },
   mensaje: { fontSize: 12, lineHeight: 17, paddingTop: 10 },

@@ -1,5 +1,5 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import PantallaAviso from "@/components/ui/PantallaAviso";
@@ -7,7 +7,7 @@ import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
 import { avisar } from "@/utils/dialogos";
-import { crearDia, diaDeHoy } from "@/utils/fechas";
+import { crearDia, diaDeHoy, fechaConDia } from "@/utils/fechas";
 import AgendaTab from "../agenda/AgendaTab";
 import { useAgenda } from "../agenda/AgendaProvider";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
@@ -255,6 +255,23 @@ export default function PanelNegocio({
     <Pantalla
       cabecera={{ onSalir: salir }}
       pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
+      fijo={
+        conSupervision && profesional ? (
+          <View style={[styles.fijo, { backgroundColor: colors.bg, borderBottomColor: colors.cardBorder }]}>
+            <SelectorSupervision
+              compacto
+              barberos={atienden}
+              seleccionadoId={profesional.id}
+              onSeleccionar={(b) => setSupervisadoId(b.id)}
+            />
+            {activa === "AGENDAMIENTOS" ? (
+              <Text style={[styles.diaFijo, { color: colors.textSecondary }]}>
+                {fechaConDia(diaAgenda.fechaFull)}
+              </Text>
+            ) : null}
+          </View>
+        ) : undefined
+      }
       alRefrescar={empresa ? deslizarParaActualizar : undefined}
     >
       <RefrescoPanelProvider registrar={registrarRefresco}>
@@ -270,13 +287,6 @@ export default function PanelNegocio({
           ) : null}
           {typeof encabezado === "function" ? encabezado(activa, irA) : encabezado}
 
-          {conSupervision && profesional ? (
-            <SelectorSupervision
-              barberos={atienden}
-              seleccionadoId={profesional.id}
-              onSeleccionar={(b) => setSupervisadoId(b.id)}
-            />
-          ) : null}
 
           {contenido()}
         </View>
@@ -287,5 +297,7 @@ export default function PanelNegocio({
 
 const styles = StyleSheet.create({
   cargando: { marginTop: 30 },
+  fijo: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  diaFijo: { fontSize: 12, fontWeight: "600", marginTop: 6 },
   botonAviso: { marginTop: 24, alignSelf: "stretch" },
 });

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
 import { useRef, useState } from "react";
 import { ScrollView, type ScrollViewInstance, StyleSheet, Text, View } from "react-native";
 import Tocable from "./Tocable";
@@ -73,10 +74,10 @@ export default function SelectorDias({
       accessibilityHint={`Muestra los días del ${etiqueta.toLowerCase()}`}
       accessibilityState={{ disabled: !habilitada }}
       disabled={!habilitada}
-      style={[styles.flecha, !habilitada && styles.deshabilitada]}
+      style={[styles.flecha, estiloBotonPagina(colors, habilitada)]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={20} color={colors.primaryText} />
+      <Ionicons name={icono} size={20} color={colorIconoPagina(colors, habilitada)} />
     </Tocable>
   );
 
@@ -154,7 +155,6 @@ const styles = StyleSheet.create({
   },
   tituloMes: { fontSize: 15, fontWeight: "bold" },
   flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
-  deshabilitada: { opacity: 0.3 },
   dia: {
     width: 60,
     height: 75,

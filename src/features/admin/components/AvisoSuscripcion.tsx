@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { CONTACTO } from "@/config/app";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { fechaLarga } from "@/utils/fechas";
 import { Suscripcion } from "../../cuenta/api";
@@ -40,9 +42,11 @@ export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscrip
         {fechaFin ? (
           <Text style={[styles.detalle, { color: colors.textSecondary }]}>
             {termina} el {fechaLarga(fechaFin)}.{" "}
-            {estado === "prueba"
-              ? "Activa un plan para no perder el acceso."
-              : "Renuévalo para no perder el acceso."}
+            {!PAGOS_EN_APP
+              ? `¿Dudas? Escríbenos${CONTACTO.correo ? ` a ${CONTACTO.correo}` : ""}.`
+              : estado === "prueba"
+                ? "Activa un plan para no perder el acceso."
+                : "Renuévalo para no perder el acceso."}
           </Text>
         ) : null}
       </View>

@@ -1,3 +1,4 @@
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError, esCancelada, esFuncionNoIncluida } from "@/services/api/http";
 import { avisar, confirmar } from "@/utils/dialogos";
@@ -29,7 +30,7 @@ export function useAvisarError() {
     registrarCausa(titulo, error);
     const aviso = describirError(error, { titulo, porDefecto, tituloConflicto });
     // El plan no incluye la función: el mismo aviso del backend, con un botón a los planes
-    if (esFuncionNoIncluida(error)) {
+    if (PAGOS_EN_APP && esFuncionNoIncluida(error)) {
       void confirmar({
         titulo: aviso.titulo,
         mensaje: aviso.mensaje,

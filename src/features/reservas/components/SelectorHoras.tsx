@@ -123,10 +123,9 @@ export default function SelectorHoras({
                           backgroundColor: colors.cardBg,
                           borderColor: colors.cardBorder,
                         },
-                        h.pegada && { borderColor: colors.primary, borderWidth: 2 },
                         esSel && {
                           borderColor: colors.primary,
-                          backgroundColor: colors.cardSelectedBg,
+                          backgroundColor: colors.primary,
                         },
                       ]}
                       accessibilityRole="button"
@@ -138,19 +137,20 @@ export default function SelectorHoras({
                       <Text
                         style={[
                           s.textoChip,
-                          { color: colors.textPrimary },
-                          esSel && { color: colors.primaryText },
+                          { color: esSel ? colors.onPrimary : colors.textPrimary },
                         ]}
                       >
                         {horaCorta(h.inicio)}
                       </Text>
-                      {h.pegada ? (
-                        <View style={[s.marca, { backgroundColor: colors.primary }]}>
-                          <Text style={[s.textoMarca, { color: colors.onPrimary }]}>
-                            ★ Recomendada
-                          </Text>
-                        </View>
-                      ) : null}
+                      {/* El renglón existe siempre: así todas las casillas miden lo mismo */}
+                      <Text
+                        style={[
+                          s.textoMarca,
+                          { color: esSel ? colors.onPrimary : colors.primaryText },
+                        ]}
+                      >
+                        {h.pegada ? "★ Recomendada" : " "}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -181,16 +181,14 @@ const s = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     width: "31%",
-    minHeight: 44,
+    height: 56,
     borderRadius: 6,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
-    gap: 4,
+    gap: 2,
   },
   textoChip: { fontSize: 14, fontWeight: "bold" },
-  marca: { borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  textoMarca: { fontSize: 10, fontWeight: "bold" },
+  textoMarca: { fontSize: 10, fontWeight: "bold", lineHeight: 13 },
   sinHoras: { fontSize: 13, marginVertical: 10 },
 });

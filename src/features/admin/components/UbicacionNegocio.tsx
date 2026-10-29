@@ -3,7 +3,6 @@ import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
-import TituloSeccion from "@/components/ui/TituloSeccion";
 import { registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar } from "@/utils/dialogos";
@@ -177,7 +176,6 @@ export default function UbicacionNegocio({ perfil, onGuardar }: Props) {
 
   return (
     <View>
-      <TituloSeccion>UBICACIÓN EN EL MAPA</TituloSeccion>
       <Text style={[styles.nota, { color: colors.textSecondary }]}>
         {punto
           ? "Mantén presionado el pin y arrástralo hasta la puerta de tu negocio, o toca el mapa para moverlo."

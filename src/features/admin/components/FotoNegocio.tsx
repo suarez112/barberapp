@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
-import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 
@@ -35,7 +34,6 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
 
   return (
     <View>
-      <TituloSeccion>FOTO DEL NEGOCIO</TituloSeccion>
       <View
         style={[
           styles.marco,

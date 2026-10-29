@@ -34,3 +34,10 @@ export const marcarAvisoLeido = (token: string, id: string) =>
     method: "PATCH",
     token,
   });
+
+// Marca todas las del usuario como leídas (al abrir el panel de la campana)
+export const marcarTodasLeidas = (token: string) =>
+  request<{ mensaje: string; marcadas: number }>("/api/v1/notificaciones/leidas", {
+    method: "PATCH",
+    token,
+  });

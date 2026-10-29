@@ -160,6 +160,8 @@ export default function AgendaTab({
         />
       </View>
 
+      <TituloSeccion style={styles.tituloCitas}>CITAS DEL DÍA</TituloSeccion>
+
       {verLinea ? (
         <>
           <LineaDeTiempo
@@ -228,6 +230,7 @@ const styles = StyleSheet.create({
   tituloAgenda: { flex: 1, marginTop: 0, marginBottom: 0 },
   botonVista: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
   resumen: { flexDirection: "row", gap: 8 },
+  tituloCitas: { marginTop: 28, marginBottom: 12 },
   dato: {
     flex: 1,
     borderWidth: 1,

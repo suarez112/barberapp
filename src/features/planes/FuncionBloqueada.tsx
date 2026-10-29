@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useFunciones } from "./funcionesContexto";
 
@@ -44,13 +45,15 @@ export default function FuncionBloqueada({ funcion, nombre, titulo: tituloFijo, 
         </View>
       </View>
       {detalle ? <Text style={[styles.detalle, { color: colors.textSecondary }]}>{detalle}</Text> : null}
-      <Boton
-        titulo="VER PLANES"
-        ayuda={`Muestra los planes para usar ${titulo.toLowerCase()}`}
-        variante="secundario"
-        onPress={abrirPlanes}
-        style={styles.boton}
-      />
+      {PAGOS_EN_APP ? (
+        <Boton
+          titulo="VER PLANES"
+          ayuda={`Muestra los planes para usar ${titulo.toLowerCase()}`}
+          variante="secundario"
+          onPress={abrirPlanes}
+          style={styles.boton}
+        />
+      ) : null}
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { registrarCausa } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { Suscripcion } from "../cuenta/api";
@@ -56,7 +57,9 @@ export function FuncionesProvider({ token, suscripcion, children }: Props) {
   return (
     <FuncionesContext.Provider value={valor}>
       {children}
-      <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+      {PAGOS_EN_APP ? (
+        <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+      ) : null}
     </FuncionesContext.Provider>
   );
 }

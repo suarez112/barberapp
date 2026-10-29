@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -171,9 +172,9 @@ function MiCartera({ token }: { token: string }) {
           accessibilityLabel="Periodo anterior"
           accessibilityHint="Muestra el periodo anterior"
           onPress={() => setAtras(atras + 1)}
-          style={s.flecha}
+          style={[s.flecha, estiloBotonPagina(colors, true)]}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={colorIconoPagina(colors, true)} />
         </TouchableOpacity>
 
         <Text style={[s.etiquetaRango, { color: colors.textPrimary }]}>{rango.etiqueta}</Text>
@@ -184,9 +185,9 @@ function MiCartera({ token }: { token: string }) {
           accessibilityHint="Vuelve hacia el periodo actual"
           disabled={atras === 0}
           onPress={() => setAtras(atras - 1)}
-          style={[s.flecha, { opacity: atras === 0 ? 0.25 : 1 }]}
+          style={[s.flecha, estiloBotonPagina(colors, atras !== 0)]}
         >
-          <Ionicons name="chevron-forward" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-forward" size={24} color={colorIconoPagina(colors, atras !== 0)} />
         </TouchableOpacity>
       </View>
 

@@ -17,12 +17,14 @@ type Props = {
   cabecera?: OpcionesCabecera;
   // Contenido fijo bajo el scroll (ej. barra de pestañas)
   pie?: ReactNode;
+  // Contenido fijo sobre el scroll: no se mueve al desplazarse (ej. profesionales y día)
+  fijo?: ReactNode;
   // Con esta función se puede deslizar hacia abajo para actualizar
   alRefrescar?: () => Promise<unknown>;
 };
 
 // Estructura común de todas las pantallas: cabecera, contenido con scroll y pie
-export default function Pantalla({ children, cabecera, pie, alRefrescar }: Props) {
+export default function Pantalla({ children, cabecera, pie, fijo, alRefrescar }: Props) {
   const { colors, esOscuro } = useAppTheme();
   const [refrescando, setRefrescando] = useState(false);
   const refrescar = async () => {
@@ -38,6 +40,7 @@ export default function Pantalla({ children, cabecera, pie, alRefrescar }: Props
     <SafeAreaView style={[styles.contenedor, { backgroundColor: colors.bg }]}>
       <StatusBar barStyle={esOscuro ? "light-content" : "dark-content"} />
       <AppHeader {...cabecera} />
+      {fijo}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.contenedor}

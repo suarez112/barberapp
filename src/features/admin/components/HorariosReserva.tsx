@@ -2,7 +2,6 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import Desplegable from "@/components/ui/Desplegable";
-import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
 import { PerfilEmpresa } from "../../cuenta/api";
@@ -75,7 +74,6 @@ export default function HorariosReserva({ perfil, onGuardar }: Props) {
 
   return (
     <View>
-      <TituloSeccion>HORARIOS DE RESERVA</TituloSeccion>
       <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
         <Desplegable
           etiqueta="Cada cuánto pueden agendar tus clientes"

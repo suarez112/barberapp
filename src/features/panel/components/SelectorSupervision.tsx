@@ -8,6 +8,8 @@ type Props = {
   barberos: Barbero[];
   seleccionadoId?: string;
   onSeleccionar: (b: Barbero) => void;
+  // Sin el título largo: para la barra fija de arriba
+  compacto?: boolean;
 };
 
 // El administrador elige de quién ver la agenda y los balances
@@ -15,13 +17,16 @@ export default function SelectorSupervision({
   barberos,
   seleccionadoId,
   onSeleccionar,
+  compacto = false,
 }: Props) {
   const { colors } = useAppTheme();
   return (
-    <View style={styles.contenedor}>
-      <TituloSeccion style={styles.titulo}>
-        👁️ SUPERVISAR AGENDA Y BALANCES DE:
-      </TituloSeccion>
+    <View style={compacto ? styles.compacto : styles.contenedor}>
+      {compacto ? null : (
+        <TituloSeccion style={styles.titulo}>
+          👁️ SUPERVISAR AGENDA Y BALANCES DE:
+        </TituloSeccion>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {barberos.map((emp) => {
           const esSel = seleccionadoId === emp.id;
@@ -63,6 +68,7 @@ export default function SelectorSupervision({
 
 const styles = StyleSheet.create({
   contenedor: { marginTop: 15 },
+  compacto: { marginTop: 8 },
   titulo: { marginTop: 0 },
   opcion: {
     minHeight: 44,
