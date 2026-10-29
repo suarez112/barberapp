@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendality – Página principal (diseño de referencia)</title>
+<!-- DISEÑO DE REFERENCIA: no es código de producción. Los textos son los aprobados. Los números del panel de ejemplo son ilustrativos. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF;}
+*{box-sizing:border-box;}
+.pg{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#111827;background:#FFFFFF;width:100%;overflow-x:hidden;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+a{color:inherit;text-decoration:none;}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;border-radius:12px;padding:14px 22px;border:2px solid transparent;cursor:pointer;font-family:inherit;}
+.btn-y{background:#FACC15;color:#111827;}
+.btn-y:hover{background:#EAB308;}
+.btn-ow{background:transparent;color:#FFFFFF;border-color:#4B5563;}
+.btn-d{background:#111827;color:#FFFFFF;}
+/* header */
+.hd{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.97);border-bottom:1px solid #E5E7EB;}
+.hd .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:16px;}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.5px;}
+.mark{width:36px;height:36px;border-radius:10px;background:#111827;display:flex;align-items:center;justify-content:center;}
+.nav{display:flex;gap:28px;font-size:15px;font-weight:500;color:#374151;}
+.nav a:hover{color:#111827;}
+.hd-act{display:flex;gap:12px;align-items:center;}
+.hd-act .lnk{font-weight:600;font-size:15px;}
+.hd-act .btn{padding:10px 18px;}
+/* hero */
+.hero{background:#111827;color:#FFFFFF;padding:88px 0 96px;}
+.hero .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;}
+.tag{display:inline-flex;align-items:center;gap:8px;background:rgba(250,204,21,.12);color:#FACC15;border:1px solid rgba(250,204,21,.35);padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;}
+.hero h1{font-size:58px;line-height:1.06;margin:20px 0 20px;font-weight:800;letter-spacing:-1.5px;}
+.hero h1 span{color:#FACC15;}
+.hero p.sub{font-size:19px;line-height:1.6;color:#D1D5DB;margin:0 0 32px;max-width:540px;}
+.hero .ctas{display:flex;gap:14px;flex-wrap:wrap;}
+.hero .note{margin-top:18px;font-size:14px;color:#9CA3AF;display:flex;gap:18px;flex-wrap:wrap;}
+.hero .note span{display:inline-flex;align-items:center;gap:6px;}
+/* dashboard mock */
+.mock{background:#F3F4F6;border-radius:20px;padding:18px;color:#111827;box-shadow:0 30px 60px rgba(0,0,0,.35);position:relative;}
+.mock-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.mock-top b{font-size:16px;}
+.mock-top small{color:#6B7280;font-size:12px;}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.kpi{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;padding:12px;}
+.kpi small{display:block;color:#6B7280;font-size:11px;font-weight:600;margin-bottom:4px;}
+.kpi b{font-size:18px;}
+.kpi.y{background:#FEF3C7;border-color:#EAB308;}
+.mrow{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;}
+.panel{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;padding:12px;}
+.panel h6{margin:0 0 10px;font-size:12px;color:#374151;}
+.ap{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #F3F4F6;font-size:12px;}
+.ap:first-of-type{border-top:0;}
+.ap .t{font-weight:700;width:40px;}
+.ap .i{flex:1;}
+.ap .i small{display:block;color:#6B7280;}
+.pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;}
+.p-ok{background:#DCFCE7;color:#15803D;}
+.p-pe{background:#DBEAFE;color:#1D4ED8;}
+.bars{display:flex;align-items:flex-end;gap:6px;height:92px;margin-top:4px;}
+.bars i{flex:1;background:#E5E7EB;border-radius:4px 4px 0 0;}
+.bars i.on{background:#FACC15;}
+.staff{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:10px;}
+.av{width:22px;height:22px;border-radius:999px;background:#111827;color:#FACC15;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.float{position:absolute;left:-28px;bottom:-22px;background:#111827;color:#FFFFFF;border:1px solid #374151;border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.35);}
+.float b{color:#FACC15;}
+/* sections */
+.sec{padding:96px 0;}
+.sec.gray{background:#F3F4F6;}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#A16207;}
+.sec h2{font-size:40px;line-height:1.15;margin:12px 0 16px;font-weight:800;letter-spacing:-.8px;max-width:760px;}
+.sec .lead{font-size:18px;color:#374151;line-height:1.6;max-width:660px;margin:0 0 48px;}
+.center{text-align:center;}
+.center h2,.center .lead{margin-left:auto;margin-right:auto;}
+.ic{width:48px;height:48px;border-radius:12px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin-bottom:18px;flex:none;}
+.ic.dark{background:#111827;}
+/* value strip */
+.vals{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.val{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:18px;padding:26px;}
+.val h3{font-size:18px;margin:0 0 8px;font-weight:700;}
+.val p{font-size:15px;line-height:1.6;color:#374151;margin:0;}
+/* feature rows */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:40px 0;}
+.feat.rev .ftxt{order:2;}
+.feat h3{font-size:30px;line-height:1.2;margin:10px 0 14px;font-weight:800;letter-spacing:-.5px;}
+.feat p{font-size:17px;line-height:1.6;color:#374151;margin:0 0 18px;}
+.chk{list-style:none;margin:0;padding:0;}
+.chk li{display:flex;gap:10px;font-size:15px;color:#111827;margin-bottom:10px;line-height:1.5;}
+.chk svg{flex:none;margin-top:2px;}
+.shot{background:#111827;border-radius:22px;padding:26px;}
+.scard{background:#FFFFFF;border-radius:14px;padding:16px;}
+.scard + .scard{margin-top:10px;}
+.sline{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:9px 0;border-top:1px solid #F3F4F6;}
+.sline:first-child{border-top:0;}
+.sline small{color:#6B7280;}
+.big{font-size:28px;font-weight:800;}
+.lbl{font-size:12px;color:#6B7280;font-weight:600;}
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.step{padding:28px;border-radius:18px;background:#111827;color:#FFFFFF;}
+.num{width:40px;height:40px;border-radius:999px;background:#FACC15;color:#111827;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.step h3{margin:0 0 8px;font-size:19px;}
+.step p{margin:0;color:#D1D5DB;line-height:1.6;font-size:15px;}
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.cat{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:16px;padding:20px;display:flex;align-items:center;gap:14px;font-weight:700;font-size:15px;}
+.cat .ic{margin:0;width:42px;height:42px;}
+.cat.more{background:#111827;color:#FFFFFF;border-color:#111827;}
+.cat.more small{display:block;font-weight:500;color:#D1D5DB;font-size:13px;margin-top:2px;}
+/* why */
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.why .val{display:flex;gap:16px;}
+.why .ic{margin:0;}
+/* planes */
+.plans{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;}
+.price{background:#111827;color:#FFFFFF;border-radius:22px;padding:36px;}
+.price .bigp{font-size:52px;font-weight:800;letter-spacing:-1px;}
+.price .bigp small{font-size:17px;font-weight:500;color:#9CA3AF;}
+.price .row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #374151;font-size:15px;color:#D1D5DB;gap:12px;}
+.price .row b{color:#FFFFFF;text-align:right;}
+.calc{margin:24px 0;background:#1F2937;border-radius:14px;padding:18px;}
+.calc .cl{font-size:13px;color:#9CA3AF;margin-bottom:10px;}
+.cnt{display:flex;align-items:center;gap:14px;}
+.cnt button{width:40px;height:40px;border-radius:10px;border:1px solid #4B5563;background:#111827;color:#FFFFFF;font-size:20px;cursor:pointer;font-family:inherit;}
+.cnt .n{font-size:22px;font-weight:800;min-width:30px;text-align:center;}
+.cnt{flex-wrap:wrap;}
+.cnt .tot{margin-left:auto;text-align:right;}
+.cnt .tot b{font-size:22px;color:#FACC15;display:block;}
+.cnt .tot small{color:#9CA3AF;font-size:12px;}
+.tiers{display:flex;flex-direction:column;gap:14px;}
+.tier{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:18px;padding:22px 24px;display:flex;gap:16px;align-items:flex-start;}
+.tier.on{border:2px solid #EAB308;background:#FFFBEB;}
+.tier .ic{margin:0;}
+.tier h4{margin:0 0 4px;font-size:17px;}
+.tier h4 small{font-weight:600;color:#6B7280;font-size:13px;margin-left:6px;}
+.tier p{margin:0;font-size:14px;color:#374151;line-height:1.55;}
+/* faq */
+.faq{max-width:820px;margin:0 auto;}
+.q{background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;margin-bottom:12px;}
+.q summary{list-style:none;cursor:pointer;padding:20px 22px;font-weight:700;font-size:16px;display:flex;justify-content:space-between;gap:12px;}
+.q summary::-webkit-details-marker{display:none;}
+.q p{margin:0;padding:0 22px 20px;color:#374151;line-height:1.6;font-size:15px;}
+/* cta */
+.cta{background:#FACC15;border-radius:28px;padding:56px;display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap;}
+.cta h2{margin:0 0 10px;font-size:36px;font-weight:800;letter-spacing:-.6px;}
+.cta p{margin:0;font-size:17px;color:#1F2937;}
+/* footer */
+.ft{background:#111827;color:#D1D5DB;padding:64px 0 32px;font-size:14px;}
+.ft .cols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px;}
+.ft h5{color:#FFFFFF;font-size:14px;margin:0 0 14px;}
+.ft a{display:block;margin-bottom:10px;color:#D1D5DB;}
+.ft a:hover{color:#FACC15;}
+.ft .bot{border-top:1px solid #374151;margin-top:40px;padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:#9CA3AF;}
+/* responsive */
+@media (max-width:980px){
+ .nav{display:none;}
+ .hero .wrap,.plans,.feat{grid-template-columns:1fr;}
+ .feat.rev .ftxt{order:0;}
+ .hero h1{font-size:44px;}
+ .vals,.cats{grid-template-columns:1fr 1fr;}
+ .steps,.why{grid-template-columns:1fr 1fr;}
+ .ft .cols{grid-template-columns:1fr 1fr;}
+ .float{left:12px;}
+}
+@media (max-width:640px){
+ .wrap{padding:0 16px;}
+ .hd-act .lnk{display:none;}
+ .hero{padding:56px 0 72px;}
+ .hero h1{font-size:36px;}
+ .hero p.sub{font-size:17px;}
+ .sec{padding:64px 0;}
+ .sec h2{font-size:30px;}
+ .feat h3{font-size:24px;}
+ .vals,.cats,.steps,.why,.ft .cols{grid-template-columns:1fr;}
+ .kpis{grid-template-columns:1fr 1fr;}
+ .mrow{grid-template-columns:1fr;}
+ .cta{padding:32px 24px;}
+ .cta h2{font-size:28px;}
+ .price{padding:26px;}
+ .price .bigp{font-size:40px;}
+ .float{display:none;}
+ .shot{padding:16px;border-radius:18px;}
+ .feat{gap:24px;padding:28px 0;}
+ .cta .btn{width:100%;justify-content:center;}
+ .hero .ctas .btn{width:100%;justify-content:center;}
+ .val{padding:22px;}
+ .sline{font-size:13px;gap:8px;}
+ .tier{padding:18px;}
+}
+</style>
+</head>
+<body>
+<div class="pg">
+
+<!-- HEADER -->
+<header class="hd">
+ <div class="wrap">
+  <a class="logo" href="#inicio">
+   <span class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="#FACC15" stroke-width="2"/><path d="M8 3v4M16 3v4" stroke="#FACC15" stroke-width="2" stroke-linecap="round"/><path d="M13 9l-3 5h3l-1 4 3-5h-3l1-4z" fill="#FACC15"/></svg></span>
+   AGENDALITY
+  </a>
+  <nav class="nav">
+   <a href="#funciones">Funciones</a>
+   <a href="#negocios">Negocios</a>
+   <a href="#planes">Planes</a>
+   <a href="#preguntas">Preguntas</a>
+  </nav>
+  <div class="hd-act">
+   <a class="lnk" href="#ingresar">Iniciar sesión</a>
+   <a class="btn btn-y" href="#registro">Prueba gratis</a>
+  </div>
+ </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="inicio">
+ <div class="wrap">
+  <div>
+   <span class="tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="#FACC15"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>Software de citas y gestión para negocios</span>
+   <h1>Administra tu negocio y deja que <span>tus clientes agenden 24/7.</span></h1>
+   <p class="sub">Automatiza tus reservas, controla el balance diario, semanal y mensual de tu empresa, asigna una agenda a cada empleado y proyecta el crecimiento de tu establecimiento.</p>
+   <div class="ctas">
+    <a class="btn btn-y" href="#registro">Prueba gratis 15 días
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#111827" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <a class="btn btn-ow" href="#reservar">Soy cliente, quiero reservar</a>
+   </div>
+   <div class="note">
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#FACC15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Sin tarjeta de crédito</span>
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#FACC15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Sin contratos</span>
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#FACC15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Web y app móvil</span>
+   </div>
+  </div>
+
+  <div class="mock" aria-label="Ejemplo ilustrativo del panel de un negocio">
+   <div class="mock-top"><b>Resumen de hoy</b><small>Ejemplo ilustrativo</small></div>
+   <div class="kpis">
+    <div class="kpi"><small>Citas de hoy</small><b>14</b></div>
+    <div class="kpi y"><small>Ingresos del día</small><b>$480.000</b></div>
+    <div class="kpi"><small>Profesionales</small><b>4</b></div>
+   </div>
+   <div class="mrow">
+    <div class="panel">
+     <h6>Próximas citas</h6>
+     <div class="ap"><span class="t">9:00</span><span class="i">Servicio A<small>Con Andrés</small></span><span class="pill p-ok">Confirmada</span></div>
+     <div class="ap"><span class="t">10:00</span><span class="i">Servicio B<small>Con Laura</small></span><span class="pill p-ok">Confirmada</span></div>
+     <div class="ap"><span class="t">11:30</span><span class="i">Servicio C<small>Con Camilo</small></span><span class="pill p-pe">Pendiente</span></div>
+    </div>
+    <div class="panel">
+     <h6>Ingresos de la semana</h6>
+     <div class="bars"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i class="on" style="height:92%"></i><i style="height:80%"></i></div>
+     <div class="staff"><span class="av">A</span><span class="av">L</span><span class="av">C</span><span class="av">M</span><span style="color:#6B7280;">Tu equipo</span></div>
+    </div>
+   </div>
+   <div class="float"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0" stroke="#FACC15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Nueva reserva recibida <b>a las 10:42 p. m.</b></span></div>
+  </div>
+ </div>
+</section>
+
+<!-- 4 VALORES -->
+<section class="sec gray">
+ <div class="wrap">
+  <div class="center">
+   <div class="eyebrow">Lo que gana tu negocio</div>
+   <h2>Menos tiempo administrando, más tiempo haciendo crecer tu negocio</h2>
+   <p class="lead">Agendality hace las tareas repetitivas por ti y te da la información para tomar mejores decisiones.</p>
+  </div>
+  <div class="vals">
+   <div class="val"><div class="ic dark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="#FACC15" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="#FACC15" stroke-width="2" stroke-linecap="round"/></svg></div><h3>Reservas automáticas 24/7</h3><p>Deja de perder tiempo agendando por llamadas o mensajes. El software agenda por ti, a cualquier hora.</p></div>
+   <div class="val"><div class="ic dark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8M15 7h6v6" stroke="#FACC15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Proyecta tu crecimiento</h3><p>Descubre qué servicios te dejan más ganancia y crece de 1 a 10 profesionales sin cambiar de sistema.</p></div>
+   <div class="val"><div class="ic dark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" stroke="#FACC15" stroke-width="2" stroke-linecap="round"/></svg></div><h3>Gestión de empleados y turnos</h3><p>Cada empleado tiene su agenda. Tú autorizas cambios, defines horarios y bloqueas turnos.</p></div>
+   <div class="val"><div class="ic dark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="#FACC15" stroke-width="2" stroke-linecap="round"/></svg></div><h3>Control financiero</h3><p>Conoce el balance diario, semanal y mensual de tu negocio, sin cuadernos ni hojas de cálculo.</p></div>
+  </div>
+ </div>
+</section>
+
+<!-- FUNCIONES EN DETALLE -->
+<section class="sec" id="funciones">
+ <div class="wrap">
+  <div class="eyebrow">Funciones</div>
+  <h2>Todo lo que tu negocio necesita, en una sola herramienta</h2>
+
+  <div class="feat">
+   <div class="ftxt">
+    <div class="eyebrow">Reservas automáticas</div>
+    <h3>Tu negocio recibe citas aunque esté cerrado</h3>
+    <p>Deja de contestar llamadas y mensajes para agendar. Tu agenda se llena y se actualiza sola, las 24 horas.</p>
+    <ul class="chk">
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Enlace propio y código QR para promocionar tu negocio</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Más tiempo para atender, menos tiempo al teléfono</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Recordatorios automáticos que reducen las inasistencias</li>
+    </ul>
+   </div>
+   <div class="shot">
+    <div class="scard">
+     <div class="lbl">Elige una hora · Miércoles</div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+      <span style="padding:8px 14px;border-radius:10px;background:#F3F4F6;font-weight:600;font-size:14px;">9:00</span>
+      <span style="padding:8px 14px;border-radius:10px;background:#FEF3C7;border:2px solid #EAB308;font-weight:700;font-size:14px;">10:00</span>
+      <span style="padding:8px 14px;border-radius:10px;background:#F3F4F6;font-weight:600;font-size:14px;">11:30</span>
+      <span style="padding:8px 14px;border-radius:10px;background:#F3F4F6;font-weight:600;font-size:14px;">2:00</span>
+      <span style="padding:8px 14px;border-radius:10px;background:#F3F4F6;font-weight:600;font-size:14px;">3:30</span>
+     </div>
+    </div>
+    <div class="scard" style="display:flex;justify-content:space-between;align-items:center;">
+     <div><div class="lbl">Cita confirmada</div><b>Miércoles · 10:00 a. m.</b></div>
+     <span class="pill p-ok" style="font-size:12px;">Listo</span>
+    </div>
+   </div>
+  </div>
+
+  <div class="feat rev">
+   <div class="ftxt">
+    <div class="eyebrow">Empleados y turnos</div>
+    <h3>Ten el control total de tu personal</h3>
+    <p>Asigna una agenda a cada empleado y mantén el control de quién atiende, cuándo y cuánto produce.</p>
+    <ul class="chk">
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Agenda y horarios individuales por empleado</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Tú autorizas cambios y bloqueas turnos</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Comisiones calculadas automáticamente</li>
+    </ul>
+   </div>
+   <div class="shot">
+    <div class="scard">
+     <div class="lbl" style="margin-bottom:6px;">Tu equipo esta semana</div>
+     <div class="sline"><span style="display:flex;gap:10px;align-items:center;"><span class="av">A</span>Andrés</span><small>18 citas</small><b>$540.000</b></div>
+     <div class="sline"><span style="display:flex;gap:10px;align-items:center;"><span class="av">L</span>Laura</span><small>15 citas</small><b>$610.000</b></div>
+     <div class="sline"><span style="display:flex;gap:10px;align-items:center;"><span class="av">C</span>Camilo</span><small>12 citas</small><b>$360.000</b></div>
+    </div>
+   </div>
+  </div>
+
+  <div class="feat">
+   <div class="ftxt">
+    <div class="eyebrow">Control financiero</div>
+    <h3>Revisa los balances de tu negocio</h3>
+    <p>Mira cuánto entra cada día, semana y mes, y cuánto le corresponde a cada empleado.</p>
+    <ul class="chk">
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Balance diario, semanal y mensual</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Comisiones de empleados calculadas solas</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Exporta tus reportes a Excel o PDF</li>
+    </ul>
+   </div>
+   <div class="shot">
+    <div class="scard">
+     <div class="lbl">Ingresos del mes</div>
+     <div class="big">$8.250.000</div>
+     <div class="bars" style="height:80px;margin-top:12px;"><i style="height:35%"></i><i style="height:50%"></i><i style="height:45%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:75%"></i><i class="on" style="height:95%"></i><i style="height:70%"></i></div>
+    </div>
+    <div class="scard">
+     <div class="sline"><span>Comisiones del equipo</span><b>$3.300.000</b></div>
+     <div class="sline"><span>Para el negocio</span><b style="color:#15803D;">$4.950.000</b></div>
+    </div>
+   </div>
+  </div>
+
+  <div class="feat rev">
+   <div class="ftxt">
+    <div class="eyebrow">Crecimiento</div>
+    <h3>Proyecta el crecimiento de tu establecimiento</h3>
+    <p>Toma decisiones con datos reales de tu negocio y crece sin cambiar de herramienta.</p>
+    <ul class="chk">
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Descubre qué servicios te dejan más ganancia</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Reportes avanzados para planear tu negocio</li>
+     <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#16A34A" stroke-width="2.4" stroke-linecap="round"/></svg>Crece de 1 a 10 profesionales con el mismo sistema</li>
+    </ul>
+   </div>
+   <div class="shot">
+    <div class="scard">
+     <div class="lbl" style="margin-bottom:6px;">Servicios más rentables del mes</div>
+     <div class="sline"><span>Servicio A</span><small>42 veces</small><b style="color:#15803D;">$1.890.000</b></div>
+     <div class="sline"><span>Servicio B</span><small>30 veces</small><b>$1.200.000</b></div>
+     <div class="sline"><span>Servicio C</span><small>25 veces</small><b>$750.000</b></div>
+    </div>
+    <div class="scard" style="display:flex;justify-content:space-between;align-items:center;">
+     <div><div class="lbl">Comparado con el mes anterior</div><b style="font-size:20px;">Ingresos en aumento</b></div>
+     <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8M15 7h6v6" stroke="#15803D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- NEGOCIOS -->
+<section class="sec gray" id="negocios">
+ <div class="wrap">
+  <div class="center">
+   <div class="eyebrow">Para quién es</div>
+   <h2>Para cualquier negocio que trabaje con citas</h2>
+   <p class="lead">Si tu negocio atiende con hora previa, Agendality se adapta a ti.</p>
+  </div>
+  <div class="cats">
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="3" stroke="#111827" stroke-width="2"/><circle cx="6" cy="18" r="3" stroke="#111827" stroke-width="2"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span>Barberías</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3c-4 0-7 3-7 7 0 5 3 7 3 11h8c0-4 3-6 3-11 0-4-3-7-7-7z" stroke="#111827" stroke-width="2" stroke-linejoin="round"/></svg></span>Peluquerías</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z" stroke="#111827" stroke-width="2" stroke-linejoin="round"/></svg></span>Salones de belleza</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 21c-5-3-8-6-8-10a8 8 0 0116 0c0 4-3 7-8 10z" stroke="#111827" stroke-width="2"/><path d="M9 11c1.5 1.5 4.5 1.5 6 0" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span>Spa y estética</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 3v8a4 4 0 008 0V3M12 15v6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span>Uñas y pestañas</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5-8-11a5 5 0 019-3 5 5 0 019 3c0 6-8 11-8 11z" stroke="#111827" stroke-width="2"/></svg></span>Salud y bienestar</div>
+   <div class="cat"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span>Entrenamiento</div>
+   <div class="cat more"><span class="ic" style="background:#FACC15;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#111827" stroke-width="2.4" stroke-linecap="round"/></svg></span><span>Y muchos más<small>Si atiendes con cita, es para ti</small></span></div>
+  </div>
+ </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="sec">
+ <div class="wrap">
+  <div class="eyebrow">Empieza en minutos</div>
+  <h2>Así de fácil es comenzar</h2>
+  <p class="lead">No necesitas saber de tecnología. Si usas el celular a diario, puedes usar Agendality para tener el control de tu negocio.</p>
+  <div class="steps">
+   <div class="step"><div class="num">1</div><h3>Crea tu negocio</h3><p>Registra tus horarios y los servicios que ofreces, con su precio y duración.</p></div>
+   <div class="step"><div class="num">2</div><h3>Agrega a tu equipo</h3><p>Invita a tus profesionales. Cada uno tendrá su propia agenda.</p></div>
+   <div class="step"><div class="num">3</div><h3>Comparte y recibe citas</h3><p>Envía tu enlace o pega tu QR. Las reservas llegan solas y los recordatorios salen automáticos.</p></div>
+  </div>
+ </div>
+</section>
+
+<!-- POR QUE -->
+<section class="sec gray">
+ <div class="wrap">
+  <div class="eyebrow">Por qué Agendality</div>
+  <h2>Hecho para negocios como el tuyo</h2>
+  <p class="lead">Una herramienta sencilla, a un precio justo y lista para crecer contigo.</p>
+  <div class="why">
+   <div class="val"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="2" width="14" height="20" rx="3" stroke="#111827" stroke-width="2"/><path d="M11 18h2" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3>Celular y computador</h3><p>Usa la app o la web. Tu información se mantiene igual en ambos.</p></div></div>
+   <div class="val"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></span><div><h3>Pagas solo lo que usas</h3><p>Sin contratos ni permanencia. Agregas o quitas profesionales cuando lo necesites.</p></div></div>
+   <div class="val"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#111827" stroke-width="2" stroke-linejoin="round"/></svg></span><div><h3>Soporte cuando lo necesitas</h3><p>Si tienes una duda o un problema, escríbenos y te ayudamos.</p></div></div>
+  </div>
+ </div>
+</section>
+
+<!-- PLANES -->
+<section class="sec" id="planes">
+ <div class="wrap">
+  <div class="eyebrow">Precios claros</div>
+  <h2>Pagas solo por los profesionales que usas</h2>
+  <p class="lead">Sin contratos ni costos ocultos. Prueba todo gratis durante 15 días, sin tarjeta.</p>
+  <div class="plans">
+   <div class="price">
+    <div style="color:#9CA3AF;font-size:14px;font-weight:600;">Primer profesional</div>
+    <div class="bigp">$35.000 <small>/ mes</small></div>
+    <div class="row"><span>Cada profesional adicional</span><b>$25.000 / mes</b></div>
+    <div class="row"><span>Máximo por negocio</span><b>10 profesionales</b></div>
+    <div class="row"><span>Pago anual</span><b>10% de descuento</b></div>
+    <div class="calc">
+     <div class="cl">Calcula tu precio · ¿Cuántos profesionales tienes?</div>
+     <div class="cnt">
+      <button type="button" aria-label="Quitar profesional">−</button>
+      <span class="n">3</span>
+      <button type="button" aria-label="Agregar profesional">+</button>
+      <div class="tot"><b>$85.000 / mes</b><small>o $918.000 al año</small></div>
+     </div>
+    </div>
+    <a class="btn btn-y" href="#registro" style="width:100%;justify-content:center;">Prueba gratis 15 días</a>
+   </div>
+   <div class="tiers">
+    <div class="tier"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#111827" stroke-width="2"/><path d="M4 21a8 8 0 0116 0" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></div><div><h4>Emprendedor <small>1 profesional</small></h4><p>Agenda en línea, recordatorios, enlace y QR, cartera y reportes básicos.</p></div></div>
+    <div class="tier on"><div class="ic" style="background:#FACC15;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></div><div><h4>Equipo <small>2 a 5 profesionales</small></h4><p>Todo lo anterior, más agenda por profesional, permisos y comisiones.</p></div></div>
+    <div class="tier"><div class="ic dark"><svg width="22" height="22" viewBox="0 0 24 24" fill="#FACC15"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></div><div><h4>Pro <small>6 a 10 profesionales</small></h4><p>Todo lo anterior, más servicios más rentables, reportes avanzados y exportar a Excel y PDF.</p></div></div>
+    <p style="font-size:13px;color:#6B7280;margin:4px 4px 0;">Tu nivel cambia solo según la cantidad de profesionales. No tienes que elegirlo.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec gray" id="preguntas">
+ <div class="wrap">
+  <div class="center"><div class="eyebrow">Resolvemos tus dudas</div><h2 style="margin-bottom:40px;">Preguntas frecuentes</h2></div>
+  <div class="faq">
+   <details class="q" open><summary>¿Necesito tarjeta para la prueba gratis?<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></summary><p>No. Durante 15 días usas todo sin registrar ningún medio de pago. Al terminar decides si continúas.</p></details>
+   <details class="q"><summary>¿Sirve para mi tipo de negocio?<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></summary><p>Si atiendes a tus clientes con cita previa, sí. Configuras tus propios servicios, duraciones y precios.</p></details>
+   <details class="q"><summary>¿Mis clientes tienen que descargar algo?<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></summary><p>No es obligatorio. Pueden reservar desde tu enlace en el navegador o usar la app si la prefieren.</p></details>
+   <details class="q"><summary>¿Puedo usarlo desde el celular y el computador?<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></summary><p>Sí. Tienes la app móvil y la versión web con la misma información, siempre actualizada.</p></details>
+   <details class="q"><summary>¿Puedo cancelar cuando quiera?<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#111827" stroke-width="2" stroke-linecap="round"/></svg></summary><p>Sí. No hay permanencia mínima en el plan mensual.</p></details>
+  </div>
+ </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:96px 0;">
+ <div class="wrap">
+  <div class="cta">
+   <div><h2>Dedica tu tiempo a lo que sabes hacer</h2><p>Crea tu negocio hoy y deja que Agendality se encargue de la agenda.</p></div>
+   <a class="btn btn-d" href="#registro">Prueba gratis 15 días</a>
+  </div>
+ </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="ft">
+ <div class="wrap">
+  <div class="cols">
+   <div>
+    <div class="logo" style="color:#FFFFFF;margin-bottom:14px;"><span class="mark" style="background:#FACC15;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#111827"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></span>AGENDALITY</div>
+    <p style="margin:0;line-height:1.6;max-width:280px;">Citas simples, negocios eficientes.</p>
+   </div>
+   <div><h5>Producto</h5><a href="#funciones">Funciones</a><a href="#negocios">Negocios</a><a href="#planes">Planes</a><a href="#preguntas">Preguntas</a></div>
+   <div><h5>Legal</h5><a href="#politica">Política de tratamiento de datos</a><a href="#terminos">Términos y condiciones</a><a href="#pqrs">PQRS</a></div>
+   <div><h5>Contacto</h5><a href="#contacto">[CORREO DE SOPORTE]</a><a href="#ingresar">Iniciar sesión</a></div>
+  </div>
+  <div class="bot"><span>© 2026 Agendality. Todos los derechos reservados.</span></div>
+ </div>
+</footer>
+
+</div>
+</body>
+</html>
