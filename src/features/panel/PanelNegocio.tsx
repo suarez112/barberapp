@@ -9,6 +9,9 @@ import { Dia } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import { crearDia, diaDeHoy, fechaConDia } from "@/utils/fechas";
 import AgendaTab from "../agenda/AgendaTab";
+import { listarAgenda } from "../agenda/api";
+import BotonNuevaCita from "../agenda/components/BotonNuevaCita";
+import NuevaCitaHoja from "../agenda/components/NuevaCitaHoja";
 import { useAgenda } from "../agenda/AgendaProvider";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
 import CarteraPanel from "../cartera/CarteraPanel";
@@ -75,7 +78,8 @@ export default function PanelNegocio({
   const [supervisadoId, setSupervisadoId] = useState<string | null>(null);
   // Cita que se abrió desde una notificación (se muestra resaltada)
   const [citaResaltadaId, setCitaResaltadaId] = useState<string | null>(null);
-  const { citas } = useAgenda();
+  const { citas, setCitas } = useAgenda();
+  const [nuevaCitaAbierta, setNuevaCitaAbierta] = useState(false);
   const { citaPendiente, limpiarCitaPendiente } = useNotificaciones();
   const citaYaRecargada = useRef<string | null>(null);
   const avisarError = useAvisarError();
@@ -248,6 +252,18 @@ export default function PanelNegocio({
     );
   }
 
+  // "Nueva cita": en la agenda, para quien tenga a quién agendar
+  const puedeAgendar = activa === "AGENDAMIENTOS" && !!empresa && !!profesional;
+  const citaCreada = async () => {
+    setNuevaCitaAbierta(false);
+    avisar("Cita agendada", "La cita quedó en la agenda.", "exito");
+    try {
+      setCitas(await listarAgenda(personal.token));
+    } catch (e) {
+      avisarError(e, { titulo: "No se pudo actualizar la agenda" });
+    }
+  };
+
   const conSupervision =
     esAdmin && atienden.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
 
@@ -273,6 +289,7 @@ export default function PanelNegocio({
         ) : undefined
       }
       alRefrescar={empresa ? deslizarParaActualizar : undefined}
+      flotante={puedeAgendar ? <BotonNuevaCita onPress={() => setNuevaCitaAbierta(true)} /> : undefined}
     >
       <RefrescoPanelProvider registrar={registrarRefresco}>
         <View>
@@ -291,6 +308,17 @@ export default function PanelNegocio({
           {contenido()}
         </View>
       </RefrescoPanelProvider>
+      {nuevaCitaAbierta && profesional ? (
+        <NuevaCitaHoja
+          personal={personal}
+          esAdmin={esAdmin}
+          profesionales={esAdmin ? atienden : [profesional]}
+          profesionalInicial={profesional}
+          diaInicial={diaAgenda}
+          onCerrar={() => setNuevaCitaAbierta(false)}
+          onCreada={citaCreada}
+        />
+      ) : null}
     </Pantalla>
   );
 }

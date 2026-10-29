@@ -66,3 +66,35 @@ export const cancelarCita = (id: string, token: string) =>
     `/api/v1/citas/${id}/cancelar`,
     { method: "PATCH", token },
   );
+
+// Horas libres para agendar desde el panel (la empresa sale de la sesión del personal)
+export const consultarDisponibilidadPanel = (
+  p: { barberoId: string; servicioId: string; fecha: string },
+  token: string,
+  signal?: AbortSignal,
+) =>
+  request<{ horas: HoraDisponible[]; intervaloMinutos: number }>(
+    `/api/v1/citas/panel/disponibilidad?barberoId=${encodeURIComponent(p.barberoId)}` +
+      `&servicioId=${encodeURIComponent(p.servicioId)}` +
+      `&fecha=${encodeURIComponent(p.fecha)}`,
+    { token, signal },
+  );
+
+// Cliente existente (clienteId) o nuevo (nombre + teléfono), nunca los dos
+export type NuevaCitaPanel = {
+  barberoId: string;
+  servicioId: string;
+  fecha: string;
+  hora: string;
+  autorizacion_registrada_por_negocio: true;
+} & (
+  | { clienteId: string }
+  | { nombre: string; telefono: string; indicativo: string }
+);
+
+export const crearCitaPanel = (cita: NuevaCitaPanel, token: string) =>
+  request<{ mensaje: string; cita: Cita }>("/api/v1/citas/panel", {
+    method: "POST",
+    body: cita,
+    token,
+  });

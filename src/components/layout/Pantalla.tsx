@@ -21,10 +21,12 @@ type Props = {
   fijo?: ReactNode;
   // Con esta función se puede deslizar hacia abajo para actualizar
   alRefrescar?: () => Promise<unknown>;
+  // Botón que flota sobre el contenido, abajo a la derecha (ej. "Nueva cita")
+  flotante?: ReactNode;
 };
 
 // Estructura común de todas las pantallas: cabecera, contenido con scroll y pie
-export default function Pantalla({ children, cabecera, pie, fijo, alRefrescar }: Props) {
+export default function Pantalla({ children, cabecera, pie, fijo, flotante, alRefrescar }: Props) {
   const { colors, esOscuro } = useAppTheme();
   const [refrescando, setRefrescando] = useState(false);
   const refrescar = async () => {
@@ -41,6 +43,7 @@ export default function Pantalla({ children, cabecera, pie, fijo, alRefrescar }:
       <StatusBar barStyle={esOscuro ? "light-content" : "dark-content"} />
       <AppHeader {...cabecera} />
       {fijo}
+      <View style={styles.contenedor}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.contenedor}
@@ -65,9 +68,15 @@ export default function Pantalla({ children, cabecera, pie, fijo, alRefrescar }:
           }
         >
           {children}
-          <View style={styles.espacioFinal} />
+          <View style={[styles.espacioFinal, flotante ? styles.espacioFlotante : null]} />
         </ScrollView>
       </KeyboardAvoidingView>
+      {flotante ? (
+        <View style={styles.flotante} pointerEvents="box-none">
+          {flotante}
+        </View>
+      ) : null}
+      </View>
       {pie}
     </SafeAreaView>
   );
@@ -77,4 +86,7 @@ const styles = StyleSheet.create({
   contenedor: { flex: 1 },
   scroll: { paddingHorizontal: 16 },
   espacioFinal: { height: 40 },
+  // Deja libre el final del contenido para que el botón flotante no tape lo último
+  espacioFlotante: { height: 96 },
+  flotante: { position: "absolute", right: 16, bottom: 16 },
 });
