@@ -19,14 +19,21 @@ export type OrdenCreada = OrdenPago & { urlPago: string };
 export const crearOrden = (token: string, datos: { profesionales: number; periodo: PlanSuscripcion }) =>
   request<OrdenCreada>("/api/v1/pagos/ordenes", { method: "POST", body: datos, token });
 
-// Al volver del pago: el backend le pregunta a la pasarela y activa el plan si aprobó
-export const confirmarOrden = (token: string, referencia: string, idTransaccion?: string) =>
-  request<OrdenPago & { activada: boolean }>(`/api/v1/pagos/ordenes/${encodeURIComponent(referencia)}/confirmar`, {
-    method: "POST",
-    body: idTransaccion ? { idTransaccion } : {},
-    token,
-  });
+// Resultado público de un pago (sin sesión): GET /api/v1/pagos/ordenes/:referencia/estado?id=
+export type ResultadoPago = {
+  estado: "aprobado" | "pendiente" | "rechazado";
+  nivel?: { id: string; nombre: string };
+  vencimiento?: string;
+};
 
-// Pago de prueba: la pasarela simulada o una llave de prueba de Wompi (pub_test_…)
-export const esModoPrueba = (orden: Pick<OrdenCreada, "proveedor"> & { urlPago?: string }) =>
-  orden.proveedor === "simulado" || (orden.urlPago ?? "").includes("pub_test_");
+export const consultarEstadoPago = (referencia: string, idTransaccion?: string, signal?: AbortSignal) =>
+  request<ResultadoPago>(
+    `/api/v1/pagos/ordenes/${encodeURIComponent(referencia)}/estado${idTransaccion ? `?id=${encodeURIComponent(idTransaccion)}` : ""}`,
+    { signal },
+  );
+
+// Si la pasarela está en modo de prueba: GET /api/v1/pagos/configuracion (público)
+export type ConfiguracionPagos = { disponible: boolean; proveedor: string; esDePrueba: boolean };
+
+export const obtenerConfiguracionPagos = (signal?: AbortSignal) =>
+  request<ConfiguracionPagos>("/api/v1/pagos/configuracion", { signal });

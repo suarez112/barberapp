@@ -6,40 +6,32 @@ import Boton from "@/components/ui/Boton";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { formatearPesos } from "@/utils/formato";
-import { useSesionLista } from "../sesion/RestaurarSesionProvider";
-import { usePersonal } from "../sesion/usePersonal";
-import { confirmarOrden, esModoPrueba, OrdenPago } from "./api";
+import { consultarEstadoPago, ResultadoPago } from "./api";
 import AvisoModoPrueba from "./AvisoModoPrueba";
-import LoginPago from "./LoginPago";
+import { useModoPrueba } from "./useModoPrueba";
 
-// A donde vuelve la pasarela: /pagar/<referencia>?id=<transacción>. Le pregunta al backend
-// por el estado de la orden (él consulta a la pasarela) y muestra el resultado.
+// A donde vuelve la pasarela: /pagar/<referencia>?id=<transacción>. Consulta el estado público
+// del pago (no pide iniciar sesión); solo "Ir a mi panel" lleva al inicio de sesión.
 export default function ConfirmarPagoScreen() {
   const { colors } = useAppTheme();
-  const { lista } = useSesionLista();
-  const personal = usePersonal();
+  const modoPrueba = useModoPrueba();
   const { referencia, id } = useLocalSearchParams<{ referencia: string; id?: string }>();
-  const [orden, setOrden] = useState<OrdenPago | null>(null);
+  const [resultado, setResultado] = useState<ResultadoPago | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
 
-  const token = personal?.esAdmin ? personal.token : null;
-
   useEffect(() => {
-    if (!token || !referencia) return;
+    if (!referencia) return;
     const controlador = new AbortController();
-    confirmarOrden(token, String(referencia), id ? String(id) : undefined)
-      .then((o) => {
-        if (!controlador.signal.aborted) setOrden(o);
-      })
+    consultarEstadoPago(String(referencia), id ? String(id) : undefined, controlador.signal)
+      .then((r) => setResultado(r))
       .catch((e) => {
         if (esCancelada(e) || controlador.signal.aborted) return;
-        registrarCausa("Confirmar pago", e);
-        setError(describirError(e, { titulo: "", porDefecto: "No se pudo confirmar el pago." }).mensaje);
+        registrarCausa("Estado del pago", e);
+        setError(describirError(e, { titulo: "", porDefecto: "No se pudo consultar el pago." }).mensaje);
       });
     return () => controlador.abort();
-  }, [token, referencia, id, intento]);
+  }, [referencia, id, intento]);
 
   if (Platform.OS !== "web") return <Redirect href="/" />;
 
@@ -51,25 +43,18 @@ export default function ConfirmarPagoScreen() {
   const irAlPanel = () => router.replace("/admin");
 
   const contenido = () => {
-    if (!lista) return <ActivityIndicator color={colors.primaryText} style={styles.cargando} />;
-    if (!personal) {
-      return <LoginPago texto="Inicia sesión otra vez para ver el resultado de tu pago." />;
-    }
-    if (!personal.esAdmin) {
-      return <Text style={[styles.texto, { color: colors.textSecondary }]}>Solo un administrador puede ver este pago.</Text>;
-    }
     if (error) {
       return (
         <View>
           <Text accessibilityLiveRegion="polite" style={[styles.estado, { color: colors.peligroTexto }]}>
-            No se pudo confirmar el pago
+            No se pudo consultar el pago
           </Text>
           <Text style={[styles.texto, { color: colors.textSecondary }]}>{error}</Text>
           <Boton titulo="REINTENTAR" ayuda="Vuelve a consultar el estado del pago" onPress={reintentar} />
         </View>
       );
     }
-    if (!orden) {
+    if (!resultado) {
       return (
         <View>
           <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
@@ -78,20 +63,22 @@ export default function ConfirmarPagoScreen() {
       );
     }
 
-    const detalle = `${orden.profesionales} ${orden.profesionales === 1 ? "profesional" : "profesionales"} · plan ${orden.periodo} · $${formatearPesos(orden.monto)} ${orden.moneda}`;
-    if (orden.estado === "aprobada") {
+    if (resultado.estado === "aprobado") {
       return (
         <View>
           <Text accessibilityLiveRegion="polite" style={[styles.estado, { color: colors.exitoTexto }]}>
             ¡Pago aprobado!
           </Text>
-          <Text style={[styles.texto, { color: colors.textPrimary }]}>Tu plan está activo: {detalle}.</Text>
-          <Text style={[styles.nota, { color: colors.textSecondary }]}>Referencia: {orden.referencia}</Text>
-          <Boton titulo="IR A MI PANEL" ayuda="Abre el panel de tu negocio" onPress={irAlPanel} style={styles.boton} />
+          <Text style={[styles.texto, { color: colors.textPrimary }]}>
+            Tu plan {resultado.nivel ? `${resultado.nivel.nombre} ` : ""}está activo
+            {resultado.vencimiento ? ` hasta el ${resultado.vencimiento}` : ""}.
+          </Text>
+          <Text style={[styles.nota, { color: colors.textSecondary }]}>Referencia: {referencia}</Text>
+          <Boton titulo="IR A MI PANEL" ayuda="Abre el panel de tu negocio; te pedirá iniciar sesión" onPress={irAlPanel} style={styles.boton} />
         </View>
       );
     }
-    if (orden.estado === "pendiente") {
+    if (resultado.estado === "pendiente") {
       return (
         <View>
           <Text accessibilityLiveRegion="polite" style={[styles.estado, { color: colors.avisoTexto }]}>
@@ -107,7 +94,7 @@ export default function ConfirmarPagoScreen() {
     return (
       <View>
         <Text accessibilityLiveRegion="polite" style={[styles.estado, { color: colors.peligroTexto }]}>
-          {orden.estado === "rechazada" ? "Pago rechazado" : "Pago anulado"}
+          Pago rechazado
         </Text>
         <Text style={[styles.texto, { color: colors.textSecondary }]}>
           No se cobró nada y tu plan no cambió. Puedes intentarlo de nuevo.
@@ -123,7 +110,7 @@ export default function ConfirmarPagoScreen() {
         <Text accessibilityRole="header" style={[styles.titulo, { color: colors.textPrimary }]}>
           Resultado del pago
         </Text>
-        {orden && esModoPrueba(orden) ? <AvisoModoPrueba /> : null}
+        {modoPrueba ? <AvisoModoPrueba /> : null}
         {contenido()}
       </View>
     </Pantalla>

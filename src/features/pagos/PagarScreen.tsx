@@ -14,9 +14,10 @@ import { nivelPara, precioPara } from "../planes/cobro";
 import { usePlanes } from "../planes/usePlanes";
 import { useSesionLista } from "../sesion/RestaurarSesionProvider";
 import { usePersonal } from "../sesion/usePersonal";
-import { crearOrden, esModoPrueba, OrdenCreada } from "./api";
+import { crearOrden } from "./api";
 import AvisoModoPrueba from "./AvisoModoPrueba";
 import LoginPago from "./LoginPago";
+import { useModoPrueba } from "./useModoPrueba";
 
 const PERIODOS = [
   { id: "mensual", label: "Mensual" },
@@ -34,7 +35,7 @@ export default function PagarScreen() {
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [profesionales, setProfesionales] = useState<number | null>(null);
   const [periodo, setPeriodo] = useState<PlanSuscripcion>("mensual");
-  const [orden, setOrden] = useState<OrdenCreada | null>(null);
+  const modoPrueba = useModoPrueba();
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -70,7 +71,6 @@ export default function PagarScreen() {
     setError(null);
     try {
       const creada = await crearOrden(token, { profesionales: cantidad, periodo });
-      setOrden(creada);
       window.location.assign(creada.urlPago);
     } catch (e) {
       registrarCausa("Crear orden de pago", e);
@@ -137,7 +137,6 @@ export default function PagarScreen() {
           </Text>
         </View>
 
-        {orden && esModoPrueba(orden) ? <AvisoModoPrueba /> : null}
         {error ? <Text style={[styles.error, { color: colors.peligroTexto }]}>{error}</Text> : null}
         <Boton
           titulo={enviando ? "REDIRIGIENDO…" : "PAGAR"}
@@ -155,6 +154,7 @@ export default function PagarScreen() {
         <Text accessibilityRole="header" style={[styles.titulo, { color: colors.textPrimary }]}>
           Pagar mi plan
         </Text>
+        {modoPrueba ? <AvisoModoPrueba /> : null}
         {contenido()}
       </View>
     </Pantalla>
