@@ -45,6 +45,8 @@ type PropsBoton = {
   ayuda: string;
   anchoCompleto?: boolean;
   chico?: boolean;
+  // Aún más pequeño (cabecera en celular angosto)
+  compacto?: boolean;
   icono?: ReactNode;
 };
 
@@ -55,7 +57,7 @@ const COLORES_BOTON = {
 } as const;
 
 // Botón que es un enlace real (<a href>) cuando lleva `href`
-export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCompleto, chico, icono }: PropsBoton) {
+export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCompleto, chico, compacto, icono }: PropsBoton) {
   const c = COLORES_BOTON[variante];
   const [encima, setEncima] = useState(false);
   const boton = (
@@ -70,11 +72,12 @@ export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCo
       style={StyleSheet.flatten([
         estilos.boton,
         chico ? estilos.botonChico : null,
+        compacto ? estilos.botonCompacto : null,
         anchoCompleto ? estilos.botonCompleto : null,
         { backgroundColor: encima ? c.hover : c.fondo, borderColor: c.borde },
       ])}
     >
-      <T style={{ color: c.texto, fontWeight: "700", fontSize: 15 }}>{etiqueta}</T>
+      <T style={{ color: c.texto, fontWeight: "700", fontSize: compacto ? 13 : 15 }}>{etiqueta}</T>
       {icono}
     </Pressable>
   );
@@ -368,6 +371,7 @@ const estilos = StyleSheet.create({
     alignSelf: "flex-start",
   },
   botonChico: { paddingVertical: 10, paddingHorizontal: 18, minHeight: 44 },
+  botonCompacto: { paddingHorizontal: 12 },
   botonCompleto: { alignSelf: "stretch" },
   enlace: { minHeight: 44, justifyContent: "center" },
 });

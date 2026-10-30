@@ -38,13 +38,14 @@ const MODOS = [
   { id: "semanal", label: "Cada semana" },
 ] as const;
 
-// Colores de la tabla (iguales en tema claro y oscuro): los bloqueos van en rojo intenso,
+// Colores de la tabla (iguales en tema claro y oscuro): los bloqueos de un día van en rojo intenso,
 // sólido; el símbolo (X, ↻, ✓) los distingue entre sí. Íconos dibujados: los caracteres
 // de texto se ven de tamaños distintos
 type Icono = ComponentProps<typeof Ionicons>["name"];
 type EstiloCelda = { fondo: string; borde: string; texto: string; simbolo: Icono };
 const SOLO_ESE_DIA: EstiloCelda = { fondo: COLORES.rojo, borde: "#991B1B", texto: COLORES.blanco, simbolo: "close" };
-const CADA_SEMANA: EstiloCelda = { fondo: "#B91C1C", borde: "#7F1D1D", texto: COLORES.blanco, simbolo: "refresh" };
+// El bloqueo semanal va en naranja suave con borde y símbolo oscuros (se lee en ambos temas)
+const CADA_SEMANA: EstiloCelda = { fondo: "#FFEDD5", borde: "#C2410C", texto: "#C2410C", simbolo: "refresh" };
 const CON_CITA: EstiloCelda = { fondo: COLORES.verde, borde: "#14532D", texto: COLORES.blanco, simbolo: "checkmark" };
 const LIBRE_OSCURO = { fondo: "#2A2A2A", borde: "#404040" };
 const LIBRE_CLARO = { fondo: "#E5E7EB", borde: "#D1D5DB" };
@@ -584,6 +585,7 @@ export default function BloqueoSemanal({
             color={estilo.fondo}
             borde={estilo.borde}
             simbolo={estilo.simbolo}
+            colorSimbolo={estilo.texto}
             texto={texto}
           />
         ))}
@@ -603,7 +605,7 @@ export default function BloqueoSemanal({
           <View
             style={[
               s.marca,
-              { backgroundColor: b.tipo === "fecha" ? SOLO_ESE_DIA.fondo : CADA_SEMANA.fondo },
+              { backgroundColor: b.tipo === "fecha" ? SOLO_ESE_DIA.fondo : CADA_SEMANA.borde },
             ]}
           />
           <Text style={[s.textoLista, { color: colors.textPrimary }]}>
@@ -627,14 +629,14 @@ export default function BloqueoSemanal({
   );
 }
 
-type Leyenda = { color: string; borde: string; texto: string; simbolo?: Icono };
+type Leyenda = { color: string; borde: string; texto: string; simbolo?: Icono; colorSimbolo?: string };
 
-function ItemLeyenda({ color, borde, texto, simbolo }: Leyenda) {
+function ItemLeyenda({ color, borde, texto, simbolo, colorSimbolo = COLORES.blanco }: Leyenda) {
   const { colors } = useAppTheme();
   return (
     <View style={s.itemLeyenda}>
       <View style={[s.cuadro, { backgroundColor: color, borderColor: borde }]}>
-        {simbolo ? <Ionicons name={simbolo} size={11} color={COLORES.blanco} /> : null}
+        {simbolo ? <Ionicons name={simbolo} size={11} color={colorSimbolo} /> : null}
       </View>
       <Text style={[s.textoLeyenda, { color: colors.textSecondary }]}>{texto}</Text>
     </View>

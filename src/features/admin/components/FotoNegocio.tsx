@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
+import FotoImagen from "@/components/ui/FotoImagen";
+import ZonaFoto from "@/components/ui/ZonaFoto";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 
@@ -34,35 +34,30 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
 
   return (
     <View>
-      <View
-        style={[
-          styles.marco,
-          { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-          pendiente && { borderColor: colors.primary },
-        ]}
-      >
-        {mostrada ? (
-          <Image
-            source={{ uri: mostrada }}
-            style={styles.foto}
-            contentFit="cover"
-            accessibilityLabel="Foto del negocio"
-          />
-        ) : (
-          <View style={styles.vacia}>
-            <Ionicons name="image-outline" size={40} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary }}>
-              Tu negocio aún no tiene foto
-            </Text>
-          </View>
-        )}
-        {guardando ? (
+      {mostrada ? (
+        <View
+          style={[
+            styles.marco,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+            pendiente && { borderColor: colors.primary },
+          ]}
+        >
+          <FotoImagen uri={mostrada} style={styles.foto} accessibilityLabel="Foto del negocio" />
+          {guardando ? (
           <View style={styles.subiendo} accessibilityLabel="Subiendo la foto" accessibilityLiveRegion="polite">
             <ActivityIndicator size="large" color="#fff" />
             <Text style={styles.textoSubiendo}>Subiendo foto…</Text>
           </View>
-        ) : null}
-      </View>
+          ) : null}
+        </View>
+      ) : (
+        <ZonaFoto
+          etiqueta="Elegir foto del negocio"
+          ayuda="Abre tu galería para elegir la foto del negocio"
+          onPress={elegir}
+          style={styles.zonaVacia}
+        />
+      )}
 
       {pendiente ? (
         <>
@@ -102,7 +97,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   foto: { width: "100%", height: "100%" },
-  vacia: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
+  zonaVacia: { aspectRatio: 4 / 3, marginBottom: 8 },
   subiendo: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.55)",

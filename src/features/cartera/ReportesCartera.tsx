@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TarjetaDesplegable from "@/components/ui/TarjetaDesplegable";
+import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { textoRango } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
@@ -143,7 +144,7 @@ function Ocupacion({ ocupacion }: { ocupacion: ReporteOcupacion }) {
                     {
                       // 100 % ocupado = barra llena
                       width: `${Math.min(100, p.porcentajeOcupacion)}%`,
-                      backgroundColor: colors.primary,
+                      backgroundColor: COLORES.barra,
                     },
                   ]}
                 />

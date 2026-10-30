@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import FotoImagen from "@/components/ui/FotoImagen";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { describirError } from "@/services/api/errores";
@@ -56,10 +56,10 @@ export default function CatalogoProductos({ codigo }: { codigo: string }) {
           ]}
         >
           {p.fotoUrl ? (
-            <Image
-              source={{ uri: p.fotoUrl }}
+            <FotoImagen
+              uri={p.fotoUrl}
+              enLista
               style={styles.foto}
-              contentFit="cover"
               accessibilityLabel={`Foto de ${p.nombre}`}
             />
           ) : (

@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TarjetaDesplegable from "@/components/ui/TarjetaDesplegable";
+import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearPesos } from "@/utils/formato";
 import {
@@ -217,7 +218,7 @@ function Tendencia({ reporte }: { reporte: ReporteTendencia }) {
         <Text style={[s.valor, { color: colors.textPrimary }]}>{dinero(m.ventas)}</Text>
       </View>
       <View style={[s.pista, { backgroundColor: colors.inputBorder }]}>
-        <View style={[s.relleno, { width: `${(m.ventas / maximo) * 100}%`, backgroundColor: colors.primary }]} />
+        <View style={[s.relleno, { width: `${(m.ventas / maximo) * 100}%`, backgroundColor: COLORES.barra }]} />
       </View>
       <View style={s.filaDato}>
         <Text style={[s.detalle, { color: colors.textSecondary }]}>

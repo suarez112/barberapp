@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import FotoImagen from "@/components/ui/FotoImagen";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
@@ -203,7 +203,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 onPress={() => abrir(n)}
               >
                 {n.fotoUrl ? (
-                  <Image source={{ uri: n.fotoUrl }} style={styles.foto} contentFit="cover" />
+                  <FotoImagen uri={n.fotoUrl} enLista style={styles.foto} />
                 ) : (
                   <View style={[styles.foto, styles.sinFoto, { borderColor: colors.cardBorder }]}>
                     <Ionicons name="storefront-outline" size={24} color={colors.primaryText} />

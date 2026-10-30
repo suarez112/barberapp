@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { MESES_CORTOS } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
@@ -58,8 +59,7 @@ export function BarrasHorizontales({ filas, vacio, unidad }: { filas: BarraFila[
                   s.relleno,
                   {
                     width: `${(f.valor / maximo) * 100}%`,
-                    backgroundColor: colors.primary,
-                    opacity: f.destacada ? 1 : 0.6,
+                    backgroundColor: f.destacada ? COLORES.barraDestacada : COLORES.barra,
                   },
                 ]}
               />
@@ -117,8 +117,7 @@ export function VentasPorDia({ dias }: { dias: Dia[] }) {
               <View
                 style={{
                   height: c.ventas > 0 ? Math.max(3, (c.ventas / maximo) * ALTO_GRAFICO) : 0,
-                  backgroundColor: colors.primary,
-                  opacity: c === mejor ? 1 : 0.6,
+                  backgroundColor: c === mejor ? COLORES.barraDestacada : COLORES.barra,
                   borderTopLeftRadius: 2,
                   borderTopRightRadius: 2,
                 }}

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { Image } from "expo-image";
+import FotoImagen from "@/components/ui/FotoImagen";
 import { ComponentProps, useEffect, useState } from "react";
 import { Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { registrarCausa } from "@/services/api/errores";
@@ -132,10 +132,9 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       ]}
     >
       {perfil.fotoUrl ? (
-        <Image
-          source={{ uri: perfil.fotoUrl }}
+        <FotoImagen
+          uri={perfil.fotoUrl}
           style={styles.foto}
-          contentFit="cover"
           accessibilityLabel={`Foto de ${perfil.nombre}`}
         />
       ) : null}

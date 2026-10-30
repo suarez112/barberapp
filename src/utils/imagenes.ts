@@ -1,5 +1,5 @@
 import { File } from "expo-file-system";
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
+import { ImageManipulator, ImageRef, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import { avisar } from "./dialogos";
@@ -14,9 +14,16 @@ export type FotoElegida = {
 
 const TIPOS_PERMITIDOS = ["image/jpeg", "image/png", "image/webp"];
 const PESO_MAXIMO = 5 * 1024 * 1024;
-// Antes de subirla, la foto se reduce a este lado máximo y se comprime en el celular
-const LADO_MAXIMO = 1080;
-const CALIDAD_SUBIDA = 0.75;
+// Antes de subirla, la foto se reduce a este lado máximo y se comprime en el celular.
+// Se prueba cada paso en orden y se queda con el primero que baje de PESO_OBJETIVO;
+// si ninguno lo logra, se sube el último (el más liviano).
+const PESO_OBJETIVO = 300 * 1024;
+const PASOS_COMPRESION = [
+  { lado: 1080, calidad: 0.7 },
+  { lado: 1080, calidad: 0.55 },
+  { lado: 900, calidad: 0.5 },
+  { lado: 720, calidad: 0.5 },
+];
 
 type Opciones = { aspecto: [number, number]; calidad?: number };
 
@@ -31,25 +38,46 @@ const pesoDe = (foto: ImagePicker.ImagePickerAsset) => {
   }
 };
 
-// Reduce la foto a LADO_MAXIMO px (sin agrandar las pequeñas) y la guarda como JPG comprimido
-const reducirFoto = async (foto: ImagePicker.ImagePickerAsset): Promise<FotoElegida> => {
-  const contexto = ImageManipulator.manipulate(foto.uri);
-  if (Math.max(foto.width, foto.height) > LADO_MAXIMO) {
-    contexto.resize(foto.width >= foto.height ? { width: LADO_MAXIMO } : { height: LADO_MAXIMO });
+const pesoDelResultado = (uri: string, blob?: Blob) => {
+  if (blob) return blob.size;
+  try {
+    return new File(uri).size;
+  } catch {
+    return undefined;
   }
-  const imagen = await contexto.renderAsync();
-  const resultado = await imagen.saveAsync({ format: SaveFormat.JPEG, compress: CALIDAD_SUBIDA });
-  return {
-    uri: resultado.uri,
-    nombre: "foto.jpg",
-    tipo: "image/jpeg",
+};
+
+// Reduce la foto (sin agrandar las pequeñas) y la guarda como JPG comprimido,
+// bajando lado y calidad por pasos hasta que pese menos de PESO_OBJETIVO
+const reducirFoto = async (foto: ImagePicker.ImagePickerAsset): Promise<FotoElegida> => {
+  const mayor = Math.max(foto.width, foto.height);
+  let ultimo: FotoElegida | undefined;
+  let ladoUsado = 0;
+  let imagen: ImageRef | undefined;
+
+  for (const paso of PASOS_COMPRESION) {
+    const lado = Math.min(paso.lado, mayor);
+    // Solo se vuelve a redimensionar cuando el lado cambia
+    if (!imagen || lado !== ladoUsado) {
+      const contexto = ImageManipulator.manipulate(foto.uri);
+      if (mayor > lado) {
+        contexto.resize(foto.width >= foto.height ? { width: lado } : { height: lado });
+      }
+      imagen = await contexto.renderAsync();
+      ladoUsado = lado;
+    }
+    const resultado = await imagen.saveAsync({ format: SaveFormat.JPEG, compress: paso.calidad });
     // En web el formulario necesita los bytes; en el celular se lee el archivo
-    archivo: Platform.OS === "web" ? await (await fetch(resultado.uri)).blob() : undefined,
-  };
+    const archivo = Platform.OS === "web" ? await (await fetch(resultado.uri)).blob() : undefined;
+    ultimo = { uri: resultado.uri, nombre: "foto.jpg", tipo: "image/jpeg", archivo };
+    const peso = pesoDelResultado(resultado.uri, archivo);
+    if (peso === undefined || peso <= PESO_OBJETIVO) break;
+  }
+  return ultimo as FotoElegida;
 };
 
 // Abre la galería, revisa formato y peso como el backend (JPG/PNG/WEBP, 5 MB) y deja la foto lista
-// para subir: máximo 1080 px de lado y comprimida.
+// para subir: máximo 1080 px de lado, JPEG y por debajo de unos 300 KB.
 // Devuelve undefined si se cancela o la foto no sirve (ya avisado).
 export const elegirFoto = async ({
   aspecto,
