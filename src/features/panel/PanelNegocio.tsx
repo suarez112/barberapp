@@ -1,9 +1,11 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
+import PanelAdaptable, { useModoPanel } from "@/components/layout/PanelAdaptable";
 import Boton from "@/components/ui/Boton";
 import PantallaAviso from "@/components/ui/PantallaAviso";
 import TextoInfo from "@/components/ui/TextoInfo";
+import { APP_NOMBRE } from "@/config/app";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
 import { avisar } from "@/utils/dialogos";
@@ -63,6 +65,7 @@ export default function PanelNegocio({
   onEquipoCambiado,
 }: Props) {
   const { colors } = useAppTheme();
+  const modo = useModoPanel();
   const { empresa, barberos } = useNegocio();
   const cerrarSesion = useCerrarSesion();
   const salir = useSalirDelPanel();
@@ -267,33 +270,30 @@ export default function PanelNegocio({
   const conSupervision =
     esAdmin && atienden.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
 
-  return (
-    <Pantalla
-      cabecera={{ onSalir: salir }}
-      pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
-      fijo={
-        conSupervision && profesional ? (
-          <View style={[styles.fijo, { backgroundColor: colors.bg, borderBottomColor: colors.cardBorder }]}>
-            <SelectorSupervision
-              compacto
-              barberos={atienden}
-              seleccionadoId={profesional.id}
-              onSeleccionar={(b) => setSupervisadoId(b.id)}
-            />
-            {activa === "AGENDAMIENTOS" ? (
-              <Text style={[styles.diaFijo, { color: colors.textSecondary }]}>
-                {fechaConDia(diaAgenda.fechaFull)}
-              </Text>
-            ) : null}
-          </View>
-        ) : undefined
-      }
-      alRefrescar={empresa ? deslizarParaActualizar : undefined}
-      flotante={puedeAgendar ? <BotonNuevaCita onPress={() => setNuevaCitaAbierta(true)} /> : undefined}
-    >
+  const fijo =
+    conSupervision && profesional ? (
+      <View style={[styles.fijo, { backgroundColor: colors.bg, borderBottomColor: colors.cardBorder }]}>
+        <SelectorSupervision
+          compacto
+          barberos={atienden}
+          seleccionadoId={profesional.id}
+          onSeleccionar={(b) => setSupervisadoId(b.id)}
+        />
+        {activa === "AGENDAMIENTOS" ? (
+          <Text style={[styles.diaFijo, { color: colors.textSecondary }]}>
+            {fechaConDia(diaAgenda.fechaFull)}
+          </Text>
+        ) : null}
+      </View>
+    ) : undefined;
+
+  const flotante = puedeAgendar ? <BotonNuevaCita onPress={() => setNuevaCitaAbierta(true)} /> : undefined;
+
+  const cuerpo = (
+    <>
       <RefrescoPanelProvider registrar={registrarRefresco}>
         <View>
-          {empresa ? (
+          {empresa && modo !== "ancho" ? (
             <PerfilBadge
               nombre={yo?.nombre ?? personal.nombre}
               esAdmin={esAdmin}
@@ -319,6 +319,39 @@ export default function PanelNegocio({
           onCreada={citaCreada}
         />
       ) : null}
+    </>
+  );
+
+  // Web con ancho suficiente: menú lateral y el contenido al lado
+  if (modo !== "movil") {
+    const nombreRol = personal.esCuentaAdmin ? "Administración" : esAdmin ? "Administrador" : "Empleado";
+    return (
+      <PanelAdaptable
+        modo={modo}
+        secciones={pestanas.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
+        activa={activa}
+        onCambiar={setPestana}
+        titulo={empresa?.nombre ?? APP_NOMBRE}
+        usuario={yo?.nombre ?? personal.nombre}
+        rol={nombreRol}
+        onSalir={salir}
+        fijo={fijo}
+        flotante={flotante}
+      >
+        {cuerpo}
+      </PanelAdaptable>
+    );
+  }
+
+  return (
+    <Pantalla
+      cabecera={{ onSalir: salir }}
+      pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
+      fijo={fijo}
+      alRefrescar={empresa ? deslizarParaActualizar : undefined}
+      flotante={flotante}
+    >
+      {cuerpo}
     </Pantalla>
   );
 }

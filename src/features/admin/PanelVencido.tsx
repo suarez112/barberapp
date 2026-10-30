@@ -1,9 +1,10 @@
 import { ReactNode, useState } from "react";
 import { Linking } from "react-native";
+import PanelAdaptable, { useModoPanel } from "@/components/layout/PanelAdaptable";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import PantallaAviso from "@/components/ui/PantallaAviso";
-import { CONTACTO } from "@/config/app";
+import { APP_NOMBRE, CONTACTO } from "@/config/app";
 import { PAGOS_EN_APP } from "@/config/pagos";
 import { Suscripcion } from "../cuenta/api";
 import PanelTabBar, { Pestana, PestanaPanel } from "../panel/components/PanelTabBar";
@@ -15,12 +16,13 @@ const PESTANAS: Pestana[] = [
   { id: "MI_NEGOCIO", icono: "business-outline", label: "Mi negocio" },
 ];
 
-type Props = { suscripcion: Suscripcion; miNegocio: ReactNode };
+type Props = { suscripcion: Suscripcion; miNegocio: ReactNode; nombreNegocio?: string; usuario?: string };
 
 // Panel del administrador con la prueba o el plan vencidos. En la web puede elegir
 // un plan y usar Mi negocio (lo demás responde 402 en el backend). En el celular solo
 // ve el aviso con el correo de soporte: no se habla de planes ni pagos.
-export default function PanelVencido({ suscripcion, miNegocio }: Props) {
+export default function PanelVencido({ suscripcion, miNegocio, nombreNegocio, usuario }: Props) {
+  const modo = useModoPanel();
   const salir = useSalirDelPanel();
   const [pestana, setPestana] = useState<PestanaPanel>("PLANES");
 
@@ -45,12 +47,31 @@ export default function PanelVencido({ suscripcion, miNegocio }: Props) {
     );
   }
 
+  const contenido = pestana === "PLANES" ? <ElegirPlan suscripcion={suscripcion} /> : miNegocio;
+
+  if (modo !== "movil") {
+    return (
+      <PanelAdaptable
+        modo={modo}
+        secciones={PESTANAS.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
+        activa={pestana}
+        onCambiar={setPestana}
+        titulo={nombreNegocio ?? APP_NOMBRE}
+        usuario={usuario ?? ""}
+        rol="Administrador"
+        onSalir={salir}
+      >
+        {contenido}
+      </PanelAdaptable>
+    );
+  }
+
   return (
     <Pantalla
       cabecera={{ onSalir: salir }}
       pie={<PanelTabBar pestanas={PESTANAS} activa={pestana} onCambiar={setPestana} />}
     >
-      {pestana === "PLANES" ? <ElegirPlan suscripcion={suscripcion} /> : miNegocio}
+      {contenido}
     </Pantalla>
   );
 }

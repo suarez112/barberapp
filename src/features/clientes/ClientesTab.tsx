@@ -1,3 +1,4 @@
+import Cuadricula from "@/components/layout/Cuadricula";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
@@ -102,9 +103,11 @@ export default function ClientesTab({ token }: { token: string }) {
         </TextoInfo>
       ) : null}
 
-      {lista.map((c) => (
-        <TarjetaCliente key={c.id} token={token} cliente={c} onAlternarBloqueo={alternarBloqueo} />
-      ))}
+      <Cuadricula>
+        {lista.map((c) => (
+          <TarjetaCliente key={c.id} token={token} cliente={c} onAlternarBloqueo={alternarBloqueo} />
+        ))}
+      </Cuadricula>
     </View>
   );
 }

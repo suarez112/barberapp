@@ -1,3 +1,4 @@
+import Cuadricula from "@/components/layout/Cuadricula";
 import { StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
@@ -139,6 +140,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
       <TituloSeccion style={styles.tituloLista}>
         SERVICIOS ACTIVOS ({servicios.length})
       </TituloSeccion>
+      <Cuadricula>
       {servicios.map((s) => (
         <TarjetaFila key={s.id}>
           <View style={styles.flex}>
@@ -168,6 +170,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
           </View>
         </TarjetaFila>
       ))}
+      </Cuadricula>
     </>
   );
 }

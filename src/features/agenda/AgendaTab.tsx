@@ -1,3 +1,4 @@
+import Cuadricula from "@/components/layout/Cuadricula";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import BotonIcono from "@/components/ui/BotonIcono";
@@ -188,7 +189,8 @@ export default function AgendaTab({
       {verLinea ? null : visibles.length === 0 ? (
         <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>
       ) : (
-        visibles.map((c) => (
+        <Cuadricula>
+          {visibles.map((c) => (
           <TarjetaCita
             key={c.id}
             cita={c}
@@ -198,7 +200,8 @@ export default function AgendaTab({
             onCompletar={completar}
             onCancelar={cancelar}
           />
-        ))
+          ))}
+        </Cuadricula>
       )}
     </View>
   );

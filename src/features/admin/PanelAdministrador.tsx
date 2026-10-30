@@ -167,7 +167,12 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
   if (suscripcion?.estado === "vencida") {
     return (
       <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
-        <PanelVencido suscripcion={suscripcion} miNegocio={miNegocio} />
+        <PanelVencido
+          suscripcion={suscripcion}
+          miNegocio={miNegocio}
+          nombreNegocio={perfil?.nombre}
+          usuario={conNombre.nombre}
+        />
       </FuncionesProvider>
     );
   }
