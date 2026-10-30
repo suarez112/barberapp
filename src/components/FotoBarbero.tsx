@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import FotoImagen from "@/components/ui/FotoImagen";
 import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto as abrirGaleria, FotoElegida } from "@/utils/imagenes";
@@ -55,11 +56,7 @@ export default function FotoBarbero({
     return (
       <View style={{ marginHorizontal: -12, marginTop: -12, marginBottom: 10 }}>
         {foto ? (
-          <Image
-            source={{ uri: foto }}
-            style={{ width: "100%", aspectRatio: 4 / 5 }}
-            resizeMode="cover"
-          />
+          <FotoImagen uri={foto} enLista style={{ width: "100%", aspectRatio: 4 / 5 }} />
         ) : (
           <View
             style={{
@@ -81,8 +78,9 @@ export default function FotoBarbero({
 
   // ---------- FORMA CIRCULAR (pantalla del administrador) ----------
   const circulo = foto ? (
-    <Image
-      source={{ uri: foto }}
+    <FotoImagen
+      uri={foto}
+      enLista
       style={{
         width: size,
         height: size,
@@ -90,8 +88,6 @@ export default function FotoBarbero({
         borderWidth: 2,
         borderColor: color,
       }}
-      // Recorta desde el centro sin deformar la foto
-      resizeMode="cover"
     />
   ) : (
     <View

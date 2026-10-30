@@ -2,11 +2,13 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
+import PantallaMarca, { EnlaceInferior } from "@/components/layout/PantallaMarca";
 import PantallaAviso from "@/components/ui/PantallaAviso";
 import Selector from "@/components/ui/Selector";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAbrirNegocio } from "@/features/negocio/useAbrirNegocio";
+import { useDisenoMovil } from "@/hooks/useDisenoMovil";
 import CatalogoProductos from "@/features/productos/CatalogoProductos";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import ConfirmacionCita from "./components/ConfirmacionCita";
@@ -28,19 +30,21 @@ export default function ClienteScreen() {
   const { colors } = useAppTheme();
   // Enlace o QR del negocio: ej. /cliente?codigo=INFINITY entra directo.
   // "Mis negocios" también abre así el negocio elegido.
-  const { codigo } = useLocalSearchParams<{ codigo?: string }>();
+  // "invitado=1" abre directo la pantalla del código (viene de "Prefiero continuar como invitado")
+  const { codigo, invitado: pideInvitado } = useLocalSearchParams<{ codigo?: string; invitado?: string }>();
   const codigoEnlace = (typeof codigo === "string" ? codigo : "")
     .trim()
     .toUpperCase();
   const modoEnlace = codigoEnlace !== "";
 
-  const { back, canGoBack, replace } = useRouter();
+  const { back, canGoBack, replace, push } = useRouter();
+  const movil = useDisenoMovil();
   const { empresa, salirDelNegocio } = useNegocio();
   const { usuario } = useCuenta();
   const conCuenta = usuario?.rol === "cliente";
   const abrirNegocio = useAbrirNegocio();
   // Eligió "Continuar como invitado": se pide el código
-  const [invitado, setInvitado] = useState(false);
+  const [invitado, setInvitado] = useState(pideInvitado === "1");
 
   useEffect(() => {
     if (codigoEnlace) abrirNegocio(codigoEnlace);
@@ -82,6 +86,41 @@ export default function ClienteScreen() {
       <OpcionesCliente onInvitado={() => setInvitado(true)} />
     );
   };
+
+  // Celular: pide el código con una franja baja y el campo centrado (el teclado no lo tapa)
+  const pideCodigo = !empresa && (modoEnlace ? !conCuenta : invitado);
+  if (movil && pideCodigo) {
+    return (
+      <PantallaMarca
+        titulo="Reserva en tu negocio"
+        baja
+        centrado
+        onVolver={modoEnlace && !conCuenta ? undefined : volver}
+      >
+        <IngresoCodigo />
+      </PantallaMarca>
+    );
+  }
+
+  // Celular: la pantalla de elección lleva la franja de marca; el resto conserva la cabecera de siempre
+  if (movil && !empresa && !modoEnlace && !invitado) {
+    return (
+      <PantallaMarca
+        titulo="Reserva tu cita en segundos"
+        onVolver={volver}
+        pie={
+          <EnlaceInferior
+            texto="¿Eres dueño o trabajas en un negocio?"
+            enlace="Inicia sesión aquí"
+            ayuda="Abre el inicio de sesión para negocios y equipos"
+            onPress={() => push("/login")}
+          />
+        }
+      >
+        <OpcionesCliente grande onInvitado={() => setInvitado(true)} />
+      </PantallaMarca>
+    );
+  }
 
   return (
     // El enlace web o el QR no tiene adónde volver; con cuenta se vuelve a "Mis negocios"

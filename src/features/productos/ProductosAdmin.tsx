@@ -1,6 +1,5 @@
 import Cuadricula from "@/components/layout/Cuadricula";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
@@ -18,6 +17,8 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { Producto } from "@/types";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio } from "@/utils/formato";
+import FotoImagen from "@/components/ui/FotoImagen";
+import ZonaFoto from "@/components/ui/ZonaFoto";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
 import { useAvisarError } from "../sesion/useAvisarError";
 import {
@@ -164,24 +165,14 @@ export default function ProductosAdmin({ token }: { token: string }) {
         onAlternar={alternar}
         style={styles.acordeon}
       >
-        <Tocable
-          accessibilityRole="button"
-          accessibilityLabel="Elegir foto del producto"
-          accessibilityHint="Abre tu galería para elegir una foto (opcional)"
+        <ZonaFoto
+          etiqueta="Elegir foto del producto"
+          ayuda="Abre tu galería para elegir una foto (opcional)"
           onPress={elegir}
-          style={[styles.foto, { borderColor: colors.cardBorder }]}
+          style={styles.foto}
         >
-          {fotoMostrada ? (
-            <Image source={{ uri: fotoMostrada }} style={styles.llenar} contentFit="cover" />
-          ) : (
-            <>
-              <Ionicons name="camera" size={28} color={colors.textSecondary} />
-              <Text style={[styles.agregarFoto, { color: colors.textSecondary }]}>
-                Agregar foto (opcional)
-              </Text>
-            </>
-          )}
-        </Tocable>
+          {fotoMostrada ? <FotoImagen uri={fotoMostrada} style={styles.llenar} /> : undefined}
+        </ZonaFoto>
         {fotoMostrada ? (
           <Tocable
             accessibilityRole="button"
@@ -250,7 +241,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
       {productos.map((p) => (
         <TarjetaFila key={p.id}>
           {p.fotoUrl ? (
-            <Image source={{ uri: p.fotoUrl }} style={styles.miniatura} contentFit="cover" />
+            <FotoImagen uri={p.fotoUrl} enLista style={styles.miniatura} />
           ) : (
             <View style={[styles.miniatura, { backgroundColor: colors.inputBg }]}>
               <Ionicons name="cube-outline" size={22} color={colors.textSecondary} />
@@ -293,18 +284,9 @@ const styles = StyleSheet.create({
   subiendo: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   botonQuitar: { minHeight: 44, justifyContent: "center" },
   tituloLista: { marginTop: 20 },
-  foto: {
-    height: 120,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-    overflow: "hidden",
-  },
+  // Alto fijo: la zona mide lo mismo vacía o con foto
+  foto: { height: 160 },
   llenar: { width: "100%", height: "100%" },
-  agregarFoto: { marginTop: 4 },
   quitarFoto: { fontSize: 12, fontWeight: "bold", marginBottom: 10, textAlign: "right" },
   miniatura: {
     width: 48,

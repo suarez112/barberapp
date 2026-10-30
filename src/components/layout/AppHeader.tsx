@@ -7,6 +7,7 @@ import CampanaNotificaciones from "@/features/notificaciones/centro/CampanaNotif
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import BotonCabecera from "./BotonCabecera";
+import BotonTema from "./BotonTema";
 import MenuCabecera from "./MenuCabecera";
 
 export type OpcionesCabecera = {
@@ -53,6 +54,8 @@ export default function AppHeader({ onVolver, onSalir }: OpcionesCabecera) {
       </Text>
 
       <CampanaNotificaciones />
+
+      <BotonTema />
 
       <BotonCabecera
         icono="menu-outline"

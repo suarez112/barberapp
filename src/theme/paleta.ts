@@ -54,6 +54,9 @@ export const COLORES = {
   azul: "#1D4ED8", // información, cita pendiente
   neutro: "#374151", // inactivo, cerrado, suspendido
   whatsapp: "#25D366",
+  // Barras de las estadísticas: amarillo normal y amarillo oscuro para la destacada (se leen en ambos temas)
+  barra: "#FACC15",
+  barraDestacada: "#EAB308",
 } as const;
 
 // Colores fijos de la página principal web (features/landing). Es un diseño claro propio,

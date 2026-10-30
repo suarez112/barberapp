@@ -3,6 +3,7 @@ import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBoton
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import SelectorDias from "@/components/ui/SelectorDias";
+import { COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { crearDia, hoyColombiaISO, sumarDias, textoRango } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
@@ -170,8 +171,8 @@ export default function TableroCartera({ token }: { token: string }) {
               s.relleno,
               {
                 width: `${(p.citas / maxCitas) * 100}%`,
-                backgroundColor: colors.primary,
-                opacity: elegidoId && !activa ? 0.45 : 1,
+                backgroundColor: activa ? COLORES.barraDestacada : COLORES.barra,
+                opacity: elegidoId && !activa ? 0.6 : 1,
               },
             ]}
           />
@@ -312,6 +313,8 @@ export default function TableroCartera({ token }: { token: string }) {
             {tarjeta(String(resumen.citasCompletadas), "Citas completadas")}
           </View>
 
+          {periodo !== "rango" ? <ProyeccionCartera periodo={periodo} /> : null}
+
           <Text style={[s.titulo, s.tituloSeparado, { color: colors.primaryText }]}>
             CITAS POR PROFESIONAL
           </Text>
@@ -359,8 +362,6 @@ export default function TableroCartera({ token }: { token: string }) {
           <ExportarCartera token={token} periodo={consulta.periodo} desde={consulta.desde} hasta={consulta.hasta} />
         </>
       ) : null}
-
-      {periodo !== "rango" ? <ProyeccionCartera periodo={periodo} /> : null}
 
       <Text style={[s.nota, { color: colors.textSecondary }]}>
         La ganancia de cada cita usa el porcentaje que tenía el profesional cuando se completó.

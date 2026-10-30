@@ -23,7 +23,7 @@ const ORO = "#FFC107";
 const ORO_CLARO = "#FFE27A";
 const ORO_OSCURO = "#FF9800";
 
-const logoImagen = require("../../../assets/logo.png");
+const logoImagen = require("../../../assets/logo-app.webp");
 
 // ---------- Static drawings (built once; the animation only moves/fades them) ----------
 

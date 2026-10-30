@@ -11,10 +11,12 @@ type Props = {
   ayuda?: string;
   onPress: () => void;
   children?: ReactNode; // ej. punto de "sin leer"
+  // Sobre una franja siempre oscura: fondo oscuro semitransparente e icono amarillo (ambos temas)
+  sobreOscuro?: boolean;
 };
 
 // Botón cuadrado pequeño de la cabecera
-export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, children }: Props) {
+export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, children, sobreOscuro = false }: Props) {
   const { colors } = useAppTheme();
   return (
     <Tocable
@@ -23,11 +25,13 @@ export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, childre
       accessibilityHint={ayuda ?? etiqueta}
       style={[
         styles.boton,
-        { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+        sobreOscuro
+          ? { backgroundColor: "rgba(0, 0, 0, 0.35)", borderColor: "rgba(250, 204, 21, 0.45)" }
+          : { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={24} color={colors.primaryText} />
+      <Ionicons name={icono} size={24} color={sobreOscuro ? "#FACC15" : colors.primaryText} />
       {children}
     </Tocable>
   );

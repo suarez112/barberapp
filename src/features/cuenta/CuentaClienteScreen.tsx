@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
+import PantallaMarca, { EnlaceInferior } from "@/components/layout/PantallaMarca";
 import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
 import CampoTelefono from "@/components/ui/CampoTelefono";
@@ -9,6 +10,7 @@ import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import Selector from "@/components/ui/Selector";
 import Tocable from "@/components/ui/Tocable";
+import { useDisenoMovil } from "@/hooks/useDisenoMovil";
 import { useTelefono } from "@/hooks/useTelefono";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError } from "@/services/api/http";
@@ -40,13 +42,40 @@ const MODOS = [
 // volver a escribir sus datos. Se puede seguir reservando como invitado.
 export default function CuentaClienteScreen() {
   const { colors } = useAppTheme();
-  const { back, canGoBack, replace } = useRouter();
+  const { back, canGoBack, replace, push } = useRouter();
+  const movil = useDisenoMovil();
   const [modo, setModo] = useState<Modo>("ENTRAR");
 
   const volver = () => {
     if (canGoBack()) back();
     else replace("/cliente");
   };
+
+  if (movil) {
+    return (
+      <PantallaMarca
+        titulo="Tu cuenta de cliente"
+        onVolver={volver}
+        pie={
+          <EnlaceInferior
+            enlace="Prefiero continuar como invitado"
+            ayuda="Abre la reserva con el código del negocio, sin crear cuenta"
+            onPress={() => push("/cliente?invitado=1")}
+          />
+        }
+      >
+        <Text style={[estilosTexto.subtitulo, styles.centrado, styles.subtituloMarca, { color: colors.textSecondary }]}>
+          Guarda tus negocios favoritos, reserva sin volver a escribir tus datos y mira tus citas.
+        </Text>
+        <Selector opciones={MODOS} valor={modo} onCambiar={setModo} />
+        {modo === "ENTRAR" ? (
+          <FormularioEntrar onListo={replace} />
+        ) : (
+          <FormularioCrear onListo={() => replace("/mis-negocios")} />
+        )}
+      </PantallaMarca>
+    );
+  }
 
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
@@ -301,6 +330,7 @@ const styles = StyleSheet.create({
   contenedor: { marginTop: 20 },
   titulo: { fontSize: 18, fontWeight: "bold", textAlign: "center", letterSpacing: 1 },
   centrado: { textAlign: "center" },
+  subtituloMarca: { marginBottom: 12 },
   ayuda: { marginTop: 0, marginBottom: 8 },
   boton: { marginTop: 10 },
   enlace: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 },

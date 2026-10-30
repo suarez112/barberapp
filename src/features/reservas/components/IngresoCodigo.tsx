@@ -23,16 +23,7 @@ export default function IngresoCodigo() {
 
   return (
     <View style={styles.contenedor}>
-      <TituloSeccion>INGRESA EL CÓDIGO DEL ESTABLECIMIENTO</TituloSeccion>
-      <Text
-        style={[
-          estilosTexto.subtitulo,
-          styles.ayuda,
-          { color: colors.textSecondary },
-        ]}
-      >
-        Ingresa el código que te dio el negocio
-      </Text>
+      <TituloSeccion style={styles.titulo}>INGRESA EL CÓDIGO DEL ESTABLECIMIENTO</TituloSeccion>
 
       <CampoTexto
         etiqueta="Código del negocio"
@@ -49,7 +40,8 @@ export default function IngresoCodigo() {
           setError(null);
         }}
         onSubmitEditing={entrar}
-        estiloTexto={styles.campo}
+        // Letra grande y espaciada solo para lo que se escribe; el ejemplo se ve normal
+        estiloTexto={codigo ? styles.campo : undefined}
         centrado
       />
 
@@ -59,13 +51,17 @@ export default function IngresoCodigo() {
         onPress={entrar}
         style={styles.boton}
       />
+      <Text style={[estilosTexto.subtitulo, styles.ayuda, { color: colors.textSecondary }]}>
+        Pídeselo al negocio o búscalo junto a su código QR.
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   contenedor: { marginTop: 30 },
-  ayuda: { marginBottom: 15 },
+  titulo: { marginBottom: 14 },
+  ayuda: { marginTop: 12, textAlign: "center" },
   campo: {
     fontSize: 18,
     fontWeight: "bold",

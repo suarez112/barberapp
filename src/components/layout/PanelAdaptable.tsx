@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, ReactNode, useState } from "react";
 import {
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -14,9 +13,8 @@ import Tocable from "@/components/ui/Tocable";
 import CampanaNotificaciones from "@/features/notificaciones/centro/CampanaNotificaciones";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import BotonCabecera from "./BotonCabecera";
+import BotonTema from "./BotonTema";
 import MenuCabecera from "./MenuCabecera";
-
-const logo = require("../../../assets/logo.png");
 
 // Desde este ancho el menú lateral queda fijo; entre ANCHO_MEDIO y este, se abre con ☰;
 // por debajo (y en Android/iOS) el panel conserva la vista de celular
@@ -134,8 +132,7 @@ export default function PanelAdaptable<Id extends string>({
         { backgroundColor: colors.headerBg, borderColor: colors.cardBorder },
       ]}
     >
-      <View style={styles.marca}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" accessibilityLabel="Logo" />
+      <View style={[styles.marca, { borderColor: colors.cardBorder }]}>
         <Text numberOfLines={2} style={[styles.nombreNegocio, { color: colors.textPrimary }]}>
           {titulo}
         </Text>
@@ -203,6 +200,7 @@ export default function PanelAdaptable<Id extends string>({
             {ancho ? (secciones.find((s) => s.id === activa)?.texto ?? "") : titulo}
           </Text>
           <CampanaNotificaciones />
+          <BotonTema />
           <BotonCabecera
             icono="ellipsis-horizontal"
             etiqueta="Opciones"
@@ -258,9 +256,8 @@ const styles = StyleSheet.create({
   pagina: { flexDirection: "row" },
   menu: { width: 260, borderRightWidth: 1, paddingVertical: 20, paddingHorizontal: 12 },
   menuDesplegable: { position: "absolute", top: 0, bottom: 0, left: 0 },
-  marca: { alignItems: "center", gap: 10, paddingHorizontal: 8, marginBottom: 24 },
-  logo: { width: 72, height: 72 },
-  nombreNegocio: { fontSize: 16, fontWeight: "bold", textAlign: "center" },
+  marca: { paddingHorizontal: 8, paddingBottom: 16, marginBottom: 16, borderBottomWidth: 1 },
+  nombreNegocio: { fontSize: 18, fontWeight: "bold" },
   items: { flex: 1, gap: 6 },
   item: {
     flexDirection: "row",

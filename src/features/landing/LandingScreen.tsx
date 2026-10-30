@@ -28,7 +28,7 @@ import SeccionPlanes from "./SeccionPlanes";
 
 // Página principal de Agendality. Solo existe en la web (la importa app/index.tsx únicamente allí).
 
-const logo = require("../../../assets/logo.png");
+const logo = require("../../../assets/logo-app.webp");
 
 const TITULO = "Agendality – Software de citas y gestión para negocios";
 const DESCRIPCION =
@@ -173,7 +173,9 @@ const PREGUNTAS = [
 ];
 
 export default function LandingScreen() {
-  const { tablet, movil } = useAnchos();
+  const { tablet, movil, ancho } = useAnchos();
+  // Cabecera en celular angosto: solo el logo (sin la palabra) para que quepan los dos botones
+  const sinNombre = ancho < 420;
   const reducirMovimiento = useReducedMotion();
   const scroll = useRef<ScrollViewInstance>(null);
   const [documento, setDocumento] = useState<TipoDocumento | null>(null);
@@ -195,7 +197,7 @@ export default function LandingScreen() {
         accessibilityRole="banner"
         style={{ backgroundColor: "rgba(255,255,255,0.97)", borderBottomWidth: 1, borderBottomColor: C.borde, zIndex: 5 }}
       >
-        <Contenedor style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 72, gap: 16 }}>
+        <Contenedor style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 72, gap: movil ? 8 : 16 }}>
           <Animated.View entering={entrada(0)}>
             <Pressable
               accessibilityRole="link"
@@ -204,8 +206,10 @@ export default function LandingScreen() {
               onPress={() => scroll.current?.scrollTo({ y: 0, animated: !reducirMovimiento })}
               style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 }}
             >
-              <Image source={logo} accessibilityLabel="" style={{ width: 36, height: 36, borderRadius: 10 }} />
-              <T style={{ fontSize: 20, fontWeight: "800", letterSpacing: 0.5 }}>AGENDALITY</T>
+              <Image source={logo} accessibilityLabel="" style={{ width: movil ? 32 : 36, height: movil ? 32 : 36, borderRadius: 10 }} />
+              {sinNombre ? null : (
+                <T style={{ fontSize: movil ? 15 : 20, fontWeight: "800", letterSpacing: movil ? 0 : 0.5 }}>AGENDALITY</T>
+              )}
             </Pressable>
           </Animated.View>
           {!tablet && (
@@ -221,11 +225,14 @@ export default function LandingScreen() {
               ))}
             </View>
           )}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            {!movil && (
-              <EnlaceTexto etiqueta="Iniciar sesión" ayuda="Abre la pantalla para entrar a tu cuenta" href="/login" style={{ fontWeight: "600" }} />
-            )}
-            <BotonLanding variante="amarillo" etiqueta="Prueba gratis" href="/registro" ayuda="Abre el registro de tu negocio" chico />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: movil ? 8 : 12 }}>
+            <EnlaceTexto
+              etiqueta="Iniciar sesión"
+              ayuda="Abre la pantalla para entrar a tu cuenta"
+              href="/login"
+              style={{ fontWeight: "600", fontSize: movil ? 13 : 15 }}
+            />
+            <BotonLanding variante="amarillo" etiqueta="Prueba gratis" href="/registro" ayuda="Abre el registro de tu negocio" chico compacto={movil} />
           </View>
         </Contenedor>
       </View>
@@ -547,7 +554,6 @@ export default function LandingScreen() {
                 {CONTACTO.correo ? (
                   <EnlacePie etiqueta={CONTACTO.correo} ayuda="Abre tu correo para escribirnos" externo={`mailto:${CONTACTO.correo}`} />
                 ) : null}
-                <EnlacePie etiqueta="Iniciar sesión" ayuda="Abre la pantalla para entrar a tu cuenta" href="/login" />
               </ColumnaPie>
             </View>
             <View style={{ borderTopWidth: 1, borderTopColor: C.bordeOscuro, marginTop: 40, paddingTop: 24 }}>
