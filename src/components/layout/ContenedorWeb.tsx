@@ -7,11 +7,11 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 const ANCHO_MAXIMO = 760;
 
 // En la web, centra la app con un ancho máximo para que no se estire de lado a lado.
-// El panel del superadmin y la página principal ("/") conservan su diseño de ancho completo. En el celular no hace nada.
+// El panel del superadmin, los del negocio (/panel y /admin) y la página principal ("/") usan el ancho completo. En el celular no hace nada.
 export default function ContenedorWeb({ children }: { children: ReactNode }) {
   const { colors } = useAppTheme();
   const ruta = usePathname();
-  if (Platform.OS !== "web" || ruta.startsWith("/superadmin") || ruta === "/") return <>{children}</>;
+  if (Platform.OS !== "web" || ruta.startsWith("/superadmin") || ruta.startsWith("/panel") || ruta.startsWith("/admin") || ruta === "/") return <>{children}</>;
   return (
     <View style={[styles.fondo, { backgroundColor: colors.bg }]}>
       <View style={styles.columna}>{children}</View>
