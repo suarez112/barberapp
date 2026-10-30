@@ -1,3 +1,4 @@
+import Cuadricula from "@/components/layout/Cuadricula";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useState } from "react";
@@ -245,6 +246,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
       {!cargando && productos.length === 0 ? (
         <TextoInfo>Aún no has agregado productos.</TextoInfo>
       ) : null}
+      <Cuadricula>
       {productos.map((p) => (
         <TarjetaFila key={p.id}>
           {p.fotoUrl ? (
@@ -281,6 +283,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
           </View>
         </TarjetaFila>
       ))}
+      </Cuadricula>
     </View>
   );
 }

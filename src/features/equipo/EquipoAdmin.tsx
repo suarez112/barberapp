@@ -1,3 +1,4 @@
+import Cuadricula from "@/components/layout/Cuadricula";
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
@@ -413,6 +414,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
       <TituloSeccion style={styles.tituloLista}>
         INTEGRANTES REGISTRADOS ({barberos.length})
       </TituloSeccion>
+      <Cuadricula>
       {barberos.map((b) => (
         <TarjetaFila key={b.id}>
           <View style={styles.flex}>
@@ -459,6 +461,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
           </View>
         </TarjetaFila>
       ))}
+      </Cuadricula>
     </>
   );
 }
