@@ -96,7 +96,7 @@ function Graficos({ e, onVerNegocio }: { e: EstadisticasPlataforma; onVerNegocio
         ) : (
           <View accessible accessibilityLabel={`${conversion.tasaPorcentaje} por ciento. ${conversion.convertidos} de ${conversion.pruebasTerminadas} negocios pasaron a un plan.`}>
             <Text style={[styles.grande, { color: colors.textPrimary }]}>
-              {conversion.tasaPorcentaje.toLocaleString("es-CO")}%
+              {formatearNumero(conversion.tasaPorcentaje)}%
             </Text>
             <Text style={[styles.nota, { color: colors.textSecondary }]}>
               {formatearNumero(conversion.convertidos)} de {formatearNumero(conversion.pruebasTerminadas)} negocios

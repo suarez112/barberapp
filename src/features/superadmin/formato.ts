@@ -38,8 +38,10 @@ export const formatearDiaMes = (dia: string) => {
   return `${Number(numero)} ${MESES[Number(mes) - 1] ?? ""}`.trim();
 };
 
-export const formatearNumero = (n: number) => n.toLocaleString("es-CO");
-export const formatearPesos = (n: number) => `$${n.toLocaleString("es-CO")}`;
+// A missing value (null/undefined/NaN, e.g. an average with an empty database) shows "—" instead of crashing.
+const esNumero = (n: number | null | undefined): n is number => typeof n === "number" && !Number.isNaN(n);
+export const formatearNumero = (n: number | null | undefined) => (esNumero(n) ? n.toLocaleString("es-CO") : "—");
+export const formatearPesos = (n: number | null | undefined) => (esNumero(n) ? `$${n.toLocaleString("es-CO")}` : "—");
 
 export const ESTADOS_NEGOCIO: Record<EstadoNegocio, { texto: string; color: string }> = {
   prueba: { texto: "EN PRUEBA", color: COLORES.azul },
