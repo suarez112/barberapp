@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import SeccionPlegable from "@/components/ui/SeccionPlegable";
@@ -10,11 +10,15 @@ import { GuiaContext, useGuia } from "../guia/guiaContexto";
 import PrimerosPasos from "../guia/PrimerosPasos";
 import { useGuiaInicial } from "../guia/useGuiaInicial";
 import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
+import PagoManual from "../pagos/manual/PagoManual";
+import { useConfiguracionPagos } from "../pagos/useConfiguracionPagos";
 import PanelNegocio from "../panel/PanelNegocio";
+import { PestanaPanel } from "../panel/components/PanelTabBar";
 import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import { FuncionesProvider } from "../planes/FuncionesProvider";
 import { useFunciones } from "../planes/funcionesContexto";
+import { MiPlanContexto } from "../planes/miPlanContexto";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
 import EnlacePublicoNegocio from "./components/EnlacePublicoNegocio";
@@ -55,7 +59,14 @@ function MostrarGuia() {
 // Panel de cualquier administrador: la cuenta de la empresa (/admin) o un
 // integrante con rol Administrador (/panel). Los dos ven las mismas pestañas,
 // incluida "Mi negocio". Con la suscripción vencida solo Planes y Mi negocio.
-export default function PanelAdministrador({ personal }: { personal: Personal }) {
+export default function PanelAdministrador({
+  personal,
+  pestanaInicial,
+}: {
+  personal: Personal;
+  // Pestaña que se abre primero (ej. /pagar abre "Mi plan")
+  pestanaInicial?: PestanaPanel;
+}) {
   const { colors } = useAppTheme();
   const cerrarSesion = useConfirmarCerrarSesion();
   const {
@@ -72,6 +83,13 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
   } = useMiEmpresa(personal.token);
 
   const guia = useGuiaInicial(personal.token);
+
+  // Web con pagos manuales: el plan se paga en la sección "Mi plan" del panel
+  const { config } = useConfiguracionPagos(Platform.OS === "web");
+  const pagoManual = Platform.OS === "web" && config?.proveedor === "manual";
+  const [pedirMiPlan, setPedirMiPlan] = useState(0);
+  const irAMiPlan = useCallback(() => setPedirMiPlan((n) => n + 1), []);
+  const miPlan = pagoManual && suscripcion ? <PagoManual token={personal.token} suscripcion={suscripcion} alAprobarse={actualizarSuscripcion} /> : undefined;
 
   // Los días restantes cambian a medianoche; también puede haber cambiado
   // el plan mientras la app estaba cerrada
@@ -169,6 +187,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
       <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
         <PanelVencido
           suscripcion={suscripcion}
+          miPlan={miPlan}
           miNegocio={miNegocio}
           nombreNegocio={perfil?.nombre}
           usuario={conNombre.nombre}
@@ -179,6 +198,7 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
 
   return (
     <GuiaContext.Provider value={guia}>
+      <MiPlanContexto.Provider value={miPlan ? irAMiPlan : null}>
       <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
         <AbrirPlanesPendiente />
         <PanelNegocio
@@ -190,11 +210,15 @@ export default function PanelAdministrador({ personal }: { personal: Personal })
             </>
           )}
           miNegocio={miNegocio}
+          miPlan={miPlan}
+          pestanaInicial={pestanaInicial}
+          pedirMiPlan={pedirMiPlan}
           onSuscripcionVencida={actualizarSuscripcion}
           suscripcion={suscripcion}
           onEquipoCambiado={actualizarSuscripcion}
         />
       </FuncionesProvider>
+      </MiPlanContexto.Provider>
     </GuiaContext.Provider>
   );
 }

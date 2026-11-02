@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
@@ -18,6 +18,8 @@ import { useIniciarSesion } from "./useIniciarSesion";
 export default function LoginScreen() {
   const { colors } = useAppTheme();
   const { back, canGoBack, push, replace } = useRouter();
+  // /pagar manda aquí a quien no tiene sesión y, al entrar, lo devuelve a la página de pago
+  const { volverA } = useLocalSearchParams<{ volverA?: string }>();
   const iniciarSesion = useIniciarSesion();
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
@@ -42,7 +44,7 @@ export default function LoginScreen() {
     if (!destino) return;
     setUsuario("");
     setClave("");
-    replace(destino);
+    replace(volverA === "/pagar" && destino !== "/mis-negocios" ? "/pagar" : destino);
   };
 
   const movil = useDisenoMovil();

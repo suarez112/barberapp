@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -8,8 +9,10 @@ import { COLORES } from "@/theme/paleta";
 import { avisar } from "@/utils/dialogos";
 import { formatearPesos } from "@/utils/formato";
 import { PlanSuscripcion, Suscripcion } from "../cuenta/api";
+import { useConfiguracionPagos } from "../pagos/useConfiguracionPagos";
 import { nivelPara, precioPara } from "./cobro";
 import { useFunciones } from "./funcionesContexto";
+import { useIrAMiPlan } from "./miPlanContexto";
 import { usePlanes } from "./usePlanes";
 
 const PERIODOS: { valor: PlanSuscripcion; texto: string; nota?: string }[] = [
@@ -28,11 +31,15 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
   const { colors } = useAppTheme();
   const { planes, error, reintentar } = usePlanes();
   const { datos: funciones } = useFunciones();
+  const irAMiPlan = useIrAMiPlan();
   const [periodo, setPeriodo] = useState<PlanSuscripcion>(suscripcion?.plan ?? "mensual");
   // Empieza en los profesionales que ya tiene el negocio (mínimo 1)
   const [cantidad, setCantidad] = useState(Math.max(1, suscripcion?.profesionalesCobrados ?? 1));
 
   const enPrueba = suscripcion?.estado === "prueba";
+  // En la web con pagos manuales, elegir el plan lleva a /pagar (Nequi, Bre-B o QR)
+  const { config } = useConfiguracionPagos();
+  const pagoWeb = Platform.OS === "web" && config?.proveedor === "manual";
 
   if (error) {
     return (
@@ -57,7 +64,9 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
   const pocos = !!suscripcion && n < suscripcion.profesionalesCobrados;
 
   const elegir = () =>
-    enPrueba
+    pagoWeb
+      ? (irAMiPlan ?? (() => router.navigate("/pagar")))()
+      : enPrueba
       ? avisar(
           "Tu prueba gratis ya está activa",
           `Disfruta tus 15 días. Cuando quieras activar el plan para ${profesionales(n)} (${periodo}), los pagos estarán disponibles próximamente.`,
@@ -181,8 +190,8 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
           </Text>
         ) : null}
         <Boton
-          titulo={esActual ? "ES TU PLAN ACTUAL" : enPrueba || !suscripcion ? "EMPEZAR GRATIS" : "ELEGIR ESTE PLAN"}
-          ayuda={`Plan para ${profesionales(n)}, nivel ${nivel.nombre}: ${formatearPesos(precio)} pesos ${sufijo}. Los pagos estarán disponibles próximamente`}
+          titulo={esActual ? "ES TU PLAN ACTUAL" : pagoWeb ? "PAGAR MI PLAN" : enPrueba || !suscripcion ? "EMPEZAR GRATIS" : "ELEGIR ESTE PLAN"}
+          ayuda={`Plan para ${profesionales(n)}, nivel ${nivel.nombre}: ${formatearPesos(precio)} pesos ${sufijo}. ${pagoWeb ? "Abre la página para pagar" : "Los pagos estarán disponibles próximamente"}`}
           onPress={elegir}
           deshabilitado={esActual || pocos}
           style={styles.boton}
@@ -199,7 +208,9 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
       </View>
 
       <Text style={[styles.muestra, { color: colors.textSecondary }]}>
-        Precios en pesos colombianos. Pagos disponibles próximamente.
+        {pagoWeb
+          ? "Precios en pesos colombianos. Paga por Nequi, llave Bre-B o código QR."
+          : "Precios en pesos colombianos. Pagos disponibles próximamente."}
       </Text>
     </View>
   );

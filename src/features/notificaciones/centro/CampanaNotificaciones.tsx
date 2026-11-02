@@ -21,7 +21,8 @@ import { COLORES } from "@/theme/paleta";
 import { useCuenta } from "../../cuenta/CuentaProvider";
 import { useSesion } from "../../sesion/SesionProvider";
 import { useNotificaciones } from "../NotificacionesProvider";
-import { useAbrirCita, useAbrirPlanes } from "../useAbrirCita";
+import { TIPOS_AVISO_PAGO } from "../../pagos/estados";
+import { useAbrirCita, useAbrirPagos, useAbrirPlanes } from "../useAbrirCita";
 import { AvisoGuardado, contarNoLeidas, listarAvisos, marcarAvisoLeido, marcarTodasLeidas } from "./api";
 
 const CADA_SEGUNDOS = 30;
@@ -35,6 +36,8 @@ const ICONO_AVISO: Record<string, keyof typeof Ionicons.glyphMap> = {
   recordatorio: "alarm-outline",
   recordatorio_2h: "alarm-outline",
   prueba_resumen: "sparkles-outline",
+  pago_aprobado: "checkmark-circle-outline",
+  pago_rechazado: "close-circle-outline",
 };
 
 const fechaCorta = (iso: string) =>
@@ -61,6 +64,7 @@ function Campana({ token }: { token: string }) {
   const { avisosRecibidos } = useNotificaciones();
   const abrirCita = useAbrirCita();
   const abrirPlanes = useAbrirPlanes();
+  const abrirPagos = useAbrirPagos();
   const [noLeidas, setNoLeidas] = useState(0);
   const [abierto, setAbierto] = useState(false);
   const [avisos, setAvisos] = useState<AvisoGuardado[] | null>(null);
@@ -139,6 +143,8 @@ function Campana({ token }: { token: string }) {
     }
     // El resumen de la prueba gratuita no trae cita: lleva a Planes
     if (a.tipo === "prueba_resumen") abrirPlanes();
+    // El pago revisado lleva al historial de pagos (web)
+    else if (TIPOS_AVISO_PAGO.includes(a.tipo)) abrirPagos();
     else if (a.citaId) abrirCita(a.citaId);
   };
 
@@ -223,7 +229,9 @@ function Campana({ token }: { token: string }) {
                     accessibilityHint={
                       a.tipo === "prueba_resumen"
                         ? "Marca como leída y abre los planes"
-                        : a.citaId
+                        : TIPOS_AVISO_PAGO.includes(a.tipo)
+                          ? "Marca como leída y abre el historial de pagos"
+                          : a.citaId
                           ? "Marca como leída y abre la cita"
                           : "Marca como leída"
                     }
