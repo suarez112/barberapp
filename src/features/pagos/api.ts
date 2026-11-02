@@ -37,3 +37,55 @@ export type ConfiguracionPagos = { disponible: boolean; proveedor: string; esDeP
 
 export const obtenerConfiguracionPagos = (signal?: AbortSignal) =>
   request<ConfiguracionPagos>("/api/v1/pagos/configuracion", { signal });
+
+// ---- Pagos manuales (proveedor "manual"): Nequi, llave Bre-B y código QR ----
+
+export type TipoQr = "nequi" | "breb";
+
+export type FormaDePago =
+  | { tipo: "nequi"; numero: string }
+  | { tipo: "llave_breb"; llave: string }
+  | { tipo: "qr"; imagenes: { tipo: TipoQr; url: string }[] };
+
+// Datos para pagar: solo trae las formas activas
+export type DatosDePago = {
+  titular: string;
+  whatsapp: string;
+  whatsappUrl: string;
+  formas: FormaDePago[];
+};
+
+export type OrdenManual = {
+  referencia: string;
+  proveedor: string;
+  profesionales: number;
+  plan: { id: string; nombre: string };
+  periodo: PlanSuscripcion;
+  monto: number;
+  moneda: string;
+  estado: EstadoOrden;
+  estadoTexto: string;
+  creadaEn: string;
+  zonaHoraria: string;
+  negocio?: { nombre: string; codigoAcceso: string };
+  // Solo en las pendientes
+  pago?: DatosDePago;
+  // Solo en las ya revisadas
+  motivoRevision?: string | null;
+  revisadaEn?: string;
+};
+
+export const crearOrdenManual = (token: string, periodo: PlanSuscripcion) =>
+  request<OrdenManual>("/api/v1/pagos/ordenes", { method: "POST", body: { periodo }, token });
+
+export const listarMisOrdenes = (token: string, signal?: AbortSignal) =>
+  request<OrdenManual[]>("/api/v1/pagos/ordenes", { token, signal });
+
+export const obtenerOrdenManual = (token: string, referencia: string, signal?: AbortSignal) =>
+  request<OrdenManual>(`/api/v1/pagos/ordenes/${encodeURIComponent(referencia)}`, { token, signal });
+
+export const obtenerFormasDePago = (token: string, signal?: AbortSignal) =>
+  request<DatosDePago>("/api/v1/pagos/formas-pago", { token, signal });
+
+// Ruta (sin dominio) de la imagen de un QR; exige el token, ver useImagenProtegida
+export const rutaQrPago = (tipo: TipoQr) => `/api/v1/pagos/formas-pago/qr/${tipo}`;

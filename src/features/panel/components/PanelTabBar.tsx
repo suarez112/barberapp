@@ -11,6 +11,8 @@ export type PestanaPanel =
   | "CARTERA"
   | "NEGOCIO"
   | "MI_NEGOCIO"
+  // Pagos manuales (web): plan, formas de pago e historial
+  | "MI_PLAN"
   // Solo con la suscripción vencida
   | "PLANES";
 

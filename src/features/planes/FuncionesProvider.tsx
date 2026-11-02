@@ -5,6 +5,7 @@ import { esCancelada } from "@/services/api/http";
 import { Suscripcion } from "../cuenta/api";
 import { obtenerFunciones, RespuestaFunciones } from "./api";
 import { FuncionesContext, Valor } from "./funcionesContexto";
+import { useIrAMiPlan } from "./miPlanContexto";
 import PlanesModal from "./PlanesModal";
 import { usePlanes } from "./usePlanes";
 
@@ -40,7 +41,8 @@ export function FuncionesProvider({ token, suscripcion, children }: Props) {
   }, [token, planId, cobrados]);
 
   const funcion = useCallback((id: string) => datos?.funciones.find((f) => f.id === id), [datos]);
-  const abrirPlanes = useCallback(() => setVerPlanes(true), []);
+  const irAMiPlan = useIrAMiPlan();
+  const abrirPlanes = useCallback(() => (irAMiPlan ? irAMiPlan() : setVerPlanes(true)), [irAMiPlan]);
 
   const valor = useMemo<Valor>(
     () => ({

@@ -8,13 +8,17 @@ import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { consultarEstadoPago, ResultadoPago } from "./api";
 import AvisoModoPrueba from "./AvisoModoPrueba";
-import { useModoPrueba } from "./useModoPrueba";
+import { useDestinoPanel } from "../sesion/useDestinoPanel";
+import { useConfiguracionPagos } from "./useConfiguracionPagos";
 
 // A donde vuelve la pasarela: /pagar/<referencia>?id=<transacción>. Consulta el estado público
 // del pago (no pide iniciar sesión); solo "Ir a mi panel" lleva al inicio de sesión.
 export default function ConfirmarPagoScreen() {
   const { colors } = useAppTheme();
-  const modoPrueba = useModoPrueba();
+  const destinoPanel = useDestinoPanel();
+  // El aviso de modo de prueba es solo de la pasarela: con pagos manuales no existe
+  const { config } = useConfiguracionPagos();
+  const modoPrueba = config?.proveedor !== "manual" && (config?.esDePrueba ?? false);
   const { referencia, id } = useLocalSearchParams<{ referencia: string; id?: string }>();
   const [resultado, setResultado] = useState<ResultadoPago | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +44,7 @@ export default function ConfirmarPagoScreen() {
     setIntento((n) => n + 1);
   };
 
-  const irAlPanel = () => router.replace("/admin");
+  const irAlPanel = () => router.replace(destinoPanel);
 
   const contenido = () => {
     if (error) {
@@ -105,7 +109,7 @@ export default function ConfirmarPagoScreen() {
   };
 
   return (
-    <Pantalla cabecera={{ onVolver: () => router.replace("/admin") }}>
+    <Pantalla cabecera={{ onVolver: irAlPanel }}>
       <View style={styles.pagina}>
         <Text accessibilityRole="header" style={[styles.titulo, { color: colors.textPrimary }]}>
           Resultado del pago

@@ -176,3 +176,44 @@ export const mensajeDeError = (error: unknown, porDefecto: string) =>
 // 403 del backend cuando el plan del negocio no incluye la función pedida
 export const esFuncionNoIncluida = (error: unknown) =>
   error instanceof ApiError && error.status === 403 && error.datos?.codigo === "funcion_no_incluida";
+
+// Descarga una imagen que exige el token (ej. un QR de pago) y devuelve una URL local
+// (blob:) para mostrarla. Un <Image source={{ uri }}> no puede mandar el encabezado
+// Authorization y recibiría 401. Solo web: quien la pidió debe liberar la URL con
+// URL.revokeObjectURL al terminar.
+export async function descargarImagen(
+  ruta: string,
+  { token, signal }: { token: string; signal?: AbortSignal },
+): Promise<string> {
+  if (signal?.aborted) throw new PeticionCancelada();
+  const controlador = new AbortController();
+  let agotado = false;
+  const temporizador = setTimeout(() => {
+    agotado = true;
+    controlador.abort();
+  }, TIEMPO_LIMITE_MS);
+  const cancelar = () => controlador.abort();
+  signal?.addEventListener("abort", cancelar);
+
+  try {
+    const respuesta = await fetch(`${API_BASE_URL}${ruta}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controlador.signal,
+    });
+    if (!respuesta.ok) {
+      const cuerpo = leerJSON(await respuesta.text()) as { error?: unknown } | undefined;
+      throw new ApiError(typeof cuerpo?.error === "string" ? cuerpo.error : "", respuesta.status);
+    }
+    const tipo = respuesta.headers.get("content-type") ?? "";
+    if (!tipo.startsWith("image/")) throw new ErrorDeConexion(tipo, "respuesta-invalida");
+    return URL.createObjectURL(await respuesta.blob());
+  } catch (error) {
+    if (error instanceof ApiError || error instanceof ErrorDeConexion) throw error;
+    if (agotado) throw new ErrorDeConexion(error, "tiempo-agotado");
+    if (signal?.aborted) throw new PeticionCancelada();
+    throw new ErrorDeConexion(error, "sin-conexion");
+  } finally {
+    clearTimeout(temporizador);
+    signal?.removeEventListener("abort", cancelar);
+  }
+}

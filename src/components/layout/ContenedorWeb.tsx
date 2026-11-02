@@ -17,6 +17,11 @@ const RUTAS_TARJETA = [
   "/cuenta-cliente",
   "/mis-negocios",
   "/mis-citas",
+  "/ayuda",
+  "/pqrs",
+  "/acerca-de",
+  // Resultado del pago con pasarela (/pagar/<referencia>); /pagar va a todo el ancho
+  "/pagar",
 ];
 
 // Sin suscripciones: solo sirve para distinguir el prerenderizado (false) del navegador (true)
@@ -41,7 +46,7 @@ const usaTarjeta = (ruta: string) =>
   RUTAS_TARJETA.some((r) => ruta === r || ruta.startsWith(`${r}/`));
 
 // En la web, centra la app con un ancho máximo para que no se estire de lado a lado.
-// El panel del superadmin, los del negocio (/panel y /admin) y la página principal ("/") usan el ancho completo.
+// El panel del superadmin, los del negocio (/panel y /admin), /pagar (dentro del panel) y la página principal ("/") usan el ancho completo.
 // Iniciar sesión y las pantallas del cliente se muestran en una tarjeta centrada (horizontal y vertical) que mide lo que su contenido.
 // En el celular no hace nada.
 export default function ContenedorWeb({ children }: { children: ReactNode }) {
@@ -91,7 +96,7 @@ export default function ContenedorWeb({ children }: { children: ReactNode }) {
     };
   }, [conTarjeta, ruta, width, height]);
 
-  if (Platform.OS !== "web" || ruta.startsWith("/superadmin") || ruta.startsWith("/panel") || ruta.startsWith("/admin") || ruta === "/") return <>{children}</>;
+  if (Platform.OS !== "web" || ruta.startsWith("/superadmin") || ruta.startsWith("/panel") || ruta.startsWith("/admin") || ruta === "/" || ruta === "/pagar") return <>{children}</>;
 
   const tarjeta = conTarjeta;
   const maximo = height - MARGEN_VERTICAL * 2;

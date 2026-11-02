@@ -40,6 +40,10 @@ type Props = {
   encabezado?: ReactNode | ((pestana: PestanaPanel, irA: (destino: DestinoGuia) => void) => ReactNode);
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
+  // Sección "Mi plan" (web con pagos manuales); `pedirMiPlan` cambia de valor para abrirla
+  miPlan?: ReactNode;
+  pestanaInicial?: PestanaPanel;
+  pedirMiPlan?: number;
   // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
   onSuscripcionVencida?: () => void;
   // Administradores: plan y cupo del equipo; onEquipoCambiado lo vuelve a consultar
@@ -52,6 +56,7 @@ const PESTANA_BLOQUEOS: Pestana = { id: "BLOQUEOS", icono: "calendar-outline", l
 const PESTANA_CLIENTES: Pestana = { id: "CLIENTES", icono: "people-outline", label: "Clientes" };
 const PESTANA_CARTERA: Pestana = { id: "CARTERA", icono: "wallet-outline", label: "Cartera" };
 const PESTANA_NEGOCIO: Pestana = { id: "NEGOCIO", icono: "storefront-outline", label: "Equipo" };
+const PESTANA_MI_PLAN: Pestana = { id: "MI_PLAN", icono: "card-outline", label: "Mi plan" };
 const PESTANA_MI_NEGOCIO: Pestana = { id: "MI_NEGOCIO", icono: "business-outline", label: "Mi negocio" };
 
 // Panel del negocio: agenda, bloqueos, clientes, cartera y administración.
@@ -60,6 +65,9 @@ export default function PanelNegocio({
   personal,
   encabezado,
   miNegocio,
+  miPlan,
+  pestanaInicial = "AGENDAMIENTOS",
+  pedirMiPlan = 0,
   onSuscripcionVencida,
   suscripcion = null,
   onEquipoCambiado,
@@ -70,7 +78,13 @@ export default function PanelNegocio({
   const cerrarSesion = useCerrarSesion();
   const salir = useSalirDelPanel();
   const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
-  const [pestana, setPestana] = useState<PestanaPanel>("AGENDAMIENTOS");
+  const [pestana, setPestana] = useState<PestanaPanel>(pestanaInicial);
+  // Un aviso de planes (candado, "Cambiar de plan") abre "Mi plan"
+  const [miPlanVisto, setMiPlanVisto] = useState(pedirMiPlan);
+  if (pedirMiPlan !== miPlanVisto) {
+    setMiPlanVisto(pedirMiPlan);
+    setPestana("MI_PLAN");
+  }
   // Sección de Equipo que se abre (cambia la llave para abrirla aunque ya estuviera en esa pestaña)
   const [seccionEquipo, setSeccionEquipo] = useState<{ seccion: "EQUIPO" | "SERVICIOS"; n: number }>({
     seccion: "EQUIPO",
@@ -155,6 +169,7 @@ export default function PanelNegocio({
         PESTANA_CLIENTES,
         PESTANA_CARTERA,
         PESTANA_NEGOCIO,
+        ...(miPlan ? [PESTANA_MI_PLAN] : []),
         ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
       ]
     : [PESTANA_AGENDA, PESTANA_CARTERA];
@@ -236,6 +251,8 @@ export default function PanelNegocio({
         );
       case "MI_NEGOCIO":
         return miNegocio;
+      case "MI_PLAN":
+        return miPlan;
     }
   };
 
