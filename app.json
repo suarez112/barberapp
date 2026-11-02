@@ -17,7 +17,7 @@
       "package": "com.anonymous.app"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/logo.png"
     },
     "plugins": [

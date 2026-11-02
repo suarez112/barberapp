@@ -1,0 +1,56 @@
+# Render Blueprint for the Agendality web app (static site).
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: agendality-web
+    runtime: static
+    # Installs dependencies from package-lock.json and exports the web build to ./dist
+    buildCommand: npm ci && npx expo export --platform web --output-dir dist
+    staticPublishPath: ./dist
+    envVars:
+      # Read at build time: EXPO_PUBLIC_* values are embedded in the JavaScript bundle.
+      # Never put secrets here, they become public.
+      - key: EXPO_PUBLIC_API_URL
+        value: https://api.agendality.com
+      - key: NODE_VERSION
+        value: "24"
+    domains:
+      - agendality.com
+      - www.agendality.com
+    routes:
+      # Single-page app: any path without a real file (/CODIGO, /cliente, /panel, /pagar/REF...)
+      # loads index.html and Expo Router shows the right screen. Existing files are served as is.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Basic security headers for every response
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(self)
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000
+      # Files with a content hash in their name (JS, images, fonts) never change: cache for 1 year
+      - path: /_expo/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      # index.html must always be revalidated so a new deploy is picked up right away
+      - path: /
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
