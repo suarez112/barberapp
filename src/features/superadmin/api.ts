@@ -76,9 +76,10 @@ export type IngresosPlataforma = CifrasIngreso & {
   porAnio: (CifrasIngreso & { anio: number })[];
   mejorMes: (CifrasIngreso & { mes: string }) | null;
   mejorAnio: (CifrasIngreso & { anio: number }) | null;
-  profesionales: { cobradosEnTotal: number; promedioPorNegocio: number };
-  // Mensual estimado por negocio activo (el anual cuenta 1/12); null sin negocios activos
-  ingresoPromedioPorNegocio: { bruto: number; neto: number } | null;
+  // promedioPorNegocio is null when there are no active businesses
+  profesionales: { cobradosEnTotal: number; promedioPorNegocio: number | null };
+  // Mensual estimado por negocio activo (el anual cuenta 1/12); bruto/neto are null without active businesses
+  ingresoPromedioPorNegocio: { bruto: number | null; neto: number | null } | null;
   // Un grupo por cada número de 1 a 10 profesionales cobrados; "ingresoMensual" es estimado
   // y cuenta solo los negocios activos del grupo (el anual cuenta 1/12)
   negociosPorProfesionales: {

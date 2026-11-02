@@ -192,9 +192,11 @@ function Graficos({ i }: { i: IngresosPlataforma }) {
         {cifra(
           "Profesionales cobrados",
           formatearNumero(i.profesionales.cobradosEnTotal),
-          `${i.profesionales.promedioPorNegocio.toLocaleString("es-CO")} en promedio por negocio activo`,
+          i.profesionales.promedioPorNegocio === null
+            ? "Aún no hay negocios activos"
+            : `${formatearNumero(i.profesionales.promedioPorNegocio)} en promedio por negocio activo`,
         )}
-        {i.ingresoPromedioPorNegocio
+        {i.ingresoPromedioPorNegocio?.bruto != null
           ? cifra(
               "Ingreso promedio por negocio",
               `${formatearPesos(i.ingresoPromedioPorNegocio.bruto)} al mes`,
