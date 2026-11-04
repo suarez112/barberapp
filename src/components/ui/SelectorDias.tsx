@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
+import { useArrastreConMouse } from "@/hooks/useArrastreConMouse";
 import { useRef, useState } from "react";
 import { ScrollView, type ScrollViewInstance, StyleSheet, Text, View } from "react-native";
 import Tocable from "./Tocable";
@@ -48,6 +49,8 @@ export default function SelectorDias({
   // Al abrir (y al cambiar de mes) la lista se desplaza sola hasta hoy, o hasta
   // el día elegido si hoy no está en este mes, dejando visible el día anterior.
   const lista = useRef<ScrollViewInstance>(null);
+  // En la web también se arrastra con el mouse
+  const { propsLista, fueArrastre } = useArrastreConMouse(lista);
   const hoy = diaDeHoy().fechaFull;
   const indiceHoy = dias.findIndex((d) => d.fechaFull === hoy);
   const indiceInicial =
@@ -103,6 +106,7 @@ export default function SelectorDias({
         onContentSizeChange={irAlDiaInicial}
         horizontal
         showsHorizontalScrollIndicator={false}
+        {...propsLista}
       >
         {dias.map((d) => {
           const esSel = seleccionado.fechaFull === d.fechaFull;
@@ -121,7 +125,10 @@ export default function SelectorDias({
                   backgroundColor: colors.cardSelectedBg,
                 },
               ]}
-              onPress={() => onSeleccionar(d)}
+              // Soltar el mouse al final de un arrastre no elige el día
+              onPress={() => {
+                if (!fueArrastre()) onSeleccionar(d);
+              }}
             >
               <Text style={[styles.nombre, { color: colors.apagadoTexto }, esSel && { color: colors.primaryText }]}>
                 {d.diaNom}

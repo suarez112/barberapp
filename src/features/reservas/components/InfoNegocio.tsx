@@ -3,17 +3,20 @@ import * as Clipboard from "expo-clipboard";
 import FotoImagen from "@/components/ui/FotoImagen";
 import { ComponentProps, useEffect, useState } from "react";
 import { Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { enlacePublicoDe } from "@/config/app";
 import { registrarCausa } from "@/services/api/errores";
 import { obtenerPerfilPublico, PerfilPublico } from "@/features/negocio/api";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { mostrarAvisoFlotante } from "@/utils/avisoFlotante";
 import { avisar } from "@/utils/dialogos";
 import { resumenHorario, textoDiasAtencion } from "@/utils/formato";
 
 // Qué hace cada botón, para el lector de pantalla
 const AYUDAS: Record<string, string> = {
   Copiar: "Copia el código del negocio",
-  Compartir: "Comparte el código del negocio por otra app",
+  Compartir: "Comparte el enlace del negocio por otra app",
   "Cómo llegar": "Abre el mapa con la ubicación del negocio",
+  "Contactar por WhatsApp": "Abre un chat de WhatsApp con el negocio",
   "Cambiar de negocio": "Vuelve a la pantalla para escribir el código de otro negocio",
 };
 
@@ -67,7 +70,7 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
   const copiarCodigo = async () => {
     try {
       await Clipboard.setStringAsync(perfil.codigoAcceso);
-      avisar("Código copiado", `Ya puedes pegar el código ${perfil.codigoAcceso}.`, "exito");
+      mostrarAvisoFlotante("Copiado");
     } catch (error) {
       registrarCausa("Copiar código", error);
       avisar("No se pudo copiar", "Intenta de nuevo o anota el código.", "error");
@@ -77,7 +80,7 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
   const compartirCodigo = async () => {
     try {
       await Share.share({
-        message: `Reserva tu cita en ${perfil.nombre}. Abre la app y escribe el código del negocio: ${perfil.codigoAcceso}`,
+        message: `Reserva tu cita en ${perfil.nombre}: ${enlacePublicoDe(perfil.codigoAcceso)}`,
       });
     } catch (error) {
       registrarCausa("Compartir código", error);
@@ -92,6 +95,16 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
     } catch (error) {
       registrarCausa("Cómo llegar", error);
       avisar("No se pudo abrir el mapa", "Revisa que tengas Google Maps o un navegador.", "error");
+    }
+  };
+
+  const contactarWhatsApp = async () => {
+    if (!perfil.whatsappUrl) return;
+    try {
+      await Linking.openURL(perfil.whatsappUrl);
+    } catch (error) {
+      registrarCausa("Contactar por WhatsApp", error);
+      avisar("No se pudo abrir WhatsApp", "Revisa que tengas WhatsApp o un navegador.", "error");
     }
   };
 
@@ -165,6 +178,12 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
 
         {perfil.googleMapsUrl ? (
           <View style={styles.botones}>{boton("navigate-outline", "Cómo llegar", comoLlegar)}</View>
+        ) : null}
+        {/* Solo si el negocio configuró su WhatsApp de contacto */}
+        {perfil.whatsappUrl ? (
+          <View style={styles.botones}>
+            {boton("logo-whatsapp", "Contactar por WhatsApp", contactarWhatsApp)}
+          </View>
         ) : null}
         {cambiarNegocio}
       </View>

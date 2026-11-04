@@ -46,6 +46,10 @@ export default function ClienteScreen() {
   // Eligió "Continuar como invitado": se pide el código
   const [invitado, setInvitado] = useState(pideInvitado === "1");
 
+  // Al salir de esta pantalla (atrás, botón del celular o del navegador) se cierra el negocio:
+  // si no, al volver a "Soy cliente" entraría directo a la reserva sin pedir el código
+  useEffect(() => salirDelNegocio, [salirDelNegocio]);
+
   useEffect(() => {
     if (codigoEnlace) abrirNegocio(codigoEnlace);
     // Solo al cambiar el código del enlace
