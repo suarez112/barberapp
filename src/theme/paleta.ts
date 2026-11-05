@@ -56,6 +56,8 @@ export const COLORES = {
   azul: "#1D4ED8", // información, cita pendiente
   neutro: "#374151", // inactivo, cerrado, suspendido
   whatsapp: "#25D366",
+  // Fondo atenuado detrás de una ventana modal (sirve en ambos temas)
+  velo: "rgba(0, 0, 0, 0.55)",
   // Barras de las estadísticas: amarillo normal y amarillo oscuro para la destacada (se leen en ambos temas)
   barra: "#FACC15",
   barraDestacada: "#EAB308",

@@ -2,7 +2,7 @@
 
 ## Equipo (`features/equipo/EquipoAdmin.tsx`)
 
-Desplegable de rol "Administrador / Empleado" (`rol`) e interruptor "Atiende clientes" (`atiendeClientes`). Muestra "Tu equipo: X de N personas del plan Y" desde la suscripción (pasada por `PanelAdministrador` → `PanelNegocio` → `NegocioTab`); cuando está lleno, un aviso con "VER PLANES". Un 409 "Tu equipo ya tiene…" (límite de cupos) muestra el mensaje del backend con "VER PLANES". Agregar o quitar a alguien recarga la suscripción.
+Registrar y editar un integrante se hace en `components/ui/VentanaFormulario` (ventana modal: hoja desde abajo en el celular, centrada desde 600 px); la lista no se mueve. La cuenta de la empresa ve arriba un resumen de "Yo también atiendo clientes" (`admin/components/AtiendoClientes`) con "EDITAR MI PERFIL", que abre en otra ventana el interruptor, la foto y la comisión. Desplegable de rol "Administrador / Empleado" (`rol`) e interruptor "Atiende clientes" (`atiendeClientes`). Muestra "Tu equipo: X de N personas del plan Y" desde la suscripción (pasada por `PanelAdministrador` → `PanelNegocio` → `NegocioTab`); cuando está lleno, un aviso con "VER PLANES". Un 409 "Tu equipo ya tiene…" (límite de cupos) muestra el mensaje del backend con "VER PLANES". Agregar o quitar a alguien recarga la suscripción.
 
 ## Planes (`features/planes/`)
 

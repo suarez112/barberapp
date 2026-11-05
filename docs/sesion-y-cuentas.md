@@ -16,7 +16,8 @@ Hay dos, una a la vez: personal (`features/sesion/SesionProvider.tsx`, `useSesio
 
 `features/admin/PanelAdministrador.tsx` (admin de cuenta o de equipo, `useMiEmpresa(token)`): `GET /api/v1/admin/empresa/suscripcion` (funciona aun vencida) alimenta:
 
-- `AvisoSuscripcion` (banner cuando `mostrarRecordatorio`: siempre en la prueba, últimos 7 días de un plan);
+- `AvisoSuscripcion` (banner cuando `mostrarRecordatorio`: siempre en la prueba, últimos 7 días de un plan; en la web trae "VER PLAN Y PAGOS", que abre "Plan y pagos", o "VER PLANES" sin pagos manuales; en el celular solo informa);
+- "Plan y pagos" (web con pagos manuales, `PagoManual`): no es pestaña. Se abre con la tarjeta de Mi negocio, el banner, los candados o `/pagar` (`pestanaInicial="MI_PLAN"`); `PanelNegocio` lo muestra con "VOLVER A MI NEGOCIO" y marca Mi negocio en el menú. Así el panel tiene como máximo 6 pestañas;
 - "Mi suscripción" (`MiSuscripcion`: plan activo muestra "Plan mensual · Activo", fecha de pago, vencimiento, días restantes e "Incluye X días de prueba que te quedaban" de `diasPruebaSumados`; plan y cupos usados; "ACTIVAR PLAN AHORA" en la prueba o "CAMBIAR DE PLAN" abre `planes/PlanesModal`);
 - con `estado = "vencida"`, `PanelVencido` ("Planes" con los planes del backend, sin pagos reales, y "Mi negocio").
 

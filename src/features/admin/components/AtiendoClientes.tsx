@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native"
 import FotoBarbero from "@/components/FotoBarbero";
 import Boton from "@/components/ui/Boton";
 import CampoTexto from "@/components/ui/CampoTexto";
+import VentanaFormulario from "@/components/ui/VentanaFormulario";
 import { PAGOS_EN_APP } from "@/config/pagos";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError, esCancelada } from "@/services/api/http";
@@ -31,7 +32,8 @@ type Props = {
 const esSinCupo = (e: unknown) =>
   e instanceof ApiError && e.status === 409 && /hasta \d+ profesionales|cupo/i.test(e.message);
 
-// Interruptor "Yo también atiendo clientes" de Mi negocio (solo la cuenta de administración).
+// "Yo también atiendo clientes" al inicio de Equipo (solo la cuenta de administración).
+// En la vista queda un resumen; el interruptor, la foto y la comisión van en una ventana.
 // Al activarlo crea su perfil de profesional: aparece al reservar y en el selector de la agenda.
 export default function AtiendoClientes({ token, suscripcion, onEquipoCambiado }: Props) {
   const { colors } = useAppTheme();
@@ -45,6 +47,7 @@ export default function AtiendoClientes({ token, suscripcion, onEquipoCambiado }
   const [comision, setComision] = useState("");
   const [errorComision, setErrorComision] = useState<string | undefined>();
   const [intento, setIntento] = useState(0);
+  const [abierta, setAbierta] = useState(false);
 
   useEffect(() => {
     const controlador = new AbortController();
@@ -150,6 +153,18 @@ ${cobro}`,
     }
   };
 
+  const conComision = incluida("comisiones");
+  const resumen = atiende
+    ? `Atiendes clientes${perfil && conComision ? ` · Comisión: ${perfil.porcentajeGanancia}%` : ""}`
+    : "No atiendes clientes";
+
+  // Al cerrar se descarta la comisión escrita sin guardar
+  const cerrar = () => {
+    setAbierta(false);
+    setErrorComision(undefined);
+    if (perfil) setComision(String(perfil.porcentajeGanancia));
+  };
+
   return (
     <View style={styles.raiz}>
       <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
@@ -171,68 +186,115 @@ ${cobro}`,
         ) : (
           <>
             <View style={styles.fila}>
+              {atiende && perfil ? (
+                <FotoBarbero nombre={perfil.nombre} foto={perfil.foto} color={colors.primaryText} size={44} />
+              ) : null}
               <View style={styles.flex}>
                 <Text style={[styles.rol, { color: colors.primaryText }]}>Tú: Administrador</Text>
-                <Text style={[styles.titulo, { color: colors.textPrimary }]}>Yo también atiendo clientes</Text>
+                <Text style={[styles.titulo, { color: colors.textPrimary }]}>{resumen}</Text>
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
                   {atiende
-                    ? `Apareces como profesional al reservar y en la agenda.${PAGOS_EN_APP ? " Cuentas como un profesional en tu cobro." : ""}`
-                    : `Actívalo para recibir citas tú también.${PAGOS_EN_APP ? " Suma un profesional a tu cobro." : ""}`}
+                    ? "Apareces como profesional al reservar y en la agenda."
+                    : "Actívalo en tu perfil si tú también recibes citas."}
                 </Text>
               </View>
-              <Switch
-                accessibilityLabel="Yo también atiendo clientes"
-                accessibilityHint="Si está activo, apareces como profesional al reservar y recibes citas"
-                value={atiende}
-                disabled={guardando}
-                onValueChange={cambiar}
-                trackColor={{ true: colors.primary, false: colors.cardBorder }}
-                thumbColor={COLORES.blanco}
-              />
             </View>
+            <Boton
+              titulo="EDITAR MI PERFIL"
+              ayuda="Abre una ventana para cambiar si atiendes clientes, tu foto y tu comisión"
+              variante="secundario"
+              onPress={() => setAbierta(true)}
+              style={styles.botonAbrir}
+            />
+          </>
+        )}
+      </View>
 
-            {atiende && perfil ? (
-              <View style={[styles.perfil, { borderTopColor: colors.cardBorder }]}>
-                <FotoBarbero nombre={perfil.nombre} foto={perfil.foto} color={colors.primaryText} editable onCambiar={cambiarFoto} />
+      <VentanaFormulario
+        visible={abierta && atiende !== null}
+        titulo="Mi perfil de profesional"
+        descripcion="Tú: Administrador"
+        ocupado={guardando}
+        onCerrar={cerrar}
+      >
+        <View style={[styles.interruptor, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder }]}>
+          <View style={styles.flex}>
+            <Text style={[styles.titulo, { color: colors.textPrimary }]}>Yo también atiendo clientes</Text>
+            <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
+              {atiende
+                ? `Apareces como profesional al reservar y en la agenda.${PAGOS_EN_APP ? " Cuentas como un profesional en tu cobro." : ""}`
+                : `Actívalo para recibir citas tú también.${PAGOS_EN_APP ? " Suma un profesional a tu cobro." : ""}`}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Yo también atiendo clientes"
+            accessibilityHint="Si está activo, apareces como profesional al reservar y recibes citas"
+            value={!!atiende}
+            disabled={guardando}
+            onValueChange={cambiar}
+            trackColor={{ true: colors.primary, false: colors.cardBorder }}
+            thumbColor={COLORES.blanco}
+          />
+        </View>
+
+        {atiende && perfil ? (
+          <View style={styles.perfil}>
+            <View style={styles.filaFoto}>
+              <FotoBarbero
+                nombre={perfil.nombre}
+                foto={perfil.foto}
+                color={colors.primaryText}
+                editable
+                onCambiar={cambiarFoto}
+              />
+              <View style={styles.flex}>
                 <Text style={[styles.nombre, { color: colors.textPrimary }]}>{perfil.nombre}</Text>
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
                   Toca la foto para cambiarla: es la que ven tus clientes al reservar.
                 </Text>
-                {incluida("comisiones") ? (
-                  <>
-                    <CampoTexto
-                      etiqueta="Tu comisión (%)"
-                      ayuda="Porcentaje de cada servicio que ganas tú, de 0 a 100"
-                      placeholder="ej: 50"
-                      keyboardType="numeric"
-                      maxLength={3}
-                      value={comision}
-                      error={errorComision}
-                      onChangeText={(v) => {
-                        setComision(v);
-                        setErrorComision(undefined);
-                      }}
-                    />
-                    <Boton
-                      titulo="GUARDAR COMISIÓN"
-                      ayuda="Guarda el porcentaje que ganas por cada servicio"
-                      variante="secundario"
-                      deshabilitado={guardando}
-                      onPress={guardarComision}
-                    />
-                  </>
-                ) : (
-                  <FuncionBloqueada
-                    funcion="comisiones"
-                    nombre="Comisiones y pago a profesionales"
-                    detalle="Mientras tanto tu comisión se queda en el valor inicial (50 %)."
-                  />
-                )}
               </View>
-            ) : null}
-          </>
-        )}
-      </View>
+            </View>
+            {conComision ? (
+              <>
+                <CampoTexto
+                  etiqueta="Tu comisión (%)"
+                  ayuda="Porcentaje de cada servicio que ganas tú, de 0 a 100"
+                  placeholder="ej: 50"
+                  keyboardType="numeric"
+                  maxLength={3}
+                  value={comision}
+                  error={errorComision}
+                  onChangeText={(v) => {
+                    setComision(v);
+                    setErrorComision(undefined);
+                  }}
+                />
+                <Boton
+                  titulo="GUARDAR COMISIÓN"
+                  ayuda="Guarda el porcentaje que ganas por cada servicio"
+                  deshabilitado={guardando}
+                  onPress={guardarComision}
+                />
+              </>
+            ) : (
+              <FuncionBloqueada
+                funcion="comisiones"
+                nombre="Comisiones y pago a profesionales"
+                detalle="Mientras tanto tu comisión se queda en el valor inicial (50 %)."
+              />
+            )}
+          </View>
+        ) : null}
+
+        <Boton
+          titulo="CERRAR"
+          ayuda="Cierra la ventana de tu perfil"
+          variante="secundario"
+          deshabilitado={guardando}
+          onPress={cerrar}
+          style={styles.cerrar}
+        />
+      </VentanaFormulario>
     </View>
   );
 }
@@ -241,11 +303,15 @@ const styles = StyleSheet.create({
   raiz: { marginTop: 15 },
   tarjeta: { borderWidth: 1, borderRadius: 10, padding: 14 },
   cargando: { marginVertical: 10 },
-  fila: { flexDirection: "row", alignItems: "center", gap: 10 },
+  fila: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },
   rol: { fontSize: 12, fontWeight: "bold", letterSpacing: 0.5, marginBottom: 2 },
   titulo: { fontSize: 15, fontWeight: "bold" },
   ayuda: { fontSize: 12, lineHeight: 17, marginTop: 2 },
-  perfil: { marginTop: 14, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, alignItems: "stretch" },
-  nombre: { fontSize: 15, fontWeight: "bold", marginTop: 8 },
+  botonAbrir: { marginTop: 12 },
+  interruptor: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 8, padding: 12 },
+  perfil: { marginTop: 16 },
+  filaFoto: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  nombre: { fontSize: 15, fontWeight: "bold" },
+  cerrar: { marginTop: 16 },
 });

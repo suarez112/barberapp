@@ -2,7 +2,6 @@ import Cuadricula from "@/components/layout/Cuadricula";
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
-import Acordeon from "@/components/ui/Acordeon";
 import Boton from "@/components/ui/Boton";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
@@ -13,6 +12,7 @@ import Desplegable from "@/components/ui/Desplegable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import VentanaFormulario from "@/components/ui/VentanaFormulario";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
@@ -103,6 +103,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
     useFormularioEdicion(VACIO, aCampos);
   const [verPlanes, setVerPlanes] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const token = personal.token;
   const soyYo = (id: string) => personal.barbero?.id === id;
 
@@ -113,6 +114,7 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   };
 
   const guardar = async () => {
+    if (guardando) return;
     const clave = campos.clave.trim();
     const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
     const nuevos = {
@@ -171,6 +173,7 @@ ${AVISO_SIN_REEMBOLSO}`,
       ...(clave ? { clave } : {}),
     };
 
+    setGuardando(true);
     try {
       if (enEdicion) {
         reemplazar(await actualizarProfesional(token, enEdicion.id, datos));
@@ -192,6 +195,8 @@ ${AVISO_SIN_REEMBOLSO}`,
         return;
       }
       avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Usuario en uso" });
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -276,11 +281,20 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
         <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
       ) : null}
 
-      <Acordeon
-        titulo={enEdicion ? "✏️ EDITANDO INTEGRANTE" : "➕ REGISTRAR NUEVO INTEGRANTE"}
-        abierto={abierto}
-        onAlternar={alternar}
-        style={styles.acordeon}
+      <Boton
+        titulo="REGISTRAR NUEVO INTEGRANTE"
+        ayuda="Abre una ventana para agregar a alguien al equipo"
+        onPress={alternar}
+        style={styles.nuevo}
+      />
+
+      {/* Crear y editar en una ventana: la lista de abajo no se mueve */}
+      <VentanaFormulario
+        visible={abierto}
+        titulo={enEdicion ? `Editar a ${enEdicion.nombre}` : "Nuevo integrante"}
+        descripcion={enEdicion ? undefined : "Entrará a la app con el usuario y la contraseña que le pongas."}
+        ocupado={guardando}
+        onCerrar={reiniciar}
       >
         <CampoTexto
           etiqueta="Nombre completo"
@@ -409,7 +423,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
-      </Acordeon>
+      </VentanaFormulario>
 
       <TituloSeccion style={styles.tituloLista}>
         INTEGRANTES REGISTRADOS ({barberos.length})
@@ -446,7 +460,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
               icono="create-outline"
               color={colors.primaryText}
               etiqueta={`Editar a ${b.nombre}`}
-              ayuda="Abre sus datos en el formulario de arriba"
+              ayuda="Abre sus datos en una ventana para editarlos"
               onPress={() => editar(b)}
             />
             {!soyYo(b.id) ? (
@@ -467,7 +481,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
 }
 
 const styles = StyleSheet.create({
-  acordeon: { marginTop: 15 },
+  nuevo: { marginTop: 15 },
   cupo: { borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 15 },
   textoCupo: { fontSize: 13, fontWeight: "bold" },
   botonPlanes: { marginTop: 10 },
