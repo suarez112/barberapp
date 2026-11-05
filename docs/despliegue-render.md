@@ -19,7 +19,7 @@ Esta guía explica, paso a paso, cómo poner la web de Agendality en internet co
 5. Haz clic en **Apply** (o **Deploy Blueprint**). Render instala, compila y publica. Tarda unos minutos.
 6. Cuando termine, abre la dirección que te da Render (algo como `https://agendality-web.onrender.com`) y revisa que se vea la página principal.
 
-Cada vez que hagas push a `master`, Render vuelve a publicar solo.
+El despliegue automático está **apagado** (`autoDeployTrigger: "off"` en `render.yaml`): unir a `master` **no** publica nada. Tú decides cuándo publicar (ver "Desplegar a mano y revertir").
 
 ## 2. Conectar agendality.com y www en Cloudflare
 
@@ -45,6 +45,36 @@ Cada vez que hagas push a `master`, Render vuelve a publicar solo.
 - `https://www.agendality.com` también abre la web.
 - Abre `https://agendality.com/cliente`, `https://agendality.com/login` y el código de un negocio (`https://agendality.com/CODIGO`) y **recarga la página** (F5): no debe salir error 404.
 - Inicia sesión: si funciona, la web está hablando con `https://api.agendality.com`.
+
+## Desplegar a mano y revertir
+
+**Desplegar**
+
+1. Une los cambios a `master`.
+2. En Render abre el servicio → **Manual Deploy** → **Deploy latest commit**.
+3. Espera a que el despliegue diga **Live** y revisa la web (sección 3).
+
+**Revertir (Rollback)**
+
+1. En Render abre el servicio → **Events** (o **Deploys**).
+2. Busca el último despliegue que funcionaba y pulsa **Rollback**.
+3. Render vuelve a publicar esa versión sin compilar de nuevo. Después corrige el error en `master` y despliega otra vez a mano.
+
+Un Rollback solo devuelve el código. **No deshace cambios en la base de datos.**
+
+**Copia de seguridad antes de migraciones (backend)**
+
+Si el despliegue del backend trae migraciones, saca primero una copia de la base:
+
+1. En Render abre la base PostgreSQL → **Recovery** (o **Backups**) y crea una copia manual / exportación, o desde tu PC:
+
+   ```bash
+   pg_dump "<URL externa de la base>" -Fc -f respaldo-AAAA-MM-DD.dump
+   ```
+
+2. Comprueba que el archivo existe y no está vacío. Guárdalo fuera del repositorio (no lo subas a GitHub).
+3. Solo entonces despliega el backend con **Manual Deploy**.
+4. Si la migración sale mal: haz Rollback del servicio y restaura la copia (`pg_restore --clean -d "<URL externa de la base>" respaldo-AAAA-MM-DD.dump`).
 
 ## Qué revisar si algo falla
 
