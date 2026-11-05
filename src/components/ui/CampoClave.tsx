@@ -125,7 +125,8 @@ const styles = StyleSheet.create({
   contenedor: { marginBottom: 12 },
   // El margen lo pone el contenedor, debajo de los requisitos
   campo: { marginBottom: 0 },
-  ojo: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+  // 46 px: la caja del campo mide 50 con o sin el ojo (sigue sobre el mínimo táctil de 44)
+  ojo: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },
   requisitos: { marginTop: 6, gap: 2 },
   linea: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 20 },
   textoLinea: { fontSize: 12, lineHeight: 16 },

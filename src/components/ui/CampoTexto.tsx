@@ -31,7 +31,7 @@ export type PropsCampo = Omit<TextInputProps, "style"> & {
   centrado?: boolean;
 };
 
-// Campo de texto accesible: etiqueta arriba, recuadro de al menos 48 px y el error debajo
+// Campo de texto accesible: etiqueta arriba, recuadro de 50 px y el error debajo
 export default function CampoTexto({
   etiqueta,
   ayuda,
@@ -119,7 +119,8 @@ const styles = StyleSheet.create({
   caja: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 48,
+    // 50 px con o sin ícono: botones internos de 46 px + 2 px de borde/relleno arriba y abajo
+    minHeight: 50,
     borderRadius: 8,
     // Borde + relleno suman siempre 2 px: al enfocar o con error el borde crece y el
     // relleno se achica, así la caja no cambia de tamaño
