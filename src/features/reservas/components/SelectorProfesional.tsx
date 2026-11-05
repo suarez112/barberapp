@@ -48,7 +48,7 @@ export default function SelectorProfesional({ barberos, seleccionado, onSeleccio
         />
       ) : null}
 
-      {lista.length === 0 ? (
+      {texto && lista.length === 0 ? (
         <TextoInfo>Ningún profesional coincide con &quot;{busqueda.trim()}&quot;.</TextoInfo>
       ) : null}
 

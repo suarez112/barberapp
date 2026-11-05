@@ -1,5 +1,5 @@
 import Cuadricula from "@/components/layout/Cuadricula";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
 import Boton from "@/components/ui/Boton";
@@ -104,6 +104,8 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
     useFormularioEdicion(VACIO, aCampos);
   const [verPlanes, setVerPlanes] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  // Evita dos guardados seguidos (dos toques rápidos llegan antes de que cambie el estado)
+  const guardandoRef = useRef(false);
   const token = personal.token;
   const soyYo = (id: string) => personal.barbero?.id === id;
 
@@ -114,7 +116,18 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   };
 
   const guardar = async () => {
-    if (guardando) return;
+    if (guardandoRef.current) return;
+    guardandoRef.current = true;
+    setGuardando(true);
+    try {
+      await validarYGuardar();
+    } finally {
+      guardandoRef.current = false;
+      setGuardando(false);
+    }
+  };
+
+  const validarYGuardar = async () => {
     const clave = campos.clave.trim();
     const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
     const nuevos = {
@@ -173,7 +186,6 @@ ${AVISO_SIN_REEMBOLSO}`,
       ...(clave ? { clave } : {}),
     };
 
-    setGuardando(true);
     try {
       if (enEdicion) {
         reemplazar(await actualizarProfesional(token, enEdicion.id, datos));
@@ -195,8 +207,6 @@ ${AVISO_SIN_REEMBOLSO}`,
         return;
       }
       avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Usuario en uso" });
-    } finally {
-      setGuardando(false);
     }
   };
 
@@ -421,7 +431,7 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "REGISTRAR INTEGRANTE"}
           ayudaGuardar={enEdicion ? "Guarda los cambios del integrante" : "Agrega al integrante al equipo"}
           onGuardar={guardar}
-          onCancelar={reiniciar}
+          onCancelar={guardando ? () => {} : reiniciar}
         />
       </VentanaFormulario>
 
