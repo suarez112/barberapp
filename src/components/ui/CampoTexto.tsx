@@ -64,9 +64,14 @@ export default function CampoTexto({
           styles.caja,
           {
             backgroundColor: colors.inputBg,
-            borderColor: error ? colors.error : colors.inputBorder,
+            borderColor: error
+              ? colors.error
+              : enfocado
+                ? colors.inputBorderFoco
+                : colors.inputBorder,
           },
-          error ? styles.cajaConError : null,
+          // El borde de enfoque va en la caja entera (con el ojo, la bandera o el "$" adentro)
+          error || enfocado ? styles.cajaResaltada : null,
           !editable && styles.bloqueado,
         ]}
       >
@@ -90,6 +95,7 @@ export default function CampoTexto({
           }}
           style={[
             styles.texto,
+            styles.sinContornoWeb,
             { color: colors.textPrimary },
             multiline && styles.multilinea,
             estiloTexto,
@@ -115,9 +121,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 48,
     borderRadius: 8,
+    // Borde + relleno suman siempre 2 px: al enfocar o con error el borde crece y el
+    // relleno se achica, así la caja no cambia de tamaño
     borderWidth: 1,
+    padding: 1,
   },
-  cajaConError: { borderWidth: 2 },
+  cajaResaltada: { borderWidth: 2, padding: 0 },
+  // En web el navegador dibuja su propio contorno solo alrededor del texto (queda cortado
+  // junto al ojo o la bandera); el enfoque ya lo muestra el borde de la caja
+  sinContornoWeb: { outlineWidth: 0 },
   bloqueado: { opacity: 0.7 },
   texto: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
   multilinea: { minHeight: 90, textAlignVertical: "top" },

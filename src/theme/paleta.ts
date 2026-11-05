@@ -32,6 +32,8 @@ export type Paleta = {
   secundarioTexto: string;
   // Borde de los campos (contraste 3:1 con el fondo)
   inputBorder: string;
+  // Borde de la caja del campo mientras se escribe en él (contraste 3:1 con el fondo del campo)
+  inputBorderFoco: string;
   // Mensajes de error bajo los campos
   error: string;
   cardSelectedBg: string;
@@ -165,6 +167,7 @@ export const crearPaleta = (
     infoTexto: esOscuro ? "#60A5FA" : "#1D4ED8",
     apagadoTexto: esOscuro ? "#9CA3AF" : "#5B6470",
     inputBorder: esOscuro ? "#737373" : "#868E96",
+    inputBorderFoco: esOscuro ? colorLegible(primary, "#171717") : "#111827",
     error: esOscuro ? "#F87171" : "#B91C1C",
     cardSelectedBg: esOscuro ? "#262419" : mezclar(primary, "#FFFFFF", 0.3),
     inicialesBg: esOscuro ? "#262626" : "#E5E7EB",

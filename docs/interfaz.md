@@ -8,7 +8,7 @@
 - Colores de estado, iguales en todas partes: rojo `COLORES.rojo` (bloqueado, error, cancelado, vencido), verde `verde` (activo, completado), naranja `naranja` (aviso), azul `azul` (info y cita pendiente: etiqueta, punto del resumen y chip "Pendientes", en ambos temas), gris `neutro` (inactivo). Como texto: `peligroTexto`/`exitoTexto`/`avisoTexto`/`infoTexto`.
 - `Insignia` y los botones de estado eligen texto negro o blanco con `textoSobre()`.
 - Variantes de `Boton`: `primario`, `secundario` (colores de tarjeta del tema + borde; reemplaza al antiguo "neutro" negro) y `peligro`.
-- Colores en código: `colors.primaryText` (color del negocio ajustado a 4,5:1 sobre el fondo) para texto/íconos; `colors.onPrimary` (negro o blanco) para texto sobre fondo `colors.primary`; `colors.inputBorder` y `colors.error` para campos. Nunca escribir texto con `colors.primary` ni un `#000` fijo.
+- Colores en código: `colors.primaryText` (color del negocio ajustado a 4,5:1 sobre el fondo) para texto/íconos; `colors.onPrimary` (negro o blanco) para texto sobre fondo `colors.primary`; `colors.inputBorder`, `colors.inputBorderFoco` (campo enfocado) y `colors.error` para campos. Nunca escribir texto con `colors.primary` ni un `#000` fijo.
 
 ## Fotos y banderas
 
@@ -21,7 +21,7 @@ Nunca usar `Alert.alert`. Usar `utils/dialogos.ts`: `avisar(titulo, mensaje?, ti
 
 ## Formularios y accesibilidad
 
-- `components/ui/CampoTexto.tsx` es la base de todo campo: `etiqueta` visible arriba (obligatoria), `placeholder` solo como ejemplo ("ej: ejemplo@gmail.com"), `ayuda` (accessibilityHint), `error` en rojo bajo el campo y anunciado, `obligatorio` agrega " *". Caja de al menos 48 px; slots `izquierda`/`derecha`. `style` es el contenedor, `estiloTexto` el texto escrito.
+- `components/ui/CampoTexto.tsx` es la base de todo campo: `etiqueta` visible arriba (obligatoria), `placeholder` solo como ejemplo ("ej: ejemplo@gmail.com"), `ayuda` (accessibilityHint), `error` en rojo bajo el campo y anunciado, `obligatorio` agrega " *". Caja de al menos 48 px; slots `izquierda`/`derecha`. El enfoque se marca con un borde de 2 px en la caja entera (no en el texto; en web se quita el contorno del navegador) y la caja no cambia de tamaño al enfocar. `style` es el contenedor, `estiloTexto` el texto escrito.
 - `centrado`: texto centrado (códigos de negocio) con el cursor también centrado (Android pone el cursor al inicio de un placeholder centrado, así que el ejemplo se oculta mientras el campo vacío tiene foco).
 - Siempre el `keyboardType` correcto (`email-address`, `phone-pad`, `numeric`/`number-pad`) y `autoComplete` + `textContentType`.
 - La validación devuelve un mensaje por campo que dice qué corregir (`cuenta/formulario/validarEmpresa.ts`: `Errores<K>`, `sinErrores`, `hayErrores`; `hooks/useFormularioEdicion.ts` tiene `errores`/`setErrores`). Cambiar un campo limpia su error. `utils/dialogos.ts` `avisarCamposConError()` solo indica mirar los campos rojos.
