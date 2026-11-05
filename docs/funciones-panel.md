@@ -2,7 +2,7 @@
 
 ## Equipo (`features/equipo/EquipoAdmin.tsx`)
 
-Desplegable de rol "Administrador / Empleado" (`rol`) e interruptor "Atiende clientes" (`atiendeClientes`). Muestra "Tu equipo: X de N personas del plan Y" desde la suscripción (pasada por `PanelAdministrador` → `PanelNegocio` → `NegocioTab`); cuando está lleno, un aviso con "VER PLANES". Un 409 "Tu equipo ya tiene…" (límite de cupos) muestra el mensaje del backend con "VER PLANES". Agregar o quitar a alguien recarga la suscripción.
+Registrar y editar un integrante se hace en `components/ui/VentanaFormulario` (ventana modal: hoja desde abajo en el celular, centrada desde 600 px); la lista no se mueve. La cuenta de la empresa es siempre la primera fila ("Tú · Administrador · Atiende / No atiende clientes", sin "Usuario:" ni botón de retirar); su perfil sale de `GET /equipo/yo-atiendo` (`equipo/useYoAtiendo`) y se quita de la lista general por `barberoId`. Su lápiz abre la misma ventana con foto, nombre, especialidad, comisión y "Yo también atiendo clientes": el interruptor se guarda con `PUT /equipo/yo-atiendo` (el backend ajusta el cobro) y lo demás con `PATCH /equipo/:id`. Sin perfil y con el interruptor apagado solo se ve el interruptor. Desplegable de rol "Administrador / Empleado" (`rol`) e interruptor "Atiende clientes" (`atiendeClientes`). Muestra "Tu equipo: X de N personas del plan Y" desde la suscripción (pasada por `PanelAdministrador` → `PanelNegocio` → `NegocioTab`); cuando está lleno, un aviso con "VER PLANES". Un 409 "Tu equipo ya tiene…" (límite de cupos) muestra el mensaje del backend con "VER PLANES". Agregar o quitar a alguien recarga la suscripción.
 
 ## Planes (`features/planes/`)
 

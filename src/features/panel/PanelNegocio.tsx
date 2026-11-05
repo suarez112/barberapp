@@ -40,7 +40,8 @@ type Props = {
   encabezado?: ReactNode | ((pestana: PestanaPanel, irA: (destino: DestinoGuia) => void) => ReactNode);
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
-  // Sección "Mi plan" (web con pagos manuales); `pedirMiPlan` cambia de valor para abrirla
+  // Pantalla "Plan y pagos" (web con pagos manuales). No es una pestaña: se abre desde
+  // Mi negocio, el aviso de la prueba o los candados; `pedirMiPlan` cambia de valor para abrirla
   miPlan?: ReactNode;
   pestanaInicial?: PestanaPanel;
   pedirMiPlan?: number;
@@ -56,7 +57,6 @@ const PESTANA_BLOQUEOS: Pestana = { id: "BLOQUEOS", icono: "calendar-outline", l
 const PESTANA_CLIENTES: Pestana = { id: "CLIENTES", icono: "people-outline", label: "Clientes" };
 const PESTANA_CARTERA: Pestana = { id: "CARTERA", icono: "wallet-outline", label: "Cartera" };
 const PESTANA_NEGOCIO: Pestana = { id: "NEGOCIO", icono: "storefront-outline", label: "Equipo" };
-const PESTANA_MI_PLAN: Pestana = { id: "MI_PLAN", icono: "card-outline", label: "Mi plan" };
 const PESTANA_MI_NEGOCIO: Pestana = { id: "MI_NEGOCIO", icono: "business-outline", label: "Mi negocio" };
 
 // Panel del negocio: agenda, bloqueos, clientes, cartera y administración.
@@ -79,7 +79,7 @@ export default function PanelNegocio({
   const salir = useSalirDelPanel();
   const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
   const [pestana, setPestana] = useState<PestanaPanel>(pestanaInicial);
-  // Un aviso de planes (candado, "Cambiar de plan") abre "Mi plan"
+  // Un aviso de planes (candado, "Cambiar de plan") abre "Plan y pagos"
   const [miPlanVisto, setMiPlanVisto] = useState(pedirMiPlan);
   if (pedirMiPlan !== miPlanVisto) {
     setMiPlanVisto(pedirMiPlan);
@@ -169,11 +169,17 @@ export default function PanelNegocio({
         PESTANA_CLIENTES,
         PESTANA_CARTERA,
         PESTANA_NEGOCIO,
-        ...(miPlan ? [PESTANA_MI_PLAN] : []),
         ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
       ]
     : [PESTANA_AGENDA, PESTANA_CARTERA];
-  const activa = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
+  // "Plan y pagos" vive dentro de Mi negocio: en el menú se marca esa pestaña
+  const enMiPlan = esAdmin && pestana === "MI_PLAN" && !!miPlan && !!miNegocio;
+  const activa: PestanaPanel = enMiPlan
+    ? "MI_PLAN"
+    : pestanas.some((p) => p.id === pestana)
+      ? pestana
+      : "AGENDAMIENTOS";
+  const activaMenu: PestanaPanel = enMiPlan ? "MI_NEGOCIO" : activa;
 
   const irA = (destino: DestinoGuia) => {
     if (destino === "SERVICIOS") {
@@ -252,7 +258,18 @@ export default function PanelNegocio({
       case "MI_NEGOCIO":
         return miNegocio;
       case "MI_PLAN":
-        return miPlan;
+        return (
+          <View>
+            <Boton
+              titulo="VOLVER A MI NEGOCIO"
+              ayuda="Cierra Plan y pagos y vuelve a Mi negocio"
+              variante="secundario"
+              onPress={() => setPestana("MI_NEGOCIO")}
+              style={styles.volver}
+            />
+            {miPlan}
+          </View>
+        );
     }
   };
 
@@ -320,8 +337,6 @@ export default function PanelNegocio({
             />
           ) : null}
           {typeof encabezado === "function" ? encabezado(activa, irA) : encabezado}
-
-
           {contenido()}
         </View>
       </RefrescoPanelProvider>
@@ -346,7 +361,7 @@ export default function PanelNegocio({
       <PanelAdaptable
         modo={modo}
         secciones={pestanas.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
-        activa={activa}
+        activa={activaMenu}
         onCambiar={setPestana}
         titulo={empresa?.nombre ?? APP_NOMBRE}
         usuario={yo?.nombre ?? personal.nombre}
@@ -363,7 +378,7 @@ export default function PanelNegocio({
   return (
     <Pantalla
       cabecera={{ onSalir: salir }}
-      pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
+      pie={<PanelTabBar pestanas={pestanas} activa={activaMenu} onCambiar={setPestana} />}
       fijo={fijo}
       alRefrescar={empresa ? deslizarParaActualizar : undefined}
       flotante={flotante}
@@ -378,4 +393,5 @@ const styles = StyleSheet.create({
   fijo: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   diaFijo: { fontSize: 12, fontWeight: "600", marginTop: 6 },
   botonAviso: { marginTop: 24, alignSelf: "stretch" },
+  volver: { marginTop: 15 },
 });
