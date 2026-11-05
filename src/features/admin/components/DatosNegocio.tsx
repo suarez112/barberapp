@@ -104,9 +104,10 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
       return;
     }
     const cambios = cambiosEntre(perfil, resultado.datos);
-    // WhatsApp: vacío lo quita; solo se envía si cambió
+    // WhatsApp: solo se envía si el usuario tocó el campo y el número cambió.
+    // Vacío a propósito lo quita. Si el servidor no envió el número, dejarlo vacío no borra nada.
     const nuevoWhatsapp = contacto === "vacio" ? null : contacto.telefono;
-    if (nuevoWhatsapp !== perfil.whatsappContacto) {
+    if (whatsapp.tocado && nuevoWhatsapp !== (perfil.whatsappContacto ?? null)) {
       cambios.whatsappContacto = nuevoWhatsapp;
       if (contacto !== "vacio") cambios.indicativoWhatsapp = contacto.indicativo;
     }
@@ -179,7 +180,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
     );
   }
 
-  const filas: [string, string][] = [
+  const filas: ([string, string] | null)[] = [
     ["Nombre", perfil.nombre],
     ["Categoría", perfil.categoria],
     ["Administra", perfil.nombreAdministradora],
@@ -187,12 +188,15 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
     ["Departamento", perfil.departamento ?? "Sin elegir"],
     ["Municipio", perfil.ciudad],
     ["Dirección", perfil.direccion],
-    [
-      "WhatsApp",
-      perfil.whatsappContacto
-        ? telefonoMostrado(perfil.whatsappContacto).texto
-        : "Sin configurar",
-    ],
+    // Sin la fila si el servidor no envió el dato: "Sin configurar" sería engañoso
+    perfil.whatsappContacto === undefined
+      ? null
+      : [
+          "WhatsApp",
+          perfil.whatsappContacto
+            ? telefonoMostrado(perfil.whatsappContacto).texto
+            : "Sin configurar",
+        ],
   ];
 
   const tarjeta = (children: ReactNode) => (
@@ -210,7 +214,11 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
   return (
     <>
       <SeccionPlegable titulo="Datos del negocio" icono="storefront-outline" abiertaAlInicio>
-        {tarjeta(filas.map(([etiqueta, valor]) => fila(etiqueta, valor)))}
+        {tarjeta(
+          filas
+            .filter((f): f is [string, string] => f !== null)
+            .map(([etiqueta, valor]) => fila(etiqueta, valor)),
+        )}
         {!perfil.departamento ? (
           <Text style={[styles.nota, { color: colors.primaryText }]}>
             Completa el departamento y el municipio de tu negocio en &quot;Editar datos&quot;.

@@ -16,11 +16,14 @@ export function useTelefono() {
   const [pais, setPais] = useState<CountryCode>(PAIS_POR_DEFECTO);
   const [texto, setTexto] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // true once the user typed or picked a country since the last cargar/limpiar
+  const [tocado, setTocado] = useState(false);
 
   const indicativo = indicativoDe(pais);
 
   const cambiarTexto = (valor: string) => {
     setError(null);
+    setTocado(true);
     const separado = separarPais(valor);
     if (separado) {
       setPais(separado.pais);
@@ -37,6 +40,7 @@ export function useTelefono() {
 
   const elegirPais = (nuevo: CountryCode) => {
     setError(null);
+    setTocado(true);
     setPais(nuevo);
     setTexto(formatearMientrasEscribe(nuevo, soloDigitos(texto)));
   };
@@ -64,6 +68,7 @@ export function useTelefono() {
   // Pone un número guardado en E.164 ("+573001234567") con su país y su máscara; null lo vacía
   const cargar = (e164: string | null | undefined) => {
     setError(null);
+    setTocado(false);
     const numero = e164 ? parsePhoneNumberFromString(e164) : undefined;
     if (!numero?.country) {
       setPais(PAIS_POR_DEFECTO);
@@ -78,9 +83,10 @@ export function useTelefono() {
     setPais(PAIS_POR_DEFECTO);
     setTexto("");
     setError(null);
+    setTocado(false);
   };
 
-  return { pais, texto, indicativo, error, setError, cambiarTexto, elegirPais, validar, validarOpcional, cargar, limpiar };
+  return { pais, texto, indicativo, error, tocado, setError, cambiarTexto, elegirPais, validar, validarOpcional, cargar, limpiar };
 }
 
 export type EstadoTelefono = ReturnType<typeof useTelefono>;

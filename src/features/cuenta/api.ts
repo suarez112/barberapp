@@ -76,9 +76,10 @@ export type PerfilEmpresa = Omit<DatosEmpresa, "departamento" | "horario"> & {
   horarioCierre: string;
   // Cada cuántos minutos pueden agendar los clientes (10, 20, 30, 40, 50 o 60)
   intervaloMinutos: number;
-  // WhatsApp de contacto en E.164 y su enlace wa.me; null si no lo configuró
-  whatsappContacto: string | null;
-  whatsappUrl: string | null;
+  // WhatsApp de contacto en E.164 y su enlace wa.me; null si no lo configuró.
+  // undefined: el servidor no lo envió en esta respuesta (no se sabe si hay número)
+  whatsappContacto?: string | null;
+  whatsappUrl?: string | null;
   anticipacionCancelacionHoras: number;
   zonaHoraria: string;
   logoUrl: string | null;
