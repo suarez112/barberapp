@@ -149,7 +149,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    minHeight: 48,
+    // 46 px: la caja del campo mide 50 con o sin la bandera (sigue sobre el mínimo táctil de 44)
+    minHeight: 46,
     paddingHorizontal: 10,
     borderRightWidth: 1,
   },
