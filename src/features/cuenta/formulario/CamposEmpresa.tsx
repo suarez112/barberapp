@@ -322,8 +322,8 @@ export default function CamposEmpresa({
       <TituloSeccion>CONTACTO</TituloSeccion>
       <CampoTelefono
         telefono={whatsapp}
-        etiqueta="WhatsApp de contacto del negocio"
-        ayuda="Opcional. Tus clientes lo ven cuando ya no pueden cancelar o reprogramar solos. Para otro país, toca la bandera."
+        etiqueta="WhatsApp de contacto del negocio (Opcional)"
+        ayuda="Tus clientes lo ven cuando ya no pueden cancelar o reprogramar solos. Para otro país, toca la bandera."
       />
 
       <TituloSeccion>HORARIO DE ATENCIÓN</TituloSeccion>

@@ -1,4 +1,4 @@
-import { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import { Dispatch, ReactNode, SetStateAction, useCallback, useState } from "react";
 import { Barbero, Empresa, Servicio } from "../../types";
 import { crearContexto } from "../../utils/crearContexto";
 import { DatosNegocio } from "./api";
@@ -28,11 +28,12 @@ export function NegocioProvider({ children }: { children: ReactNode }) {
     setServicios(datos.servicios);
   };
 
-  const salirDelNegocio = () => {
+  // Estable (useCallback): la pantalla del cliente la usa al desmontarse
+  const salirDelNegocio = useCallback(() => {
     setEmpresa(null);
     setBarberos([]);
     setServicios([]);
-  };
+  }, []);
 
   return (
     <NegocioContext

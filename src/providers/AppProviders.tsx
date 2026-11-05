@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import AvisoFlotanteHost from "@/components/ui/AvisoFlotanteHost";
 import DialogoHost from "@/components/ui/DialogoHost";
 import { AgendaProvider } from "@/features/agenda/AgendaProvider";
 import { CuentaProvider } from "@/features/cuenta/CuentaProvider";
@@ -27,6 +28,8 @@ export default function AppProviders({ children }: { children: ReactNode }) {
                   <ManejadorNotificaciones />
                   {/* Avisos y confirmaciones de toda la app */}
                   <DialogoHost />
+                  {/* Avisos cortos que se van solos (ej. "Copiado") */}
+                  <AvisoFlotanteHost />
                   {/* Obliga a aceptar la versión nueva de la política y los términos */}
                   <ModalNuevaVersion />
                 </AgendaProvider>

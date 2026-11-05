@@ -4,6 +4,7 @@ import { Share, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import { registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { mostrarAvisoFlotante } from "@/utils/avisoFlotante";
 import { avisar } from "@/utils/dialogos";
 
 type Props = {
@@ -21,7 +22,7 @@ export default function EnlacePublico({ enlace, nombreNegocio, onCompartido }: P
     onCompartido?.();
     try {
       await Clipboard.setStringAsync(enlace);
-      avisar("Enlace copiado", "Ya puedes pegarlo en WhatsApp, Instagram o donde quieras.", "exito");
+      mostrarAvisoFlotante("Copiado");
     } catch (error) {
       registrarCausa("Copiar enlace", error);
       avisar("No se pudo copiar", "Intenta de nuevo o anota el enlace.", "error");
