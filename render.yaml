@@ -4,6 +4,9 @@ services:
   - type: web
     name: agendality-web
     runtime: static
+    # No automatic deploys: merging into master does not publish. Deploy from the
+    # dashboard with Manual Deploy (see docs/despliegue-render.md).
+    autoDeployTrigger: "off"
     # Installs dependencies from package-lock.json and exports the web build to ./dist
     buildCommand: npm ci && npx expo export --platform web --output-dir dist
     staticPublishPath: ./dist
