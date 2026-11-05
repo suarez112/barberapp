@@ -31,7 +31,7 @@ Nunca usar `Alert.alert`. Usar `utils/dialogos.ts`: `avisar(titulo, mensaje?, ti
 - `components/ui/CampoPrecio.tsx` + `utils/formato.ts` `leerPrecio()`: los precios muestran puntos de miles al escribir ("35.000") y se envían como pesos enteros (35000). Nunca `Number("35.000")` (da 35).
 - `components/ui/Desplegable.tsx`: lista en modal (`buscable` agrega búsqueda; las listas sin búsqueda abren desplazadas a la opción elegida). Se usa para duración del servicio, empleados, departamento, municipio y horas.
 - `components/ui/VentanaFormulario.tsx`: ventana modal para formularios (X y Cancelar la cierran; el fondo no, para no perder lo escrito; `ocupado` impide cerrarla mientras guarda). En el celular sube desde abajo; desde 600 px va centrada (máx. 520 px). Fondo atenuado: `COLORES.velo`.
-- `reservas/components/SelectorProfesional.tsx`: lista compacta (foto pequeña, nombre, especialidad y check); desde 7 profesionales muestra "Buscar profesional" (sin tildes ni mayúsculas).
+- `reservas/components/SelectorProfesional.tsx`: una fila por profesional con foto cuadrada de 92 px (radio 16, la inicial si no tiene foto), nombre, especialidad y check; la foto guardada mide 720 x 900, así que se ve nítida; desde 7 profesionales muestra "Buscar profesional" (sin tildes ni mayúsculas).
 - `components/layout/Pantalla.tsx` usa `keyboardShouldPersistTaps="handled"`, así botones y opciones de desplegables (los modales reciben toques por este ScrollView) funcionan al primer toque con el teclado abierto.
 
 ## Teléfonos en la app

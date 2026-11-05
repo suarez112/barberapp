@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import FotoBarbero from "@/components/FotoBarbero";
 import CampoTexto from "@/components/ui/CampoTexto";
+import FotoImagen from "@/components/ui/FotoImagen";
 import TextoInfo from "@/components/ui/TextoInfo";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -16,12 +16,14 @@ type Props = {
 
 // Desde cuántos profesionales aparece el buscador
 const CON_BUSCADOR = 7;
+// Foto cuadrada: grande para reconocer al profesional sin abrirla (la foto guardada mide 720 x 900)
+const FOTO = 92;
 
 // "José Peña" y "jose pena" coinciden
 const simplificar = (texto: string) =>
   texto.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 
-// Lista compacta para elegir profesional: una fila por persona (foto, nombre y especialidad).
+// Lista para elegir profesional: una fila por persona con su foto grande, nombre y especialidad.
 // Con muchos profesionales se puede buscar por nombre o especialidad.
 export default function SelectorProfesional({ barberos, seleccionado, onSeleccionar }: Props) {
   const { colors } = useAppTheme();
@@ -55,7 +57,6 @@ export default function SelectorProfesional({ barberos, seleccionado, onSeleccio
       <View style={styles.lista}>
         {lista.map((b) => {
           const elegido = seleccionado?.id === b.id;
-          const detalle = [b.especialidad, b.equipo].filter(Boolean).join(" · ");
           return (
             <Tocable
               key={b.id}
@@ -70,14 +71,22 @@ export default function SelectorProfesional({ barberos, seleccionado, onSeleccio
                 elegido && { borderColor: colors.primary, backgroundColor: colors.cardSelectedBg },
               ]}
             >
-              <FotoBarbero nombre={b.nombre} foto={b.foto} color={colors.primaryText} size={44} />
+              {b.foto ? (
+                <FotoImagen uri={b.foto} enLista accessibilityIgnoresInvertColors style={styles.foto} />
+              ) : (
+                <View style={[styles.foto, styles.sinFoto, { backgroundColor: colors.inicialesBg }]}>
+                  <Text style={[styles.inicial, { color: colors.inicialesTexto }]}>
+                    {b.nombre.trim().charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
               <View style={styles.textos}>
-                <Text numberOfLines={1} style={[styles.nombre, { color: colors.textPrimary }]}>
+                <Text numberOfLines={2} style={[styles.nombre, { color: colors.textPrimary }]}>
                   {b.nombre}
                 </Text>
-                {detalle ? (
-                  <Text numberOfLines={1} style={[styles.especialidad, { color: colors.textSecondary }]}>
-                    {detalle}
+                {b.especialidad ? (
+                  <Text numberOfLines={2} style={[styles.especialidad, { color: colors.textSecondary }]}>
+                    {b.especialidad}
                   </Text>
                 ) : null}
               </View>
@@ -100,13 +109,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    minHeight: 60,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    padding: 8,
+    paddingRight: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
+  foto: { width: FOTO, height: FOTO, borderRadius: 16 },
+  sinFoto: { alignItems: "center", justifyContent: "center" },
+  inicial: { fontSize: 36, fontWeight: "bold" },
   textos: { flex: 1 },
-  nombre: { fontSize: 15, fontWeight: "bold" },
-  especialidad: { fontSize: 12, marginTop: 2 },
+  nombre: { fontSize: 17, fontWeight: "bold" },
+  especialidad: { fontSize: 14, marginTop: 4 },
 });
