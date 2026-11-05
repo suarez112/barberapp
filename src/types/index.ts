@@ -67,8 +67,9 @@ export interface HorarioOcupado {
 export interface Cita extends HorarioOcupado {
   id: string;
   cliente: string;
-  telefono: string;
-  indicativo?: string;
+  // null: el negocio no permite que este empleado vea el teléfono de los clientes
+  telefono: string | null;
+  indicativo?: string | null;
   servicio: string;
   barberoNombre: string;
   empresaId: string;

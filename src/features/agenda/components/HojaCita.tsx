@@ -86,14 +86,17 @@ export default function HojaCita({
         {cita ? (
           <>
             <Text style={[styles.titulo, { color: colors.textSecondary }]}>DETALLE DE LA CITA</Text>
-            <View style={styles.telefono}>
-              <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Teléfono</Text>
-              <TelefonoConBandera
-                telefono={cita.telefono}
-                indicativo={cita.indicativo}
-                style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "bold" }}
-              />
-            </View>
+            {/* Sin teléfono (el negocio no deja que este empleado lo vea) no se muestra la fila */}
+            {cita.telefono ? (
+              <View style={styles.telefono}>
+                <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>Teléfono</Text>
+                <TelefonoConBandera
+                  telefono={cita.telefono}
+                  indicativo={cita.indicativo}
+                  style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "bold" }}
+                />
+              </View>
+            ) : null}
             <TarjetaCita
               cita={cita}
               puedeCompletar={puedeCompletar}
