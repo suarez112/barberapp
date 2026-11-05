@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import {
+  Platform,
   StyleProp,
   StyleSheet,
   Text,
@@ -72,6 +73,7 @@ export default function CampoTexto({
           },
           // El borde de enfoque va en la caja entera (con el ojo, la bandera o el "$" adentro)
           error || enfocado ? styles.cajaResaltada : null,
+          multiline ? styles.cajaMultilinea : styles.cajaUnaLinea,
           !editable && styles.bloqueado,
         ]}
       >
@@ -95,7 +97,7 @@ export default function CampoTexto({
           }}
           style={[
             styles.texto,
-            styles.sinContornoWeb,
+            sinContornoWeb,
             { color: colors.textPrimary },
             multiline && styles.multilinea,
             estiloTexto,
@@ -119,8 +121,6 @@ const styles = StyleSheet.create({
   caja: {
     flexDirection: "row",
     alignItems: "center",
-    // 50 px con o sin ícono: botones internos de 46 px + 2 px de borde/relleno arriba y abajo
-    minHeight: 50,
     borderRadius: 8,
     // Borde + relleno suman siempre 2 px: al enfocar o con error el borde crece y el
     // relleno se achica, así la caja no cambia de tamaño
@@ -128,12 +128,27 @@ const styles = StyleSheet.create({
     padding: 1,
   },
   cajaResaltada: { borderWidth: 2, padding: 0 },
-  // En web el navegador dibuja su propio contorno solo alrededor del texto (queda cortado
-  // junto al ojo o la bandera); el enfoque ya lo muestra el borde de la caja
-  sinContornoWeb: { outlineWidth: 0 },
+  // 50 px con o sin ícono y con cualquier tamaño de letra: botones internos de 46 px
+  // + 2 px de borde/relleno arriba y abajo
+  cajaUnaLinea: { height: 50 },
+  cajaMultilinea: { minHeight: 50, alignItems: "stretch" },
   bloqueado: { opacity: 0.7 },
-  texto: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
-  multilinea: { minHeight: 90, textAlignVertical: "top" },
+  // Sin borde ni alto propio: el borde, el tamaño y el color de enfoque son solo de la caja
+  texto: {
+    flex: 1,
+    alignSelf: "stretch",
+    borderWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 0,
+    fontSize: 15,
+  },
+  multilinea: { minHeight: 90, paddingVertical: 12, textAlignVertical: "top" },
   centrado: { textAlign: "center" },
   error: { fontSize: 12, marginTop: 4, lineHeight: 16 },
 });
+
+// En web el navegador dibuja su propio contorno alrededor del <input> (un recuadro dentro de
+// la caja, cortado junto al ojo o la bandera). Chrome ignora outline-width: 0 si el estilo es
+// "auto", por eso también va outlineStyle: "none" (no está en los tipos de React Native).
+const sinContornoWeb =
+  Platform.OS === "web" ? ({ outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle) : null;
