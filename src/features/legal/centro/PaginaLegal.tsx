@@ -98,7 +98,8 @@ function MenuLateral({ activa }: { activa: EntradaLegal["clave"] | null }) {
               accessibilityLabel={e.nombre}
               accessibilityHint={e.descripcion}
               accessibilityState={{ selected: actual }}
-              style={[styles.opcion, styles.opcionFila, actual && { backgroundColor: colors.seleccionBg }]}
+              // Hijo de <Link asChild>: expo-router pide un style plano, no un arreglo
+              style={StyleSheet.flatten([styles.opcion, styles.opcionFila, actual && { backgroundColor: colors.seleccionBg }])}
             >
               <Ionicons name={e.icono} size={20} color={actual ? colors.seleccionTexto : colors.textSecondary} />
               <Text
