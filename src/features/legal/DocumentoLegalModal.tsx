@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -9,13 +8,9 @@ import {
   View,
 } from "react-native";
 import TextoMarkdown from "@/components/ui/TextoMarkdown";
-import { describirError, registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { DocumentoLegal, TipoDocumento, obtenerDocumentoLegal } from "./api";
-import { guardarDocumento, leerDocumentoGuardado } from "./documentosGuardados";
-
-// Los textos casi nunca cambian: se piden una vez por cada vez que se abre la app
-const cache = new Map<TipoDocumento, DocumentoLegal>();
+import { TipoDocumento } from "./api";
+import { useDocumentoLegal } from "./useDocumentoLegal";
 
 type Props = {
   // Documento a mostrar; null = modal cerrado
@@ -23,72 +18,12 @@ type Props = {
   onCerrar: () => void;
 };
 
-// Lo que se sabe de un intento de carga ("politica-datos:0", "terminos:1"…)
-type Estado = {
-  clave: string;
-  documento: DocumentoLegal | null;
-  // El documento es la copia guardada en el celular, no la recién descargada
-  guardado: boolean;
-  error: string | null;
-};
-
 // Política de datos o Términos en un modal con el estilo de los avisos de la app.
 // Si no hay conexión muestra la última versión descargada; si tampoco la hay,
 // el error con "Reintentar".
 export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
   const { colors } = useAppTheme();
-  const [intento, setIntento] = useState(0);
-  const [estado, setEstado] = useState<Estado | null>(null);
-
-  const clave = tipo ? `${tipo}:${intento}` : "";
-  const actual = estado?.clave === clave ? estado : null;
-  const enMemoria = tipo ? cache.get(tipo) : undefined;
-  const documento = enMemoria ?? actual?.documento ?? null;
-  const guardado = !enMemoria && !!actual?.guardado;
-  const error = enMemoria ? null : (actual?.error ?? null);
-
-  useEffect(() => {
-    if (!tipo || cache.has(tipo)) return;
-    const esteIntento = `${tipo}:${intento}`;
-    const controlador = new AbortController();
-    let vigente = true;
-    const actualizar = (cambios: (previo: Estado) => Partial<Estado>) =>
-      vigente &&
-      setEstado((e) => {
-        const previo =
-          e?.clave === esteIntento
-            ? e
-            : { clave: esteIntento, documento: null, guardado: false, error: null };
-        return { ...previo, ...cambios(previo) };
-      });
-
-    // La copia guardada se muestra de inmediato mientras llega la versión al día
-    leerDocumentoGuardado(tipo).then((doc) => {
-      if (doc && !cache.has(tipo))
-        actualizar((p) => (p.documento ? {} : { documento: doc, guardado: true }));
-    });
-
-    obtenerDocumentoLegal(tipo, controlador.signal)
-      .then((doc) => {
-        cache.set(tipo, doc);
-        guardarDocumento(tipo, doc);
-        actualizar(() => ({ documento: doc, guardado: false, error: null }));
-      })
-      .catch((e) => {
-        if (controlador.signal.aborted) return;
-        registrarCausa("Documento legal", e);
-        actualizar(() => ({
-          error: describirError(e, {
-            titulo: "",
-            porDefecto: "No se pudo cargar el documento.",
-          }).mensaje,
-        }));
-      });
-    return () => {
-      vigente = false;
-      controlador.abort();
-    };
-  }, [tipo, intento]);
+  const { documento, guardado, error, reintentar: alReintentar } = useDocumentoLegal(tipo);
 
   const reintentar = (
     <Pressable
@@ -96,7 +31,7 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
       accessibilityLabel="Reintentar"
       accessibilityHint="Vuelve a descargar el documento"
       style={[styles.botonSecundario, { borderColor: colors.cardBorder }]}
-      onPress={() => setIntento((n) => n + 1)}
+      onPress={alReintentar}
     >
       <Text style={[styles.textoSecundario, { color: colors.textPrimary }]}>REINTENTAR</Text>
     </Pressable>

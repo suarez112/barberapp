@@ -11,6 +11,8 @@ export type DocumentoLegal = {
   titulo: string;
   contenido: string; // markdown
   publicadoEn: string;
+  // Fecha desde la que rige ("2026-11-05"); si el backend no la envía se muestra publicadoEn
+  vigenteDesde?: string;
 };
 
 // Lo que exige el backend en el registro y en la reserva como invitado
