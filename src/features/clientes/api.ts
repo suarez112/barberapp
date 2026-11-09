@@ -40,6 +40,24 @@ export type Bloqueado = {
 export const listarClientes = (token: string, signal?: AbortSignal) =>
   request<Cliente[]>("/api/v1/clientes", { token, signal });
 
+// Página de clientes, con búsqueda en el servidor (nombre y, si parece un número, teléfono).
+// siguienteCursor: se envía tal cual para pedir la página siguiente; null = no hay más.
+export type PaginaClientes = { datos: Cliente[]; siguienteCursor: string | null };
+
+export const listarClientesPagina = (
+  token: string,
+  p: { limite: number; cursor?: string | null; q?: string },
+  signal?: AbortSignal,
+) => {
+  const params = new URLSearchParams({ limite: String(p.limite) });
+  if (p.cursor) params.set("cursor", p.cursor);
+  if (p.q) params.set("q", p.q);
+  return request<PaginaClientes>(`/api/v1/clientes?${params.toString()}`, { token, signal });
+};
+
+export const listarBloqueados = (token: string, signal?: AbortSignal) =>
+  request<Bloqueado[]>("/api/v1/clientes/lista-negra", { token, signal });
+
 export const obtenerHistorial = (token: string, clienteId: string) =>
   request<{ cliente: Cliente; citas: CitaHistorial[] }>(
     `/api/v1/clientes/${encodeURIComponent(clienteId)}/historial`,

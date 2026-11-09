@@ -84,3 +84,16 @@ export const cambiarYoAtiendo = async (token: string, atiende: boolean) =>
       token,
     }),
   );
+
+// ¿Los empleados ven el teléfono de los clientes? Solo administradores; apagado por defecto
+type PrivacidadClientes = { empleadosVenTelefono: boolean; mensaje?: string };
+
+export const obtenerPrivacidadClientes = (token: string, signal?: AbortSignal) =>
+  request<PrivacidadClientes>("/api/v1/admin/empresa/privacidad-clientes", { token, signal });
+
+export const cambiarPrivacidadClientes = (token: string, empleadosVenTelefono: boolean) =>
+  request<PrivacidadClientes>("/api/v1/admin/empresa/privacidad-clientes", {
+    method: "PUT",
+    body: { empleadosVenTelefono },
+    token,
+  });

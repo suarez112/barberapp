@@ -36,6 +36,7 @@ import FuncionBloqueada from "../planes/FuncionBloqueada";
 import { AVISO_SIN_REEMBOLSO, calcularCargoNuevo, textoCargoNuevo } from "../planes/cobro";
 import { useFunciones } from "../planes/funcionesContexto";
 import PlanesModal from "../planes/PlanesModal";
+import PrivacidadTelefonos from "./PrivacidadTelefonos";
 import { useYoAtiendo } from "./useYoAtiendo";
 import { PAGOS_EN_APP } from "@/config/pagos";
 
@@ -634,6 +635,8 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
           onCancelar={guardando ? () => {} : cerrar}
         />
       </VentanaFormulario>
+
+      <PrivacidadTelefonos token={token} />
 
       <TituloSeccion style={styles.tituloLista}>
         INTEGRANTES REGISTRADOS ({otros.length + (cuentaAdmin ? 1 : 0)})

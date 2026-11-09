@@ -6,8 +6,8 @@ import { avisar } from "./dialogos";
 // indicativo guardado en la cita; sin él: 10 dígitos -> Colombia (57);
 // 11 a 15 dígitos -> ya traen indicativo.
 export const numeroParaWhatsApp = (
-  telefono?: string,
-  indicativo?: string,
+  telefono?: string | null,
+  indicativo?: string | null,
 ): string | null => {
   const digitos = (telefono ?? "").replace(/\D/g, "");
   if (!digitos) return null;
@@ -20,7 +20,7 @@ export const numeroParaWhatsApp = (
   return numero.length >= 8 && numero.length <= 15 ? numero : null;
 };
 
-export const abrirWhatsApp = async (telefono?: string, indicativo?: string) => {
+export const abrirWhatsApp = async (telefono?: string | null, indicativo?: string | null) => {
   const numero = numeroParaWhatsApp(telefono, indicativo);
   if (!numero) {
     avisar(

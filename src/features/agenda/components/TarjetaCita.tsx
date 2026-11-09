@@ -88,19 +88,18 @@ export default function TarjetaCita({
           </Text>
         </View>
 
-        <Tocable
-          onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}
-          accessibilityRole="button"
-          accessibilityLabel={`Escribir por WhatsApp a ${c.cliente}`}
-          accessibilityHint="Abre WhatsApp con el número del cliente"
-          style={[styles.whatsapp, { opacity: tieneWhatsApp ? 1 : 0.35 }]}
-        >
-          <Ionicons
-            name="logo-whatsapp"
-            size={28}
-            color={tieneWhatsApp ? COLORES.whatsapp : colors.textSecondary}
-          />
-        </Tocable>
+        {/* Sin teléfono (el negocio no deja que este empleado lo vea) no hay ícono */}
+        {tieneWhatsApp ? (
+          <Tocable
+            onPress={() => abrirWhatsApp(c.telefono, c.indicativo)}
+            accessibilityRole="button"
+            accessibilityLabel={`Escribir por WhatsApp a ${c.cliente}`}
+            accessibilityHint="Abre WhatsApp con el número del cliente"
+            style={styles.whatsapp}
+          >
+            <Ionicons name="logo-whatsapp" size={28} color={COLORES.whatsapp} />
+          </Tocable>
+        ) : null}
       </View>
 
       {c.estado === "COMPLETADA" && c.completadaEn ? (
