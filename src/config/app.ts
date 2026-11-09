@@ -5,10 +5,11 @@ export const APP_LEMA = "Citas simples, negocios eficientes";
 
 // Página web de cada negocio: <base>/<CÓDIGO> (ej. https://agendality.com/INFINITY)
 export const ENLACE_PUBLICO_BASE = "https://agendality.com";
-export const enlacePublicoDe = (codigo: string) => `${ENLACE_PUBLICO_BASE}/${codigo}`;
+export const enlacePublicoDe = (codigo: string) =>
+  `${ENLACE_PUBLICO_BASE}/${codigo}`;
 
 // "Contacto" en Ayuda. Reemplaza el valor de ejemplo por el correo real del desarrollador.
 // Un correo vacío ("") oculta la sección.
 export const CONTACTO = {
-  correo: "tucorreo@ejemplo.com",
+  correo: "soporte@agendality.com",
 };
