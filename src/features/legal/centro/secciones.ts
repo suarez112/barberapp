@@ -57,11 +57,17 @@ function fechaColombia(valor: string) {
   return Number.isNaN(ms) ? null : fechaLarga(fechaColombiaISO(ms));
 }
 
+// "Vigente desde el 5 de noviembre de 2026"; null si el backend no envía vigenteDesde
+export function textoVigencia(documento: DocumentoLegal) {
+  const vigente = documento.vigenteDesde ? fechaColombia(documento.vigenteDesde) : null;
+  return vigente ? `Vigente desde el ${vigente}` : null;
+}
+
 // Fecha que se muestra bajo el título: la de vigencia si el backend la envía;
 // si no, la de publicación (con su nombre, para no hacerla pasar por la de vigencia)
 export function textoFecha(documento: DocumentoLegal) {
-  const vigente = documento.vigenteDesde ? fechaColombia(documento.vigenteDesde) : null;
-  if (vigente) return `Vigente desde el ${vigente}`;
+  const vigente = textoVigencia(documento);
+  if (vigente) return vigente;
   const publicado = fechaColombia(documento.publicadoEn);
   return publicado ? `Publicado el ${publicado}` : null;
 }

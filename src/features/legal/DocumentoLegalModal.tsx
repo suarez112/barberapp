@@ -10,6 +10,7 @@ import {
 import TextoMarkdown from "@/components/ui/TextoMarkdown";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { TipoDocumento } from "./api";
+import { textoVigencia } from "./centro/secciones";
 import { useDocumentoLegal } from "./useDocumentoLegal";
 
 type Props = {
@@ -46,10 +47,14 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
           {documento ? (
             <>
               <Text style={[styles.version, { color: colors.textSecondary }]}>
-                Versión {documento.version}
+                {[`Versión ${documento.version}`, textoVigencia(documento)].filter(Boolean).join(" · ")}
+              </Text>
+              {/* El título viene en "titulo"; si el texto también lo trae (# Título), se oculta allí */}
+              <Text accessibilityRole="header" style={[styles.titulo, { color: colors.primaryText }]}>
+                {documento.titulo}
               </Text>
               <ScrollView style={styles.contenido} showsVerticalScrollIndicator>
-                <TextoMarkdown contenido={documento.contenido} />
+                <TextoMarkdown contenido={documento.contenido} sinTituloPrincipal />
               </ScrollView>
               {guardado ? (
                 <View style={styles.aviso}>
@@ -115,6 +120,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   version: { fontSize: 11, textAlign: "right", marginBottom: 4 },
+  titulo: { fontSize: 17, fontWeight: "bold", marginBottom: 8 },
   // flexShrink: con un texto largo el botón Cerrar sigue a la vista
   contenido: { flexGrow: 0, flexShrink: 1 },
   estado: { paddingVertical: 30, alignItems: "center", gap: 8 },
