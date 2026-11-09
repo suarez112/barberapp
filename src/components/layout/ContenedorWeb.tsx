@@ -1,6 +1,7 @@
 import { usePathname } from "expo-router";
 import { ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useSoltarFocoOculto } from "@/hooks/useSoltarFocoOculto";
 import { useAppTheme } from "@/theme/ThemeProvider";
 
 // Ancho cómodo para leer en una pantalla grande
@@ -60,6 +61,8 @@ export default function ContenedorWeb({ children }: { children: ReactNode }) {
   const referencia = useRef<unknown>(null);
   const [alto, setAlto] = useState<number>();
   const conTarjeta = montado && usaTarjeta(ruta) && width >= ANCHO_MINIMO_TARJETA;
+  // Sin foco en la pantalla que queda oculta al navegar (aviso de aria-hidden en la web)
+  useSoltarFocoOculto();
 
   // La tarjeta mide lo que mide su contenido: se vuelve a medir cuando cambia la pantalla,
   // el contenido o la ventana. Si no cabe en la pantalla, el contenido se desplaza dentro.
