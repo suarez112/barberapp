@@ -25,8 +25,15 @@ const profesionales = (n: number) => (n === 1 ? "1 profesional" : `${n} profesio
 const dinero = (n: number) => `$${formatearPesos(Math.round(n))}`;
 
 // Calculadora: el negocio elige cuántos profesionales atienden y ve al instante el precio,
-// el nivel y lo que incluye. Elegir el plan solo avisa que los pagos llegan pronto.
-export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion | null }) {
+// el nivel y lo que incluye. En la web, elegir el plan lleva a /pagar con lo elegido;
+// onAntesDePagar cierra la ventana de planes (un Modal tapa la navegación en la web).
+export default function ListaPlanes({
+  suscripcion,
+  onAntesDePagar,
+}: {
+  suscripcion: Suscripcion | null;
+  onAntesDePagar?: () => void;
+}) {
   const { colors } = useAppTheme();
   const { planes, error, reintentar } = usePlanes();
   const { datos: funciones } = useFunciones();
@@ -61,9 +68,14 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
   // Un negocio no puede elegir menos profesionales de los que ya atienden
   const pocos = !!suscripcion && n < suscripcion.profesionalesCobrados;
 
+  const irAPagar = () => {
+    onAntesDePagar?.();
+    router.navigate({ pathname: "/pagar", params: { profesionales: String(n), periodo } });
+  };
+
   const elegir = () =>
     pagoWeb
-      ? router.navigate("/pagar")
+      ? irAPagar()
       : enPrueba
       ? avisar(
           "Tu prueba gratis ya está activa",

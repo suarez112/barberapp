@@ -1,4 +1,4 @@
-import { Redirect } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
@@ -31,18 +31,30 @@ const avisoDeOrden = (e: unknown): Aviso => {
   return e instanceof ApiError && e.status === 503 && e.message ? { titulo: aviso.titulo, mensaje: e.message } : aviso;
 };
 
-// Pago con Wompi: la administradora elige cuántos profesionales y el periodo,
-// ve el resumen con el precio del backend y sigue al checkout. Al volver, ConfirmarPago
-// (/pagar/<referencia>) consulta el resultado.
+// Lo elegido en Planes llega como /pagar?profesionales=<n>&periodo=<mensual|anual>.
+// Solo cuenta si ambos son válidos; si no, se ignora y se elige aquí.
+type Elegido = { profesionales: number; periodo: PlanSuscripcion };
+const leerElegido = (profesionales: unknown, periodo: unknown): Elegido | null => {
+  const n = typeof profesionales === "string" && /^\d+$/.test(profesionales) ? Number(profesionales) : NaN;
+  if (!Number.isInteger(n) || n < 1) return null;
+  if (periodo !== "mensual" && periodo !== "anual") return null;
+  return { profesionales: n, periodo };
+};
+
+// Pago con Wompi. Desde Planes llega lo elegido y la pantalla solo confirma (resumen + PAGAR);
+// entrando directo, la administradora elige profesionales y periodo aquí. Sigue al checkout y,
+// al volver, ConfirmarPago (/pagar/<referencia>) consulta el resultado.
 export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   const { colors } = useAppTheme();
   const volver = useVolver();
   const { lista } = useSesionLista();
   const personal = usePersonal();
   const { planes, error: errorPlanes, reintentar } = usePlanes();
+  const parametros = useLocalSearchParams<{ profesionales?: string; periodo?: string }>();
+  const [elegido] = useState(() => leerElegido(parametros.profesionales, parametros.periodo));
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
-  const [profesionales, setProfesionales] = useState<number | null>(null);
-  const [periodo, setPeriodo] = useState<PlanSuscripcion>("mensual");
+  const [profesionales, setProfesionales] = useState<number | null>(elegido?.profesionales ?? null);
+  const [periodo, setPeriodo] = useState<PlanSuscripcion>(elegido?.periodo ?? "mensual");
   const [error, setError] = useState<Aviso | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -56,7 +68,7 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
       .then((s) => {
         setSuscripcion(s);
         setProfesionales((actual) => actual ?? Math.max(1, s.profesionalesCobrados));
-        if (s.plan) setPeriodo(s.plan);
+        if (s.plan && !elegido) setPeriodo(s.plan);
       })
       .catch((e) => {
         if (esCancelada(e)) return;
@@ -64,7 +76,7 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
         setProfesionales((actual) => actual ?? 1);
       });
     return () => controlador.abort();
-  }, [token]);
+  }, [token, elegido]);
 
   if (Platform.OS !== "web") return <Redirect href="/" />;
 
@@ -111,20 +123,24 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
 
     return (
       <View>
-        <Desplegable
-          etiqueta="Número de profesionales"
-          ayuda="Cuántas personas atienden clientes en tu negocio"
-          placeholder="Elige cuántos"
-          opciones={opciones}
-          valor={cantidad}
-          onCambiar={setProfesionales}
-        />
-        {minimo > 1 ? (
-          <Text style={[styles.nota, { color: colors.textSecondary }]}>Mínimo {minimo}: ya atienden clientes hoy.</Text>
-        ) : null}
+        {elegido ? null : (
+          <>
+            <Desplegable
+              etiqueta="Número de profesionales"
+              ayuda="Cuántas personas atienden clientes en tu negocio"
+              placeholder="Elige cuántos"
+              opciones={opciones}
+              valor={cantidad}
+              onCambiar={setProfesionales}
+            />
+            {minimo > 1 ? (
+              <Text style={[styles.nota, { color: colors.textSecondary }]}>Mínimo {minimo}: ya atienden clientes hoy.</Text>
+            ) : null}
 
-        <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>Periodo</Text>
-        <Chips opciones={PERIODOS} valor={periodo} onCambiar={setPeriodo} />
+            <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>Periodo</Text>
+            <Chips opciones={PERIODOS} valor={periodo} onCambiar={setPeriodo} />
+          </>
+        )}
 
         <View
           accessible

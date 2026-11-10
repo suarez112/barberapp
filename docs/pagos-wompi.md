@@ -4,7 +4,7 @@ En Android e iOS no hay precios ni pagos: las pantallas de esta página redirige
 
 ## Flujo
 
-1. `/pagar` (`features/pagos/PagarScreen.tsx` → `PagoPasarela.tsx`): el administrador elige profesionales (1 a 10; el mínimo son los que ya atienden, `profesionalesCobrados`) y periodo. El precio sale de `GET /api/v1/planes`.
+1. `/pagar` (`features/pagos/PagarScreen.tsx` → `PagoPasarela.tsx`). Desde Planes ("PAGAR MI PLAN" cierra la ventana de planes y navega) llega `/pagar?profesionales=<n>&periodo=<mensual|anual>`: si ambos son válidos, la pantalla solo confirma (resumen + PAGAR). Entrando directo (correo, "INTENTAR OTRA VEZ", aviso antiguo) o con parámetros inválidos, el administrador elige profesionales (1 a 10) y periodo con los valores por defecto. En los dos casos el mínimo son los que ya atienden (`profesionalesCobrados`) y el máximo `maximoProfesionales`. El precio sale de `GET /api/v1/planes`.
 2. `POST /api/v1/pagos/ordenes` con `{ profesionales, periodo }`. La respuesta 201 trae `urlPago` y la app abre esa dirección (checkout de Wompi). Errores que se muestran con el mensaje del servidor: 409 (menos profesionales de los que atienden, o negocio cancelado), 403 (negocio suspendido) y 503 (pagos sin configurar).
 3. Wompi vuelve a `<URL_PAGOS>/<referencia>?id=<transacción>`. En la app esa ruta es `src/app/pagar/[referencia].tsx` → `ConfirmarPagoScreen.tsx`, así que `URL_PAGOS` del backend es **`https://agendality.com/pagar`**.
 4. La pantalla llama `GET /api/v1/pagos/ordenes/:referencia/estado?id=...` (público, sin sesión). Responde `aprobado`, `pendiente` o `rechazado`. Si está pendiente reintenta sola con esperas crecientes (unos 50 s en total) y luego deja un botón para consultar a mano.
