@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
+import Tocable from "@/components/ui/Tocable";
 import { registrarCausa } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { useCuenta } from "../cuenta/CuentaProvider";
 import { useSesion } from "../sesion/SesionProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
-import { aceptarVersionVigente, obtenerEstadoLegal } from "./api";
+import { aceptarVersionVigente, EstadoLegal, obtenerEstadoLegal, TipoDocumento } from "./api";
 import CasillaAutorizacion from "./CasillaAutorizacion";
+import DocumentoLegalModal from "./DocumentoLegalModal";
+
+const DOCUMENTOS: { tipo: TipoDocumento; titulo: string }[] = [
+  { tipo: "politica-datos", titulo: "Política de Tratamiento de Datos" },
+  { tipo: "terminos", titulo: "Términos y Condiciones" },
+  { tipo: "aviso-privacidad", titulo: "Aviso de privacidad" },
+];
 
 // Si publicamos una versión nueva de la política o los términos, quien tiene sesión
 // (administrador, equipo o cliente) debe aceptarla antes de seguir: el modal no se
@@ -19,7 +27,11 @@ export default function ModalNuevaVersion() {
   const { token: tokenCuenta, usuario, actualizarUsuario } = useCuenta();
   const avisarError = useAvisarError();
   const token = tokenPersonal || tokenCuenta;
+  // Token de la sesión con documentos pendientes y las versiones que debe aceptar
   const [pendiente, setPendiente] = useState<string | null>(null);
+  const [estado, setEstado] = useState<EstadoLegal | null>(null);
+  // Documento abierto para leerlo; este modal sigue debajo con su casilla y su estado
+  const [abierto, setAbierto] = useState<TipoDocumento | null>(null);
   const [acepta, setAcepta] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const mostrar = pendiente !== null && pendiente === token;
@@ -28,9 +40,10 @@ export default function ModalNuevaVersion() {
     if (!token) return;
     const controlador = new AbortController();
     obtenerEstadoLegal(token, controlador.signal)
-      .then((estado) => {
-        if (!estado.vigente) {
+      .then((nuevo) => {
+        if (!nuevo.vigente) {
           setAcepta(false);
+          setEstado(nuevo);
           setPendiente(token);
         }
       })
@@ -66,6 +79,24 @@ export default function ModalNuevaVersion() {
               Publicamos una nueva versión de la Política de Tratamiento de Datos y de los Términos
               y Condiciones. Léelos y acéptalos para seguir usando la app.
             </Text>
+            {estado ? (
+              <Text style={[styles.version, { color: colors.textSecondary }]}>
+                Versión {estado.versionPolitica} de la Política de Datos · Versión{" "}
+                {estado.versionTerminos} de los Términos
+              </Text>
+            ) : null}
+            {DOCUMENTOS.map(({ tipo, titulo }) => (
+              <Tocable
+                key={tipo}
+                accessibilityRole="link"
+                accessibilityLabel={`Leer: ${titulo}`}
+                accessibilityHint="Abre el documento sin cerrar esta ventana"
+                style={styles.enlace}
+                onPress={() => setAbierto(tipo)}
+              >
+                <Text style={[styles.textoEnlace, { color: colors.primaryText }]}>{titulo}</Text>
+              </Tocable>
+            ))}
             <CasillaAutorizacion aceptada={acepta} onCambiar={setAcepta} />
             <Boton
               titulo={enviando ? "GUARDANDO…" : "ACEPTAR Y CONTINUAR"}
@@ -77,6 +108,7 @@ export default function ModalNuevaVersion() {
           </ScrollView>
         </View>
       </View>
+      <DocumentoLegalModal tipo={abierto} onCerrar={() => setAbierto(null)} />
     </Modal>
   );
 }
@@ -86,5 +118,8 @@ const styles = StyleSheet.create({
   caja: { borderRadius: 16, borderWidth: 1, padding: 20, maxHeight: "90%" },
   titulo: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
   texto: { fontSize: 14, lineHeight: 20 },
+  version: { fontSize: 12, lineHeight: 17, marginTop: 8 },
+  enlace: { minHeight: 44, minWidth: 44, justifyContent: "center" },
+  textoEnlace: { fontSize: 14, fontWeight: "bold", textDecorationLine: "underline" },
   boton: { marginTop: 12 },
 });
