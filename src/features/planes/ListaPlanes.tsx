@@ -12,7 +12,6 @@ import { PlanSuscripcion, Suscripcion } from "../cuenta/api";
 import { useConfiguracionPagos } from "../pagos/useConfiguracionPagos";
 import { nivelPara, precioPara } from "./cobro";
 import { useFunciones } from "./funcionesContexto";
-import { useIrAMiPlan } from "./miPlanContexto";
 import { usePlanes } from "./usePlanes";
 
 const PERIODOS: { valor: PlanSuscripcion; texto: string; nota?: string }[] = [
@@ -31,15 +30,14 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
   const { colors } = useAppTheme();
   const { planes, error, reintentar } = usePlanes();
   const { datos: funciones } = useFunciones();
-  const irAMiPlan = useIrAMiPlan();
   const [periodo, setPeriodo] = useState<PlanSuscripcion>(suscripcion?.plan ?? "mensual");
   // Empieza en los profesionales que ya tiene el negocio (mínimo 1)
   const [cantidad, setCantidad] = useState(Math.max(1, suscripcion?.profesionalesCobrados ?? 1));
 
   const enPrueba = suscripcion?.estado === "prueba";
-  // En la web con pagos manuales, elegir el plan lleva a /pagar (Nequi, Bre-B o QR)
-  const { config } = useConfiguracionPagos();
-  const pagoWeb = Platform.OS === "web" && config?.proveedor === "manual";
+  // En la web, elegir el plan lleva a /pagar (pago con Wompi), salvo que el backend diga que los pagos no están disponibles
+  const { config } = useConfiguracionPagos(Platform.OS === "web");
+  const pagoWeb = Platform.OS === "web" && config?.disponible !== false;
 
   if (error) {
     return (
@@ -65,7 +63,7 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
 
   const elegir = () =>
     pagoWeb
-      ? (irAMiPlan ?? (() => router.navigate("/pagar")))()
+      ? router.navigate("/pagar")
       : enPrueba
       ? avisar(
           "Tu prueba gratis ya está activa",
@@ -209,7 +207,7 @@ export default function ListaPlanes({ suscripcion }: { suscripcion: Suscripcion 
 
       <Text style={[styles.muestra, { color: colors.textSecondary }]}>
         {pagoWeb
-          ? "Precios en pesos colombianos. Paga por Nequi, llave Bre-B o código QR."
+          ? "Precios en pesos colombianos. El pago se hace en la pasarela segura de Wompi."
           : "Precios en pesos colombianos. Pagos disponibles próximamente."}
       </Text>
     </View>

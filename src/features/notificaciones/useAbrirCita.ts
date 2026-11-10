@@ -35,7 +35,7 @@ export function useAbrirPlanes() {
   };
 }
 
-// Abre el historial de pagos desde un aviso de pago aprobado o rechazado.
+// Abre la pantalla de pago (/pagar) desde un aviso antiguo de pago aprobado o rechazado.
 // Solo administradores y solo en la web: las apps del celular no tienen pantalla de pagos.
 export function useAbrirPagos() {
   const router = useRouter();

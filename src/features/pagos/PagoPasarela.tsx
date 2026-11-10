@@ -5,8 +5,8 @@ import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import Chips from "@/components/ui/Chips";
 import Desplegable from "@/components/ui/Desplegable";
-import { describirError, registrarCausa } from "@/services/api/errores";
-import { esCancelada } from "@/services/api/http";
+import { Aviso, describirError, registrarCausa } from "@/services/api/errores";
+import { ApiError, esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearPesos } from "@/utils/formato";
 import { PlanSuscripcion, obtenerSuscripcion, Suscripcion } from "../cuenta/api";
@@ -23,8 +23,16 @@ const PERIODOS = [
   { id: "anual", label: "Anual" },
 ] as const;
 
-// Pago con pasarela (proveedor distinto de "manual"): la administradora elige cuántos profesionales y el periodo,
-// ve el resumen con el precio del backend y sigue a la pasarela. Al volver, ConfirmarPago
+// Aviso de un error al crear la orden. 409 (menos profesionales de los que atienden, o negocio cancelado)
+// y 403 (negocio suspendido) traen su motivo en el mensaje del servidor. El 503 (pagos sin configurar)
+// también, pero describirError lo cubre con un texto genérico de 5xx: aquí se muestra el del servidor.
+const avisoDeOrden = (e: unknown): Aviso => {
+  const aviso = describirError(e, { titulo: "No se pudo iniciar el pago", porDefecto: "No se pudo iniciar el pago." });
+  return e instanceof ApiError && e.status === 503 && e.message ? { titulo: aviso.titulo, mensaje: e.message } : aviso;
+};
+
+// Pago con Wompi: la administradora elige cuántos profesionales y el periodo,
+// ve el resumen con el precio del backend y sigue al checkout. Al volver, ConfirmarPago
 // (/pagar/<referencia>) consulta el resultado.
 export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   const { colors } = useAppTheme();
@@ -35,7 +43,7 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [profesionales, setProfesionales] = useState<number | null>(null);
   const [periodo, setPeriodo] = useState<PlanSuscripcion>("mensual");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Aviso | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   const token = personal?.esAdmin ? personal.token : null;
@@ -73,7 +81,7 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
       window.location.assign(creada.urlPago);
     } catch (e) {
       registrarCausa("Crear orden de pago", e);
-      setError(describirError(e, { titulo: "", porDefecto: "No se pudo iniciar el pago." }).mensaje);
+      setError(avisoDeOrden(e));
       setEnviando(false);
     }
   };
@@ -136,7 +144,12 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
           </Text>
         </View>
 
-        {error ? <Text style={[styles.error, { color: colors.peligroTexto }]}>{error}</Text> : null}
+        {error ? (
+          <View accessibilityLiveRegion="polite" style={styles.error}>
+            <Text style={[styles.errorTitulo, { color: colors.peligroTexto }]}>{error.titulo}</Text>
+            <Text style={[styles.errorTexto, { color: colors.peligroTexto }]}>{error.mensaje}</Text>
+          </View>
+        ) : null}
         <Boton
           titulo={enviando ? "REDIRIGIENDO…" : "PAGAR"}
           ayuda="Te lleva a la pasarela de pago para completar la compra"
@@ -171,5 +184,7 @@ const styles = StyleSheet.create({
   resumenTitulo: { fontSize: 11, fontWeight: "bold", letterSpacing: 1, marginBottom: 8 },
   resumenLinea: { fontSize: 15, marginBottom: 2 },
   total: { fontSize: 32, fontWeight: "bold", marginTop: 8 },
-  error: { fontSize: 14, marginBottom: 12 },
+  error: { marginBottom: 12 },
+  errorTitulo: { fontSize: 14, fontWeight: "bold" },
+  errorTexto: { fontSize: 14 },
 });

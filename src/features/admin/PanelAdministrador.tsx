@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import SeccionPlegable from "@/components/ui/SeccionPlegable";
-import TarjetaMenu from "@/components/ui/TarjetaMenu";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useRefrescoDiario } from "@/hooks/useRefrescoDiario";
 import { useAppTheme } from "@/theme/ThemeProvider";
@@ -11,15 +10,11 @@ import { GuiaContext, useGuia } from "../guia/guiaContexto";
 import PrimerosPasos from "../guia/PrimerosPasos";
 import { useGuiaInicial } from "../guia/useGuiaInicial";
 import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
-import PagoManual from "../pagos/manual/PagoManual";
-import { useConfiguracionPagos } from "../pagos/useConfiguracionPagos";
 import PanelNegocio from "../panel/PanelNegocio";
-import { PestanaPanel } from "../panel/components/PanelTabBar";
 import { useConfirmarCerrarSesion } from "../panel/useSalirDelPanel";
 import { Personal } from "../sesion/usePersonal";
 import { FuncionesProvider } from "../planes/FuncionesProvider";
 import { useFunciones } from "../planes/funcionesContexto";
-import { MiPlanContexto } from "../planes/miPlanContexto";
 import AvisoSuscripcion from "./components/AvisoSuscripcion";
 import DatosNegocio from "./components/DatosNegocio";
 import EnlacePublicoNegocio from "./components/EnlacePublicoNegocio";
@@ -60,14 +55,7 @@ function MostrarGuia() {
 // Panel de cualquier administrador: la cuenta de la empresa (/admin) o un
 // integrante con rol Administrador (/panel). Los dos ven las mismas pestañas,
 // incluida "Mi negocio". Con la suscripción vencida solo Planes y Mi negocio.
-export default function PanelAdministrador({
-  personal,
-  pestanaInicial,
-}: {
-  personal: Personal;
-  // Pestaña que se abre primero (ej. /pagar abre "Plan y pagos")
-  pestanaInicial?: PestanaPanel;
-}) {
+export default function PanelAdministrador({ personal }: { personal: Personal }) {
   const { colors } = useAppTheme();
   const cerrarSesion = useConfirmarCerrarSesion();
   const {
@@ -84,13 +72,6 @@ export default function PanelAdministrador({
   } = useMiEmpresa(personal.token);
 
   const guia = useGuiaInicial(personal.token);
-
-  // Web con pagos manuales: el plan se paga en "Plan y pagos", dentro de Mi negocio
-  const { config } = useConfiguracionPagos(Platform.OS === "web");
-  const pagoManual = Platform.OS === "web" && config?.proveedor === "manual";
-  const [pedirMiPlan, setPedirMiPlan] = useState(0);
-  const irAMiPlan = useCallback(() => setPedirMiPlan((n) => n + 1), []);
-  const miPlan = pagoManual && suscripcion ? <PagoManual token={personal.token} suscripcion={suscripcion} alAprobarse={actualizarSuscripcion} /> : undefined;
 
   // Los días restantes cambian a medianoche; también puede haber cambiado
   // el plan mientras la app estaba cerrada
@@ -161,18 +142,6 @@ export default function PanelAdministrador({
             </Text>
           </View>
 
-          {/* Con el plan vencido, "Mi plan" ya es su propia pestaña */}
-          {miPlan && !vencida ? (
-            <View style={styles.planYPagos}>
-              <TarjetaMenu
-                icono="card-outline"
-                titulo="Plan y pagos"
-                descripcion="Tu plan, cómo pagarlo y el historial de pagos"
-                onPress={irAMiPlan}
-              />
-            </View>
-          ) : null}
-
           <MostrarGuia />
           {/* "Yo también atiendo clientes" ahora está al inicio de Equipo */}
           <DatosNegocio perfil={perfil} onGuardar={guardarDatos} />
@@ -202,7 +171,6 @@ export default function PanelAdministrador({
       <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
         <PanelVencido
           suscripcion={suscripcion}
-          miPlan={miPlan}
           miNegocio={miNegocio}
           nombreNegocio={perfil?.nombre}
           usuario={conNombre.nombre}
@@ -213,27 +181,22 @@ export default function PanelAdministrador({
 
   return (
     <GuiaContext.Provider value={guia}>
-      <MiPlanContexto.Provider value={miPlan ? irAMiPlan : null}>
       <FuncionesProvider token={personal.token} suscripcion={suscripcion}>
         <AbrirPlanesPendiente />
         <PanelNegocio
           personal={conNombre}
           encabezado={(pestana, irA) => (
             <>
-              {suscripcion && pestana !== "MI_PLAN" ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
+              {suscripcion ? <AvisoSuscripcion suscripcion={suscripcion} /> : null}
               <PrimerosPasos pestana={pestana} nombreNegocio={perfil?.nombre ?? ""} onIr={irA} />
             </>
           )}
           miNegocio={miNegocio}
-          miPlan={miPlan}
-          pestanaInicial={pestanaInicial}
-          pedirMiPlan={pedirMiPlan}
           onSuscripcionVencida={actualizarSuscripcion}
           suscripcion={suscripcion}
           onEquipoCambiado={actualizarSuscripcion}
         />
       </FuncionesProvider>
-      </MiPlanContexto.Provider>
     </GuiaContext.Provider>
   );
 }
@@ -248,7 +211,6 @@ const styles = StyleSheet.create({
   },
   cargando: { marginTop: 30 },
   mostrarGuia: { marginTop: 12 },
-  planYPagos: { marginTop: 12 },
   codigo: {
     borderWidth: 1,
     borderRadius: 10,

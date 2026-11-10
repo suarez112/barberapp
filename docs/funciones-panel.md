@@ -6,7 +6,7 @@ Registrar y editar un integrante se hace en `components/ui/VentanaFormulario` (v
 
 ## Planes (`features/planes/`)
 
-`GET /api/v1/planes` (Básico 3, Equipo 5, Pro 10 personas; precios del backend). `ListaPlanes` tiene selector Mensual/Anual, marca el plan actual y desactiva planes menores al equipo activo; elegir uno solo dice "Pagos disponibles próximamente". `PlanesModal` lo abre a pantalla completa desde Mi suscripción ("ACTIVAR PLAN AHORA" en la prueba, "CAMBIAR DE PLAN" en otro caso) y desde Equipo. "Mi suscripción" muestra "Plan: Básico · hasta 3 personas" y "Cupo usado: 2 de 3 personas".
+`GET /api/v1/planes` (Básico 3, Equipo 5, Pro 10 personas; precios del backend). `ListaPlanes` tiene selector Mensual/Anual, marca el plan actual y desactiva planes menores al equipo activo; elegir uno en la web lleva a `/pagar` (pago con Wompi); en Android e iOS no hay precios ni pagos. `PlanesModal` lo abre a pantalla completa desde Mi suscripción ("ACTIVAR PLAN AHORA" en la prueba, "CAMBIAR DE PLAN" en otro caso) y desde Equipo. "Mi suscripción" muestra "Plan: Básico · hasta 3 personas" y "Cupo usado: 2 de 3 personas".
 
 ## Cartera (`features/cartera/CarteraPanel.tsx`)
 

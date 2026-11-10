@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { esCancelada } from "@/services/api/http";
 import { ConfiguracionPagos, obtenerConfiguracionPagos } from "./api";
 
-// Qué proveedor de pagos usa el backend ("manual" o una pasarela) y si está en modo de
-// prueba. Se pregunta al abrir la página, sin sesión. `null` = todavía no se sabe o no se
-// pudo saber (entonces no se muestra el aviso de prueba ni el flujo manual).
+// Si los pagos están disponibles y si la pasarela está en modo de prueba. Se pregunta al
+// abrir la página, sin sesión. `null` = todavía no se sabe o no se pudo saber (entonces no
+// se muestra el aviso de prueba).
 export function useConfiguracionPagos(activo = true): { config: ConfiguracionPagos | null; cargando: boolean } {
   const [estado, setEstado] = useState<{ config: ConfiguracionPagos | null; listo: boolean }>({
     config: null,

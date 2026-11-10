@@ -12,7 +12,6 @@ import { formatearPesos } from "@/utils/formato";
 import { EstadoSuscripcion, Suscripcion } from "../../cuenta/api";
 import { useFunciones } from "../../planes/funcionesContexto";
 import { AVISO_DIAS_SE_SUMAN } from "../../pagos/estados";
-import { useIrAMiPlan } from "../../planes/miPlanContexto";
 import PlanesModal from "../../planes/PlanesModal";
 
 const ESTADOS: Record<EstadoSuscripcion, { texto: string; color: string }> = {
@@ -32,7 +31,6 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
   const { estado, plan, fechaPago, fechaFin, diasRestantes, diasPruebaSumados } = suscripcion;
   const { planEquipo, profesionalesCobrados, precioPeriodo, cargosPendientes } = suscripcion;
   const { datos: funciones } = useFunciones();
-  const irAMiPlan = useIrAMiPlan();
   // En la prueba el backend no da precio del periodo: se usa el de hoy según los profesionales
   const precioHoy =
     precioPeriodo ?? (plan === "anual" ? funciones?.precio?.anual : funciones?.precio?.mensual) ?? null;
@@ -129,7 +127,7 @@ export default function MiSuscripcion({ suscripcion }: { suscripcion: Suscripcio
                   ? "Muestra el precio según tus profesionales. Los días de prueba que te quedan se suman al plan"
                   : "Muestra el precio según la cantidad de profesionales"
               }
-              onPress={() => (irAMiPlan ? irAMiPlan() : setVerPlanes(true))}
+              onPress={() => setVerPlanes(true)}
               style={styles.boton}
             />
           ) : null}
