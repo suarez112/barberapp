@@ -8,9 +8,12 @@ export const fechaISO = (d: Date) =>
 
 export const hoyISO = () => fechaISO(new Date());
 
-// Hoy en Colombia (UTC-5, sin horario de verano), como lo calcula el backend
-export const hoyColombiaISO = () =>
-  new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// Fecha de Colombia (UTC-5, sin horario de verano) de un instante: "2026-10-20T03:00:00Z" -> "2026-10-19"
+export const fechaColombiaISO = (ms: number) =>
+  new Date(ms - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+// Hoy en Colombia, como lo calcula el backend
+export const hoyColombiaISO = () => fechaColombiaISO(Date.now());
 
 // "2026-10-19" + 14 -> "2026-11-02"
 export const sumarDias = (fecha: string, dias: number) => {

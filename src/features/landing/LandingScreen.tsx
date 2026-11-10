@@ -1,11 +1,10 @@
 import { Image } from "expo-image";
 import Head from "expo-router/head";
+import { Href } from "expo-router";
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, type ScrollViewInstance, View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 import { CONTACTO } from "@/config/app";
-import DocumentoLegalModal from "@/features/legal/DocumentoLegalModal";
-import { TipoDocumento } from "@/features/legal/api";
 import { COLORES_LANDING as C } from "@/theme/paleta";
 import {
   BotonLanding,
@@ -178,7 +177,6 @@ export default function LandingScreen() {
   const sinNombre = ancho < 420;
   const reducirMovimiento = useReducedMotion();
   const scroll = useRef<ScrollViewInstance>(null);
-  const [documento, setDocumento] = useState<TipoDocumento | null>(null);
 
   // Solo web: cada sección lleva su id en el HTML. La cabecera está fuera del scroll, así que no hace falta compensarla.
   const irA = (id: IdSeccion) =>
@@ -546,8 +544,10 @@ export default function LandingScreen() {
                 ))}
               </ColumnaPie>
               <ColumnaPie titulo="Legal">
-                <EnlacePie etiqueta="Política de tratamiento de datos" ayuda="Abre la política de tratamiento de datos" onPress={() => setDocumento("politica-datos")} />
-                <EnlacePie etiqueta="Términos y condiciones" ayuda="Abre los términos y condiciones" onPress={() => setDocumento("terminos")} />
+                <EnlacePie etiqueta="Centro legal" ayuda="Abre el índice de documentos legales" href="/legales" />
+                <EnlacePie etiqueta="Términos y condiciones" ayuda="Abre los términos y condiciones" href="/legales/terminos" />
+                <EnlacePie etiqueta="Política de tratamiento de datos" ayuda="Abre la política de tratamiento de datos" href="/legales/politica-de-datos" />
+                <EnlacePie etiqueta="Aviso de privacidad" ayuda="Abre el aviso de privacidad" href="/legales/aviso-privacidad" />
                 <EnlacePie etiqueta="PQRS" ayuda="Abre el formulario de peticiones, quejas, reclamos y sugerencias" href="/pqrs" />
               </ColumnaPie>
               <ColumnaPie titulo="Contacto">
@@ -563,7 +563,6 @@ export default function LandingScreen() {
         </View>
       </ScrollView>
 
-      <DocumentoLegalModal tipo={documento} onCerrar={() => setDocumento(null)} />
     </View>
   );
 }
@@ -642,7 +641,7 @@ function EnlacePie({
   etiqueta: string;
   ayuda: string;
   onPress?: () => void;
-  href?: "/pqrs" | "/login";
+  href?: Href;
   externo?: string;
 }) {
   const alTocar = externo

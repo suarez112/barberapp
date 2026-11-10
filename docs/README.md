@@ -6,6 +6,7 @@ Léelo solo cuando la tarea lo necesite.
 - [api-y-errores.md](api-y-errores.md) — URL del backend, cliente HTTP, mensajes de error y subida de fotos. Leer al conectar un endpoint o tocar errores.
 - [interfaz.md](interfaz.md) — colores, componentes de formulario, diálogos, teléfonos, calendario y accesibilidad. Leer al construir o cambiar UI.
 - [sesion-y-cuentas.md](sesion-y-cuentas.md) — sesiones, suscripción, consentimiento legal y notificaciones push. Leer al tocar login, cuentas o permisos.
+- [centro-legal.md](centro-legal.md) — Centro legal, "Vigente desde" y reaceptación de documentos. Leer al tocar `features/legal` o el modal de nueva versión.
 - [funciones-panel.md](funciones-panel.md) — Equipo, Planes, Cartera, Agenda, Clientes, Bloqueos, mapa, cancelaciones. Leer al cambiar una función del panel.
 - [superadmin.md](superadmin.md) — panel web del dueño de la plataforma. Leer al tocar `/superadmin`.
 - [pagos-wompi.md](pagos-wompi.md) — pago del plan con Wompi (solo web), ruta de vuelta y cómo probarlo. Leer al tocar `/pagar` o los pagos.
