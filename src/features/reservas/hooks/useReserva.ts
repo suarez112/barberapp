@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { consultarDisponibilidad, crearCita, HoraDisponible } from "@/features/agenda/api";
 import { useAgenda } from "@/features/agenda/AgendaProvider";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
-import { ACEPTACION } from "@/features/legal/api";
+import { ACEPTACION, obtenerEstadoLegal } from "@/features/legal/api";
 import { MENSAJE_AUTORIZACION } from "@/features/legal/CasillaAutorizacion";
 import { useTelefono } from "@/hooks/useTelefono";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { describirError, esEstado, registrarCausa } from "@/services/api/errores";
-import { ApiError, esCancelada, mensajeDeError } from "@/services/api/http";
+import { esCancelada, mensajeDeError } from "@/services/api/http";
 import { Barbero, Dia, Servicio } from "@/types";
 import { avisar } from "@/utils/dialogos";
 import { duracionEnMinutos } from "@/utils/disponibilidad";
@@ -19,15 +19,6 @@ import {
 } from "@/utils/fechas";
 import { indicativoDe, PAIS_POR_DEFECTO } from "@/utils/telefonos";
 import { DatosConfirmacion } from "../components/ConfirmacionCita";
-
-// 400 de POST /citas cuando falta aceptar los documentos: un cliente con cuenta
-// después de publicarse una versión nueva (o con la sesión vencida, que el
-// backend toma como invitado)
-const pideAceptarDocumentos = (error: unknown) =>
-  error instanceof ApiError &&
-  error.status === 400 &&
-  (error.message.startsWith("Publicamos una nueva versión") ||
-    error.message.startsWith("Debes aceptar la Política"));
 
 const HORA_OCUPADA = "Esa hora acaba de ocuparse, elige otra";
 
@@ -50,6 +41,20 @@ export function useReserva() {
       : null;
   // Un cliente que ya aceptó no ve la casilla, salvo que haya una versión nueva
   const pedirAutorizacion = !cliente || cliente.debeAceptarDocumentos === true;
+
+  // POST /citas responde un 400 genérico ({ error: texto }, sin código) cuando faltan
+  // documentos por aceptar, igual que para cualquier otro dato inválido. Por eso no se
+  // lee el texto: si la reserva se envió sin aceptación y falló con 400, se le pregunta
+  // al backend (/legal/estado) si la persona tiene una versión nueva pendiente.
+  const faltanDocumentos = async (error: unknown, sinAceptacion: boolean) => {
+    if (!sinAceptacion || !token || !esEstado(error, 400)) return false;
+    try {
+      return !(await obtenerEstadoLegal(token)).vigente;
+    } catch (e) {
+      registrarCausa("Estado de los documentos:", e);
+      return false;
+    }
+  };
 
   const [barbero, setBarbero] = useState<Barbero | null>(null);
   const [servicio, setServicio] = useState<Servicio | null>(null);
@@ -219,7 +224,7 @@ export function useReserva() {
     } catch (error) {
       registrarCausa("Error al agendar:", error);
       // Se publicó una versión nueva de los documentos: aparece la casilla
-      if (cliente && pideAceptarDocumentos(error)) {
+      if (cliente && (await faltanDocumentos(error, !pedirAutorizacion))) {
         actualizarUsuario({ debeAceptarDocumentos: true });
         setAceptaDatos(false);
         avisar(
