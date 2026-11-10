@@ -8,5 +8,6 @@ Léelo solo cuando la tarea lo necesite.
 - [sesion-y-cuentas.md](sesion-y-cuentas.md) — sesiones, suscripción, consentimiento legal y notificaciones push. Leer al tocar login, cuentas o permisos.
 - [funciones-panel.md](funciones-panel.md) — Equipo, Planes, Cartera, Agenda, Clientes, Bloqueos, mapa, cancelaciones. Leer al cambiar una función del panel.
 - [superadmin.md](superadmin.md) — panel web del dueño de la plataforma. Leer al tocar `/superadmin`.
+- [pagos-wompi.md](pagos-wompi.md) — pago del plan con Wompi (solo web), ruta de vuelta y cómo probarlo. Leer al tocar `/pagar` o los pagos.
 - [despliegue-render.md](despliegue-render.md) — publicar la web en Render y Cloudflare. Leer al desplegar.
 - `referencias/` y `diseno/` — imagen de referencia de la intro y página principal de diseño.

@@ -40,11 +40,6 @@ type Props = {
   encabezado?: ReactNode | ((pestana: PestanaPanel, irA: (destino: DestinoGuia) => void) => ReactNode);
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
-  // Pantalla "Plan y pagos" (web con pagos manuales). No es una pestaña: se abre desde
-  // Mi negocio, el aviso de la prueba o los candados; `pedirMiPlan` cambia de valor para abrirla
-  miPlan?: ReactNode;
-  pestanaInicial?: PestanaPanel;
-  pedirMiPlan?: number;
   // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
   onSuscripcionVencida?: () => void;
   // Administradores: plan y cupo del equipo; onEquipoCambiado lo vuelve a consultar
@@ -65,9 +60,6 @@ export default function PanelNegocio({
   personal,
   encabezado,
   miNegocio,
-  miPlan,
-  pestanaInicial = "AGENDAMIENTOS",
-  pedirMiPlan = 0,
   onSuscripcionVencida,
   suscripcion = null,
   onEquipoCambiado,
@@ -78,13 +70,7 @@ export default function PanelNegocio({
   const cerrarSesion = useCerrarSesion();
   const salir = useSalirDelPanel();
   const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
-  const [pestana, setPestana] = useState<PestanaPanel>(pestanaInicial);
-  // Un aviso de planes (candado, "Cambiar de plan") abre "Plan y pagos"
-  const [miPlanVisto, setMiPlanVisto] = useState(pedirMiPlan);
-  if (pedirMiPlan !== miPlanVisto) {
-    setMiPlanVisto(pedirMiPlan);
-    setPestana("MI_PLAN");
-  }
+  const [pestana, setPestana] = useState<PestanaPanel>("AGENDAMIENTOS");
   // Sección de Equipo que se abre (cambia la llave para abrirla aunque ya estuviera en esa pestaña)
   const [seccionEquipo, setSeccionEquipo] = useState<{ seccion: "EQUIPO" | "SERVICIOS"; n: number }>({
     seccion: "EQUIPO",
@@ -172,14 +158,7 @@ export default function PanelNegocio({
         ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
       ]
     : [PESTANA_AGENDA, PESTANA_CARTERA];
-  // "Plan y pagos" vive dentro de Mi negocio: en el menú se marca esa pestaña
-  const enMiPlan = esAdmin && pestana === "MI_PLAN" && !!miPlan && !!miNegocio;
-  const activa: PestanaPanel = enMiPlan
-    ? "MI_PLAN"
-    : pestanas.some((p) => p.id === pestana)
-      ? pestana
-      : "AGENDAMIENTOS";
-  const activaMenu: PestanaPanel = enMiPlan ? "MI_NEGOCIO" : activa;
+  const activa: PestanaPanel = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
 
   const irA = (destino: DestinoGuia) => {
     if (destino === "SERVICIOS") {
@@ -257,19 +236,6 @@ export default function PanelNegocio({
         );
       case "MI_NEGOCIO":
         return miNegocio;
-      case "MI_PLAN":
-        return (
-          <View>
-            <Boton
-              titulo="VOLVER A MI NEGOCIO"
-              ayuda="Cierra Plan y pagos y vuelve a Mi negocio"
-              variante="secundario"
-              onPress={() => setPestana("MI_NEGOCIO")}
-              style={styles.volver}
-            />
-            {miPlan}
-          </View>
-        );
     }
   };
 
@@ -361,7 +327,7 @@ export default function PanelNegocio({
       <PanelAdaptable
         modo={modo}
         secciones={pestanas.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
-        activa={activaMenu}
+        activa={activa}
         onCambiar={setPestana}
         titulo={empresa?.nombre ?? APP_NOMBRE}
         usuario={yo?.nombre ?? personal.nombre}
@@ -378,7 +344,7 @@ export default function PanelNegocio({
   return (
     <Pantalla
       cabecera={{ onSalir: salir }}
-      pie={<PanelTabBar pestanas={pestanas} activa={activaMenu} onCambiar={setPestana} />}
+      pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
       fijo={fijo}
       alRefrescar={empresa ? deslizarParaActualizar : undefined}
       flotante={flotante}
@@ -393,5 +359,4 @@ const styles = StyleSheet.create({
   fijo: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   diaFijo: { fontSize: 12, fontWeight: "600", marginTop: 6 },
   botonAviso: { marginTop: 24, alignSelf: "stretch" },
-  volver: { marginTop: 15 },
 });

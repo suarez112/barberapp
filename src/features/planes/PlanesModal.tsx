@@ -32,7 +32,7 @@ export default function PlanesModal({ visible, onCerrar, suscripcion, nota }: Pr
         </View>
         <ScrollView contentContainerStyle={styles.contenido}>
           {nota ? <Text style={[styles.nota, { color: colors.textSecondary }]}>{nota}</Text> : null}
-          <ListaPlanes suscripcion={suscripcion} />
+          <ListaPlanes suscripcion={suscripcion} onAntesDePagar={onCerrar} />
         </ScrollView>
       </SafeAreaView>
     </Modal>

@@ -8,22 +8,18 @@ import { avisar, confirmar } from "@/utils/dialogos";
 import ActividadSuperadmin from "./ActividadSuperadmin";
 import CategoriasSuperadmin from "./CategoriasSuperadmin";
 import AvisoInactividad from "./components/AvisoInactividad";
-import FormasPagoSuperadmin from "./FormasPagoSuperadmin";
 import InicioSuperadmin from "./InicioSuperadmin";
 import NegociosSuperadmin from "./NegociosSuperadmin";
-import PagosSuperadmin from "./PagosSuperadmin";
 import PqrsSuperadmin from "./PqrsSuperadmin";
 import { useSuperadmin } from "./SuperadminContext";
 import { useInactividad } from "./useInactividad";
 
-type Seccion = "inicio" | "negocios" | "pagos" | "formas-pago" | "pqrs" | "categorias" | "actividad";
+type Seccion = "inicio" | "negocios" | "pqrs" | "categorias" | "actividad";
 type Icono = ComponentProps<typeof Ionicons>["name"];
 
 const SECCIONES: { id: Seccion; texto: string; icono: Icono }[] = [
   { id: "inicio", texto: "Inicio", icono: "grid-outline" },
   { id: "negocios", texto: "Negocios", icono: "storefront-outline" },
-  { id: "pagos", texto: "Pagos", icono: "cash-outline" },
-  { id: "formas-pago", texto: "Formas de pago", icono: "wallet-outline" },
   { id: "pqrs", texto: "PQRS", icono: "chatbubble-ellipses-outline" },
   { id: "categorias", texto: "Categorías", icono: "pricetags-outline" },
   { id: "actividad", texto: "Actividad", icono: "list-outline" },
@@ -153,8 +149,6 @@ export default function PanelSuperadmin() {
           {/* Cada sección carga sus datos al abrirse */}
           {seccion === "inicio" && <InicioSuperadmin onVerNegocio={verNegocio} />}
           {seccion === "negocios" && <NegociosSuperadmin idInicial={negocioAbierto} />}
-          {seccion === "pagos" && <PagosSuperadmin />}
-          {seccion === "formas-pago" && <FormasPagoSuperadmin />}
           {seccion === "pqrs" && <PqrsSuperadmin />}
           {seccion === "categorias" && <CategoriasSuperadmin />}
           {seccion === "actividad" && <ActividadSuperadmin />}

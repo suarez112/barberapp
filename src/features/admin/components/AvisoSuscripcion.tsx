@@ -7,14 +7,12 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { fechaLarga } from "@/utils/fechas";
 import { Suscripcion } from "../../cuenta/api";
 import { useFunciones } from "../../planes/funcionesContexto";
-import { useIrAMiPlan } from "../../planes/miPlanContexto";
 
 // Días que le quedan a la prueba o al plan. El backend decide cuándo mostrarlo:
-// siempre en la prueba y en los últimos 7 días de un plan. En la web lleva a "Plan y pagos"
-// (o a la ventana de planes); en el celular solo informa: ahí no se habla de pagos.
+// siempre en la prueba y en los últimos 7 días de un plan. En la web lleva a la
+// ventana de planes (y de ahí a /pagar); en el celular solo informa: ahí no se habla de pagos.
 export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscripcion }) {
   const { colors } = useAppTheme();
-  const irAMiPlan = useIrAMiPlan();
   const { abrirPlanes } = useFunciones();
   const { estado, plan, diasRestantes: dias, fechaFin, mostrarRecordatorio } = suscripcion;
   if (!mostrarRecordatorio || estado === "vencida" || dias === null) return null;
@@ -59,8 +57,8 @@ export default function AvisoSuscripcion({ suscripcion }: { suscripcion: Suscrip
       </View>
       {PAGOS_EN_APP ? (
         <Boton
-          titulo={irAMiPlan ? "VER PLAN Y PAGOS" : "VER PLANES"}
-          ayuda={irAMiPlan ? "Abre Plan y pagos para activar o renovar tu plan" : "Abre los planes para activar o renovar"}
+          titulo="VER PLANES"
+          ayuda="Abre los planes para activar o renovar"
           variante={urgente ? "primario" : "secundario"}
           onPress={abrirPlanes}
           style={styles.boton}

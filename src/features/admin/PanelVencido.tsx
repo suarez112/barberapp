@@ -16,12 +16,12 @@ const PESTANAS: Pestana[] = [
   { id: "MI_NEGOCIO", icono: "business-outline", label: "Mi negocio" },
 ];
 
-type Props = { suscripcion: Suscripcion; miNegocio: ReactNode; miPlan?: ReactNode; nombreNegocio?: string; usuario?: string };
+type Props = { suscripcion: Suscripcion; miNegocio: ReactNode; nombreNegocio?: string; usuario?: string };
 
 // Panel del administrador con la prueba o el plan vencidos. En la web puede elegir
 // un plan y usar Mi negocio (lo demás responde 402 en el backend). En el celular solo
 // ve el aviso con el correo de soporte: no se habla de planes ni pagos.
-export default function PanelVencido({ suscripcion, miNegocio, miPlan, nombreNegocio, usuario }: Props) {
+export default function PanelVencido({ suscripcion, miNegocio, nombreNegocio, usuario }: Props) {
   const modo = useModoPanel();
   const salir = useSalirDelPanel();
   const [pestana, setPestana] = useState<PestanaPanel>("PLANES");
@@ -47,14 +47,13 @@ export default function PanelVencido({ suscripcion, miNegocio, miPlan, nombreNeg
     );
   }
 
-  const pestanas = miPlan ? PESTANAS.map((p) => (p.id === "PLANES" ? { ...p, label: "Mi plan" } : p)) : PESTANAS;
-  const contenido = pestana === "PLANES" ? (miPlan ?? <ElegirPlan suscripcion={suscripcion} />) : miNegocio;
+  const contenido = pestana === "PLANES" ? <ElegirPlan suscripcion={suscripcion} /> : miNegocio;
 
   if (modo !== "movil") {
     return (
       <PanelAdaptable
         modo={modo}
-        secciones={pestanas.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
+        secciones={PESTANAS.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
         activa={pestana}
         onCambiar={setPestana}
         titulo={nombreNegocio ?? APP_NOMBRE}
@@ -70,7 +69,7 @@ export default function PanelVencido({ suscripcion, miNegocio, miPlan, nombreNeg
   return (
     <Pantalla
       cabecera={{ onSalir: salir }}
-      pie={<PanelTabBar pestanas={pestanas} activa={pestana} onCambiar={setPestana} />}
+      pie={<PanelTabBar pestanas={PESTANAS} activa={pestana} onCambiar={setPestana} />}
     >
       {contenido}
     </Pantalla>

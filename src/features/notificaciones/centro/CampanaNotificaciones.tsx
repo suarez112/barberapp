@@ -143,7 +143,7 @@ function Campana({ token }: { token: string }) {
     }
     // El resumen de la prueba gratuita no trae cita: lleva a Planes
     if (a.tipo === "prueba_resumen") abrirPlanes();
-    // El pago revisado lleva al historial de pagos (web)
+    // Los avisos antiguos de pago llevan a la pantalla de pago (web)
     else if (TIPOS_AVISO_PAGO.includes(a.tipo)) abrirPagos();
     else if (a.citaId) abrirCita(a.citaId);
   };
@@ -230,7 +230,7 @@ function Campana({ token }: { token: string }) {
                       a.tipo === "prueba_resumen"
                         ? "Marca como leída y abre los planes"
                         : TIPOS_AVISO_PAGO.includes(a.tipo)
-                          ? "Marca como leída y abre el historial de pagos"
+                          ? "Marca como leída y abre la pantalla de pago"
                           : a.citaId
                           ? "Marca como leída y abre la cita"
                           : "Marca como leída"
