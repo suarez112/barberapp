@@ -122,38 +122,3 @@ export const formularioFoto = (foto: FotoElegida) => {
   else datos.append("foto", new File(foto.uri) as unknown as Blob);
   return datos;
 };
-
-const PESO_MAXIMO_QR = 1024 * 1024;
-
-// Imagen de un código QR para subir tal cual: sin recortar ni comprimir, porque un QR
-// borroso no se lee. Revisa formato y peso como el backend (JPG/PNG/WEBP, 1 MB).
-// Devuelve undefined si se cancela o no sirve (ya avisado).
-export const elegirImagenQr = async (): Promise<FotoElegida | undefined> => {
-  const r = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ["images"],
-    allowsEditing: false,
-    quality: 1,
-  });
-  if (r.canceled || !r.assets?.length) return undefined;
-  const imagen = r.assets[0];
-  const tipo = imagen.mimeType ?? imagen.file?.type ?? "";
-  if (!TIPOS_PERMITIDOS.includes(tipo)) {
-    avisar("Formato no permitido", "El código QR debe ser una imagen JPG, PNG o WEBP.", "error");
-    return undefined;
-  }
-  const peso = pesoDe(imagen);
-  if (peso && peso > PESO_MAXIMO_QR) {
-    const megas = (peso / 1024 / 1024).toFixed(1).replace(".", ",");
-    avisar("Archivo muy grande", `El código QR pesa ${megas} MB y el máximo es 1 MB.`, "error");
-    return undefined;
-  }
-  return { uri: imagen.uri, nombre: imagen.fileName ?? "qr", tipo, archivo: imagen.file };
-};
-
-// Cuerpo multipart con la imagen en el campo "qr" (y ningún otro campo)
-export const formularioQr = (imagen: FotoElegida) => {
-  const datos = new FormData();
-  if (imagen.archivo) datos.append("qr", imagen.archivo, imagen.nombre);
-  else datos.append("qr", new File(imagen.uri) as unknown as Blob);
-  return datos;
-};
