@@ -83,13 +83,31 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   const minimo = Math.max(1, suscripcion?.profesionalesCobrados ?? 1);
   const maximo = planes?.maximoProfesionales ?? 10;
   const cantidad = Math.min(Math.max(profesionales ?? minimo, minimo), maximo);
+  const precio = planes ? precioPara(planes, cantidad)[periodo] : null;
 
   const pagar = async () => {
-    if (!token || enviando) return;
+    if (!token || enviando || precio === null) return;
     setEnviando(true);
     setError(null);
     try {
       const creada = await crearOrden(token, { profesionales: cantidad, periodo });
+      // La pasarela cobra el monto de la orden: si no es el precio mostrado, no se redirige
+      if (creada.monto !== precio) {
+        setError({
+          titulo: "El precio cambió",
+          mensaje: `El pago sería de $${formatearPesos(creada.monto)} y aquí se muestra $${formatearPesos(precio)}. No se cobró nada. Recarga la página para ver el precio actual.`,
+        });
+        setEnviando(false);
+        return;
+      }
+      if (typeof creada.urlPago !== "string" || !creada.urlPago.startsWith("https://")) {
+        setError({
+          titulo: "No se pudo iniciar el pago",
+          mensaje: "La dirección de la pasarela de pago no es segura. No se cobró nada. Intenta de nuevo más tarde.",
+        });
+        setEnviando(false);
+        return;
+      }
       window.location.assign(creada.urlPago);
     } catch (e) {
       registrarCausa("Crear orden de pago", e);
@@ -99,7 +117,9 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   };
 
   const contenido = () => {
-    if (!lista) return <ActivityIndicator color={colors.primaryText} style={styles.cargando} />;
+    if (!lista) {
+      return <ActivityIndicator accessibilityLabel="Cargando" color={colors.primaryText} style={styles.cargando} />;
+    }
     if (!personal) return <Redirect href={{ pathname: "/login", params: { volverA: "/pagar" } }} />;
     if (!personal.esAdmin) {
       return <Text style={[styles.texto, { color: colors.textSecondary }]}>Solo un administrador puede pagar el plan.</Text>;
@@ -112,9 +132,10 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
         </View>
       );
     }
-    if (!planes || profesionales === null) return <ActivityIndicator color={colors.primaryText} style={styles.cargando} />;
+    if (!planes || precio === null || profesionales === null) {
+      return <ActivityIndicator accessibilityLabel="Cargando precios" color={colors.primaryText} style={styles.cargando} />;
+    }
 
-    const precio = precioPara(planes, cantidad)[periodo];
     const nivel = nivelPara(planes, cantidad);
     const opciones = Array.from({ length: maximo - minimo + 1 }, (_, i) => minimo + i).map((n) => ({
       valor: n,
