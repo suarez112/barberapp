@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
-import { describirError, registrarCausa } from "@/services/api/errores";
+import { Aviso, describirError, registrarCausa } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { consultarEstadoPago, ResultadoPago } from "./api";
@@ -24,7 +24,7 @@ export default function ConfirmarPagoScreen() {
   const modoPrueba = config?.esDePrueba ?? false;
   const { referencia, id } = useLocalSearchParams<{ referencia: string; id?: string }>();
   const [resultado, setResultado] = useState<ResultadoPago | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Aviso | null>(null);
   const [intento, setIntento] = useState(0);
   // Consultas automáticas ya hechas y si todavía se espera otra
   const automaticas = useRef(0);
@@ -47,7 +47,7 @@ export default function ConfirmarPagoScreen() {
       .catch((e) => {
         if (esCancelada(e) || controlador.signal.aborted) return;
         registrarCausa("Estado del pago", e);
-        setError(describirError(e, { titulo: "", porDefecto: "No se pudo consultar el pago." }).mensaje);
+        setError(describirError(e, { titulo: "No se pudo consultar el pago", porDefecto: "No se pudo consultar el pago." }));
       });
     return () => {
       controlador.abort();
@@ -72,9 +72,9 @@ export default function ConfirmarPagoScreen() {
       return (
         <View>
           <Text accessibilityLiveRegion="polite" style={[styles.estado, { color: colors.peligroTexto }]}>
-            No se pudo consultar el pago
+            {error.titulo}
           </Text>
-          <Text style={[styles.texto, { color: colors.textSecondary }]}>{error}</Text>
+          <Text style={[styles.texto, { color: colors.textSecondary }]}>{error.mensaje}</Text>
           <Boton titulo="REINTENTAR" ayuda="Vuelve a consultar el estado del pago" onPress={reintentar} />
         </View>
       );
@@ -82,7 +82,7 @@ export default function ConfirmarPagoScreen() {
     if (!resultado) {
       return (
         <View>
-          <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
+          <ActivityIndicator accessibilityLabel="Consultando tu pago" color={colors.primaryText} style={styles.cargando} />
           <Text style={[styles.texto, styles.centro, { color: colors.textSecondary }]}>Consultando tu pago…</Text>
         </View>
       );
@@ -111,7 +111,7 @@ export default function ConfirmarPagoScreen() {
           </Text>
           {esperando ? (
             <>
-              <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
+              <ActivityIndicator accessibilityLabel="Esperando la confirmación del pago" color={colors.primaryText} style={styles.cargando} />
               <Text style={[styles.texto, styles.centro, { color: colors.textSecondary }]}>
                 Esperando la confirmación de Wompi. No cierres esta página.
               </Text>
