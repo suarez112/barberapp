@@ -1,6 +1,6 @@
 # Reglas para el agente
 
-App móvil Expo/React Native (Expo SDK 57, Expo Router, TypeScript) de agendamiento para barberías. Este repo es solo el frontend. La documentación está en docs/README.md. Léela solo cuando la tarea lo necesite.
+App móvil Expo/React Native (Expo SDK 58, Expo Router, TypeScript) de agendamiento para barberías. Este repo es solo el frontend. La documentación está en docs/README.md. Léela solo cuando la tarea lo necesite.
 
 ## Expo
 
