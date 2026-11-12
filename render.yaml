@@ -43,6 +43,29 @@ services:
       - path: /*
         name: Strict-Transport-Security
         value: max-age=31536000
+      # Content-Security-Policy: the page only loads what the app uses (see docs/despliegue-render.md).
+      # - script/font: only our own files (route chunks load with <script src>, no eval needed).
+      # - style 'unsafe-inline': react-native-web and expo-font inject <style> tags at runtime.
+      # - img: our assets, the API photos, flagcdn.com flags, data: (business link QR) and blob: (photo preview).
+      # - connect: the API (keep it equal to EXPO_PUBLIC_API_URL above) and blob: (a chosen photo is read
+      #   with fetch(blob:) before uploading it, see src/utils/imagenes.ts).
+      # Wompi needs no entry: the app sends the browser to its checkout (a full-page redirect),
+      # which CSP does not restrict, and Wompi returns to /pagar/<reference> on this site.
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'self';
+          script-src 'self';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: blob: https://api.agendality.com https://flagcdn.com;
+          font-src 'self';
+          connect-src 'self' blob: https://api.agendality.com;
+          frame-src 'none';
+          object-src 'none';
+          base-uri 'self';
+          form-action 'self';
+          frame-ancestors 'none';
+          upgrade-insecure-requests
       # Files with a content hash in their name (JS, images, fonts) never change: cache for 1 year
       - path: /_expo/*
         name: Cache-Control

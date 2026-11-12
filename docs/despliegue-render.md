@@ -106,6 +106,11 @@ Si el despliegue del backend trae migraciones, saca primero una copia de la base
 - Los cambios de DNS pueden tardar desde minutos hasta unas horas.
 - Con la nube naranja, el modo SSL/TLS debe ser **Full (strict)**.
 
+**La página sale en blanco, sin fotos o sin íconos después de publicar**
+
+- Abre la consola del navegador (F12 → Console). Si ves "Refused to load ... because it violates the following Content Security Policy directive", la CSP de `render.yaml` está bloqueando ese recurso: agrega su dominio a la directiva que indica el mensaje y vuelve a desplegar.
+- Si usas la nube naranja de Cloudflare, funciones como Web Analytics, Rocket Loader o Email Obfuscation insertan scripts que la CSP bloquea: desactívalas o agrega su dominio.
+
 **Después de publicar sigo viendo la versión vieja**
 
 - Recarga con Ctrl + F5. `index.html` no se guarda en caché, pero el navegador puede tener la página abierta desde antes.
@@ -117,5 +122,6 @@ Si el despliegue del backend trae migraciones, saca primero una copia de la base
 - `routes`: la regla que evita el 404 al recargar.
 - `headers`:
   - cabeceras de seguridad (no dejar que la web se abra dentro de otra página, no adivinar tipos de archivo, enviar menos datos al salir a otro sitio, usar siempre HTTPS);
+  - `Content-Security-Policy` (CSP): la página solo carga scripts, fuentes y estilos propios, imágenes propias, de la API (`https://api.agendality.com`) y de `flagcdn.com` (banderas), y solo llama a la API (más `blob:`, para leer la foto elegida antes de subirla). Si cambias `EXPO_PUBLIC_API_URL` o agregas un servicio externo (fuentes, analítica, un widget de pago), agrégalo también a la CSP o el navegador lo bloqueará. Wompi no necesita entrada: el pago es una redirección de página completa;
   - caché de un año para `/_expo/*` y `/assets/*`: sus nombres llevan un código (hash) que cambia en cada versión, así que nunca quedan viejos;
   - `index.html` sin caché, para que cada publicación se vea enseguida.
