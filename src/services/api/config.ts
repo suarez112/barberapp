@@ -8,7 +8,27 @@ const PUERTO_BACKEND = 4000;
 const hostDelServidorDeDesarrollo = (): string | undefined =>
   Constants.expoConfig?.hostUri?.split(":")[0];
 
+// Fuera de desarrollo no hay valores por defecto: sin una URL https válida
+// la app falla al arrancar con un mensaje claro, en vez de llamar a localhost
+// o enviar tokens y contraseñas por http.
+const resolverUrlProduccion = (): string => {
+  const desdeEntorno = process.env.EXPO_PUBLIC_API_URL;
+  if (!desdeEntorno) {
+    throw new Error(
+      "Falta EXPO_PUBLIC_API_URL. Define la URL https:// del backend antes de generar el build.",
+    );
+  }
+  if (!desdeEntorno.startsWith("https://")) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL debe empezar por https:// fuera de desarrollo.",
+    );
+  }
+  return desdeEntorno.replace(/\/$/, "");
+};
+
 const resolverUrlBase = (): string => {
+  if (!__DEV__) return resolverUrlProduccion();
+
   // 1. Prioridad: variable de entorno (ver .env.example)
   const desdeEntorno = process.env.EXPO_PUBLIC_API_URL;
   if (desdeEntorno) return desdeEntorno.replace(/\/$/, "");
