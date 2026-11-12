@@ -1,6 +1,7 @@
 import { Modal, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 
 type Props = { segundos: number; onSeguir: () => void; onSalir: () => void };
 
@@ -48,7 +49,7 @@ export default function AvisoInactividad({ segundos, onSeguir, onSalir }: Props)
 }
 
 const styles = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center", padding: 24 },
+  fondo: { flex: 1, backgroundColor: COLORES.velo, alignItems: "center", justifyContent: "center", padding: 24 },
   tarjeta: { width: "100%", maxWidth: 420, borderWidth: 1, borderRadius: 16, padding: 24 },
   titulo: { fontSize: 20, fontWeight: "bold", textAlign: "center" },
   texto: { fontSize: 14, textAlign: "center", marginTop: 8 },

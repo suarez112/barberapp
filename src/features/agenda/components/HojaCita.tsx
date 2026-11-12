@@ -5,6 +5,7 @@ import TelefonoConBandera from "@/components/ui/TelefonoConBandera";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Cita } from "@/types";
 import TarjetaCita from "./TarjetaCita";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   // Sin cita la hoja está cerrada
@@ -112,7 +113,7 @@ export default function HojaCita({
 }
 
 const styles = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  fondo: { flex: 1, backgroundColor: COLORES.velo },
   hoja: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,

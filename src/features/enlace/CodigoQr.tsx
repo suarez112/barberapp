@@ -6,6 +6,7 @@ import Boton from "@/components/ui/Boton";
 import { registrarCausa } from "@/services/api/errores";
 import { avisar } from "@/utils/dialogos";
 import { aBase64, qrPng } from "@/utils/qr";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   enlace: string;
@@ -78,7 +79,7 @@ export default function CodigoQr({ enlace, codigo }: Props) {
 
 const styles = StyleSheet.create({
   contenedor: { alignItems: "center", marginTop: 12 },
-  marco: { backgroundColor: "#FFFFFF", borderRadius: 10, padding: 6 },
+  marco: { backgroundColor: COLORES.blanco, borderRadius: 10, padding: 6 },
   imagen: { width: TAMANO, height: TAMANO },
   boton: { alignSelf: "stretch", marginTop: 10 },
 });

@@ -12,6 +12,7 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { TipoDocumento } from "./api";
 import { textoVigencia } from "./centro/secciones";
 import { useDocumentoLegal } from "./useDocumentoLegal";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   // Documento a mostrar; null = modal cerrado
@@ -106,7 +107,7 @@ export default function DocumentoLegalModal({ tipo, onCerrar }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: COLORES.velo,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,

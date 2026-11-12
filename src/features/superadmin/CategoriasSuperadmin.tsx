@@ -116,7 +116,7 @@ export default function CategoriasSuperadmin() {
                 : "Reactiva la categoría: vuelve a ofrecerse al registrar negocios"
             }
             trackColor={{ false: colors.inputBorder, true: COLORES.verde }}
-            thumbColor="#FFFFFF"
+            thumbColor={COLORES.blanco}
           />
         </View>
       ),

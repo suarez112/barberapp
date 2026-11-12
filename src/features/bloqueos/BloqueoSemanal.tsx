@@ -6,7 +6,7 @@ import BotonIcono from "@/components/ui/BotonIcono";
 import Selector from "@/components/ui/Selector";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
+import { COLORES, COLORES_BLOQUEOS } from "@/theme/paleta";
 import { Barbero, DiaHorario } from "@/types";
 import { avisar, confirmar } from "@/utils/dialogos";
 import {
@@ -43,12 +43,17 @@ const MODOS = [
 // de texto se ven de tamaños distintos
 type Icono = ComponentProps<typeof Ionicons>["name"];
 type EstiloCelda = { fondo: string; borde: string; texto: string; simbolo: Icono };
-const SOLO_ESE_DIA: EstiloCelda = { fondo: COLORES.rojo, borde: "#991B1B", texto: COLORES.blanco, simbolo: "close" };
+const SOLO_ESE_DIA: EstiloCelda = { fondo: COLORES.rojo, borde: COLORES_BLOQUEOS.soloEseDiaBorde, texto: COLORES.blanco, simbolo: "close" };
 // El bloqueo semanal va en naranja suave con borde y símbolo oscuros (se lee en ambos temas)
-const CADA_SEMANA: EstiloCelda = { fondo: "#FFEDD5", borde: "#C2410C", texto: "#C2410C", simbolo: "refresh" };
-const CON_CITA: EstiloCelda = { fondo: COLORES.verde, borde: "#14532D", texto: COLORES.blanco, simbolo: "checkmark" };
-const LIBRE_OSCURO = { fondo: "#2A2A2A", borde: "#404040" };
-const LIBRE_CLARO = { fondo: "#E5E7EB", borde: "#D1D5DB" };
+const CADA_SEMANA: EstiloCelda = {
+  fondo: COLORES_BLOQUEOS.cadaSemanaFondo,
+  borde: COLORES_BLOQUEOS.cadaSemanaBorde,
+  texto: COLORES_BLOQUEOS.cadaSemanaBorde,
+  simbolo: "refresh",
+};
+const CON_CITA: EstiloCelda = { fondo: COLORES.verde, borde: COLORES_BLOQUEOS.conCitaBorde, texto: COLORES.blanco, simbolo: "checkmark" };
+const LIBRE_OSCURO = { fondo: COLORES_BLOQUEOS.libreOscuroFondo, borde: COLORES_BLOQUEOS.libreOscuroBorde };
+const LIBRE_CLARO = { fondo: COLORES_BLOQUEOS.libreClaroFondo, borde: COLORES_BLOQUEOS.libreClaroBorde };
 
 // 750 -> "12:30" (formato 24 horas que pide el backend)
 const minutosA24 = (total: number) =>

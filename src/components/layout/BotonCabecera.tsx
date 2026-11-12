@@ -3,6 +3,7 @@ import { ComponentProps, ReactNode } from "react";
 import { StyleSheet } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   icono: ComponentProps<typeof Ionicons>["name"];
@@ -26,12 +27,12 @@ export default function BotonCabecera({ icono, etiqueta, ayuda, onPress, childre
       style={[
         styles.boton,
         sobreOscuro
-          ? { backgroundColor: "rgba(0, 0, 0, 0.35)", borderColor: "rgba(250, 204, 21, 0.45)" }
+          ? { backgroundColor: COLORES.botonSobreOscuroBg, borderColor: COLORES.botonSobreOscuroBorde }
           : { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={24} color={sobreOscuro ? "#FACC15" : colors.primaryText} />
+      <Ionicons name={icono} size={24} color={sobreOscuro ? COLORES.botonSobreOscuroIcono : colors.primaryText} />
       {children}
     </Tocable>
   );

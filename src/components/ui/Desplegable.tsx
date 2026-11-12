@@ -13,6 +13,7 @@ import {
 import { useAppTheme } from "../../theme/ThemeProvider";
 import CampoTexto from "./CampoTexto";
 import Tocable from "./Tocable";
+import { COLORES } from "@/theme/paleta";
 
 export type OpcionDesplegable<T extends string | number> = { valor: T; etiqueta: string };
 
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   // movería bajo el dedo y el primer toque no elegiría nada
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: COLORES.velo,
     justifyContent: "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 60,

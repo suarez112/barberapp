@@ -53,7 +53,7 @@ type PropsBoton = {
 const COLORES_BOTON = {
   amarillo: { fondo: C.amarillo, hover: C.amarilloOscuro, texto: C.oscuro, borde: "transparent" },
   oscuro: { fondo: C.oscuro, hover: C.oscuro2, texto: C.blanco, borde: "transparent" },
-  contorno: { fondo: "transparent", hover: "rgba(255,255,255,0.08)", texto: C.blanco, borde: C.bordeBoton },
+  contorno: { fondo: "transparent", hover: C.contornoHover, texto: C.blanco, borde: C.bordeBoton },
 } as const;
 
 // Botón que es un enlace real (<a href>) cuando lleva `href`

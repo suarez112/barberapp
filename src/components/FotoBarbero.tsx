@@ -130,7 +130,7 @@ export default function FotoBarbero({
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: "rgba(0,0,0,0.55)",
+            backgroundColor: COLORES.velo,
             alignItems: "center",
             justifyContent: "center",
           }}

@@ -11,6 +11,7 @@ import { useAvisarError } from "../sesion/useAvisarError";
 import { aceptarVersionVigente, EstadoLegal, obtenerEstadoLegal, TipoDocumento } from "./api";
 import CasillaAutorizacion from "./CasillaAutorizacion";
 import DocumentoLegalModal from "./DocumentoLegalModal";
+import { COLORES } from "@/theme/paleta";
 
 const DOCUMENTOS: { tipo: TipoDocumento; titulo: string }[] = [
   { tipo: "politica-datos", titulo: "Política de Tratamiento de Datos" },
@@ -114,7 +115,7 @@ export default function ModalNuevaVersion() {
 }
 
 const styles = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.6)", justifyContent: "center", padding: 20 },
+  fondo: { flex: 1, backgroundColor: COLORES.velo, justifyContent: "center", padding: 20 },
   caja: { borderRadius: 16, borderWidth: 1, padding: 20, maxHeight: "90%" },
   titulo: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
   texto: { fontSize: 14, lineHeight: 20 },

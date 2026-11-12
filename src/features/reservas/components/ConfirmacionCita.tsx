@@ -3,7 +3,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { agregarAlCalendario } from "@/utils/calendario";
 import { horaAMinutos, minutosAHora } from "@/utils/disponibilidad";
 import FotoBarbero from "@/components/FotoBarbero";
-import type { Paleta } from "@/theme/paleta";
+import { COLORES, type Paleta } from "@/theme/paleta";
 
 export type DatosConfirmacion = {
   negocio: string;
@@ -197,7 +197,7 @@ export default function ConfirmacionCita({
 const s = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: COLORES.velo,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
@@ -232,7 +232,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
-    backgroundColor: "rgba(128, 128, 128, 0.08)",
+    backgroundColor: COLORES.bloqueSuave,
   },
   fecha: { fontSize: 13, fontWeight: "600" },
   hora: {
@@ -247,7 +247,7 @@ const s = StyleSheet.create({
     marginTop: 16,
     borderRadius: 14,
     padding: 14,
-    backgroundColor: "rgba(128, 128, 128, 0.08)",
+    backgroundColor: COLORES.bloqueSuave,
   },
   filaDetalle: { flexDirection: "row", alignItems: "center" },
   iconoDetalle: {

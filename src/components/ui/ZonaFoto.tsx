@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 import { StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 import Tocable from "./Tocable";
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
 // Zona para subir una foto: caja con borde punteado amarillo, fondo suave y cámara grande.
 // Se lee en tema claro (fondo crema) y oscuro (amarillo translúcido sobre el fondo oscuro).
 export default function ZonaFoto({ etiqueta, ayuda, onPress, children, style }: Props) {
-  const { colors, esOscuro } = useAppTheme();
+  const { colors } = useAppTheme();
   return (
     <Tocable
       accessibilityRole="button"
@@ -26,8 +27,8 @@ export default function ZonaFoto({ etiqueta, ayuda, onPress, children, style }: 
       style={[
         styles.zona,
         {
-          borderColor: "#EAB308",
-          backgroundColor: esOscuro ? "rgba(234, 179, 8, 0.10)" : "#FFFBEB",
+          borderColor: COLORES.bordeDestacado,
+          backgroundColor: colors.zonaFotoBg,
         },
         children ? styles.conFoto : null,
         style,
@@ -35,8 +36,8 @@ export default function ZonaFoto({ etiqueta, ayuda, onPress, children, style }: 
     >
       {children ?? (
         <>
-          <Ionicons name="camera-outline" size={44} color={esOscuro ? "#FACC15" : "#A16207"} />
-          <Text style={[styles.texto, { color: esOscuro ? colors.textPrimary : "#713F12" }]}>
+          <Ionicons name="camera-outline" size={44} color={colors.zonaFotoIcono} />
+          <Text style={[styles.texto, { color: colors.zonaFotoTexto }]}>
             Toca para agregar una foto (opcional)
           </Text>
         </>

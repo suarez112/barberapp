@@ -8,6 +8,7 @@ import { ejemploTelefono, indicativoDe } from "@/utils/telefonos";
 import Bandera from "./Bandera";
 import CampoTexto from "./CampoTexto";
 import Tocable from "./Tocable";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   telefono: EstadoTelefono;
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
   indicativo: { fontWeight: "bold", fontSize: 15 },
   fondo: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: COLORES.velo,
     justifyContent: "flex-start",
     paddingHorizontal: 20,
     paddingVertical: 60,

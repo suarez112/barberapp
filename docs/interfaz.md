@@ -2,7 +2,9 @@
 
 ## Tema y colores
 
-**Todo color vive en `theme/paleta.ts`** (`crearPaleta` por tema + `COLORES` para rellenos fijos).
+**Todo color vive en `theme/paleta.ts`** (`crearPaleta` por tema + `COLORES` para rellenos fijos; grupos propios: `COLORES_LANDING`, `COLORES_BLOQUEOS`, `COLORES_INICIO`, `COLORES_GRAFICOS`).
+
+- Fondo de todo modal y de una foto que se está subiendo: `COLORES.velo` (una sola opacidad en toda la app).
 
 - Tema claro: fondo claro, tarjetas blancas, texto/títulos/enlaces en negro o gris oscuro (`primaryText` es oscuro ahí); el amarillo del negocio solo es fondo (botones, pestaña activa = `seleccionBg`/`seleccionTexto`, elementos seleccionados = `cardSelectedBg`) con texto negro.
 - Colores de estado, iguales en todas partes: rojo `COLORES.rojo` (bloqueado, error, cancelado, vencido), verde `verde` (activo, completado), naranja `naranja` (aviso), azul `azul` (info y cita pendiente: etiqueta, punto del resumen y chip "Pendientes", en ambos temas), gris `neutro` (inactivo). Como texto: `peligroTexto`/`exitoTexto`/`avisoTexto`/`infoTexto`.
