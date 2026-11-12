@@ -10,6 +10,7 @@ import { Comparar, ResumenCartera, TipoComparacion } from "./api";
 import FuncionBloqueada from "../planes/FuncionBloqueada";
 import { BarrasHorizontales, BarraFila, diaCorto, VentasPorDia } from "./GraficosCartera";
 import PagoProfesionales from "./PagoProfesionales";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 const dinero = (n: number) => `$${formatearPesos(n)}`;
 // 12.5 -> "12,5"
@@ -164,7 +165,7 @@ export default function EstadisticasCartera({
   return (
     <View>
       <Text accessibilityRole="header" style={[s.tituloGrande, { color: colors.primaryText }]}>
-        📊 ESTADÍSTICAS DEL PERÍODO
+        <IconoEnLinea nombre="stats-chart-outline" color={colors.primaryText} /> ESTADÍSTICAS DEL PERÍODO
       </Text>
 
       {comparacion && anterior && variacion ? (

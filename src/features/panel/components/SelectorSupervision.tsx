@@ -3,6 +3,7 @@ import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero } from "@/types";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Props = {
   barberos: Barbero[];
@@ -24,7 +25,7 @@ export default function SelectorSupervision({
     <View style={compacto ? styles.compacto : styles.contenedor}>
       {compacto ? null : (
         <TituloSeccion style={styles.titulo}>
-          👁️ SUPERVISAR AGENDA Y BALANCES DE:
+          <IconoEnLinea nombre="eye-outline" color={colors.primaryText} /> SUPERVISAR AGENDA Y BALANCES DE:
         </TituloSeccion>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -35,7 +36,7 @@ export default function SelectorSupervision({
               key={emp.id}
               accessibilityRole="button"
               accessibilityState={{ selected: esSel }}
-              accessibilityLabel={emp.nombre}
+              accessibilityLabel={emp.esAdmin ? `${emp.nombre}, administrador` : emp.nombre}
               accessibilityHint="Muestra la agenda y la cartera de esta persona"
               style={[
                 styles.opcion,
@@ -53,7 +54,10 @@ export default function SelectorSupervision({
                   { color: esSel ? colors.primaryText : colors.textPrimary },
                 ]}
               >
-                {emp.nombre} {emp.esAdmin ? "👑" : null}
+                {emp.nombre}{" "}
+                {emp.esAdmin ? (
+                  <IconoEnLinea nombre="shield-checkmark-outline" color={esSel ? colors.primaryText : colors.textPrimary} />
+                ) : null}
               </Text>
               <Text style={[styles.comision, { color: colors.textSecondary }]}>
                 {emp.porcentajeGanancia}% Comisión

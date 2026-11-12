@@ -94,7 +94,8 @@ export default function ServiciosAdmin({ token }: { token: string }) {
   return (
     <>
       <Acordeon
-        titulo={enEdicion ? "✏️ EDITANDO SERVICIO" : "➕ AGREGAR NUEVO SERVICIO"}
+        titulo={enEdicion ? "EDITANDO SERVICIO" : "AGREGAR NUEVO SERVICIO"}
+        icono={enEdicion ? "create-outline" : "add-circle-outline"}
         abierto={abierto}
         onAlternar={alternar}
         style={styles.acordeon}

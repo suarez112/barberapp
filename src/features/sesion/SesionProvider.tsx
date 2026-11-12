@@ -33,13 +33,14 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     return borrarSesion();
   };
 
-  const actualizarBarberoLogueado = (cambios: Partial<Barbero>) =>
-    setBarbero((actual) => {
-      if (!actual) return actual;
-      const nuevo = { ...actual, ...cambios };
-      guardarSesion({ tipo: "personal", token, barbero: nuevo });
-      return nuevo;
-    });
+  // Se guarda fuera de setBarbero: la función de un setState debe ser pura
+  // (React puede ejecutarla dos veces)
+  const actualizarBarberoLogueado = (cambios: Partial<Barbero>) => {
+    if (!barbero) return;
+    const nuevo = { ...barbero, ...cambios };
+    setBarbero(nuevo);
+    guardarSesion({ tipo: "personal", token, barbero: nuevo });
+  };
 
   return (
     <SesionContext

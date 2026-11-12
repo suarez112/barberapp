@@ -17,6 +17,7 @@ import { EstadoReserva } from "../hooks/useReserva";
 import SelectorHoras from "./SelectorHoras";
 import SelectorProfesional from "./SelectorProfesional";
 import SelectorServicio from "./SelectorServicio";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Props = {
   reserva: EstadoReserva;
@@ -84,7 +85,9 @@ export default function FormularioReserva({ reserva }: Props) {
         HORA DISPONIBLE ({horariosDisponibles.length} DISPONIBLES)
       </TituloSeccion>
       {!barbero || !servicio ? (
-        <TextoInfo>⚠️ Selecciona primero un profesional y un servicio.</TextoInfo>
+        <TextoInfo>
+          <IconoEnLinea nombre="warning-outline" color={colors.peligroTexto} /> Selecciona primero un profesional y un servicio.
+        </TextoInfo>
       ) : empresa && !horarioDelDia(empresa, dia.fechaFull) ? (
         <TextoInfo>El negocio no atiende este día. Elige otra fecha.</TextoInfo>
       ) : errorHoras ? (

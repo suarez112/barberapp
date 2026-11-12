@@ -1,11 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ReactNode } from "react";
+import { ComponentProps, ReactNode } from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import IconoEnLinea from "./IconoEnLinea";
 import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 
 type Props = {
   titulo: string;
+  // Ícono decorativo antes del título
+  icono?: ComponentProps<typeof Ionicons>["name"];
   abierto: boolean;
   onAlternar: () => void;
   children: ReactNode;
@@ -15,6 +18,7 @@ type Props = {
 // Cabecera que despliega un formulario debajo
 export default function Acordeon({
   titulo,
+  icono,
   abierto,
   onAlternar,
   children,
@@ -27,12 +31,19 @@ export default function Acordeon({
       <Tocable
         accessibilityRole="button"
         accessibilityState={{ expanded: abierto }}
-        accessibilityLabel={titulo.replace(/^\W+\s*/u, "")}
+        accessibilityLabel={titulo}
         accessibilityHint={abierto ? "Oculta el formulario" : "Muestra el formulario"}
         style={[styles.cabecera, bordes, style]}
         onPress={onAlternar}
       >
-        <Text style={[styles.titulo, { color: colors.primaryText }]}>{titulo}</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>
+          {icono ? (
+            <>
+              <IconoEnLinea nombre={icono} color={colors.primaryText} />{" "}
+            </>
+          ) : null}
+          {titulo}
+        </Text>
         <Ionicons
           name={abierto ? "chevron-up" : "chevron-down"}
           size={20}
