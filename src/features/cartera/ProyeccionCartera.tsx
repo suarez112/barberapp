@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearPesos } from "@/utils/formato";
 import { useAgenda } from "../agenda/AgendaProvider";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 export type PeriodoActual = "hoy" | "semana" | "mes";
 
@@ -66,7 +67,7 @@ export default function ProyeccionCartera({ periodo }: { periodo: PeriodoActual 
   return (
     <View>
       <Text style={[s.titulo, { color: colors.primaryText }]}>
-        📈 PROYECCIÓN · {ETIQUETAS[periodo]}
+        <IconoEnLinea nombre="trending-up-outline" color={colors.primaryText} /> PROYECCIÓN · {ETIQUETAS[periodo]}
       </Text>
       <View style={s.fila}>
         {tarjeta(String(porRealizar.length), "Citas por realizar")}

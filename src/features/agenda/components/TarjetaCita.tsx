@@ -9,6 +9,7 @@ import { Cita, EstadoCita } from "@/types";
 import { fechaHoraCita, formatearHora } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
 import { abrirWhatsApp, numeroParaWhatsApp } from "@/utils/whatsapp";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 export const ESTADO_CITA: Record<EstadoCita, { texto: string; color: string }> = {
   CONFIRMADA: { texto: "Pendiente", color: COLORES.azul },
@@ -107,7 +108,8 @@ export default function TarjetaCita({
           Completada por {c.completadaPor} a las {formatearHora(c.completadaEn)}
           {esAdmin && retraso > MINUTOS_ALERTA_COMPLETADA_TARDE ? (
             <Text style={[styles.alerta, { color: colors.avisoTexto }]}>
-              {"  "}⚠️ {Math.round(retraso / 60)} h después
+              {"  "}
+              <IconoEnLinea nombre="warning-outline" color={colors.avisoTexto} /> {Math.round(retraso / 60)} h después
             </Text>
           ) : null}
         </Text>

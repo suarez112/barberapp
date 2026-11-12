@@ -39,6 +39,7 @@ import PlanesModal from "../planes/PlanesModal";
 import PrivacidadTelefonos from "./PrivacidadTelefonos";
 import { useYoAtiendo } from "./useYoAtiendo";
 import { PAGOS_EN_APP } from "@/config/pagos";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 const ROLES = [
   { valor: "admin", etiqueta: "Administrador" },
@@ -391,7 +392,13 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
           ]}
         >
           <Text style={[styles.textoCupo, { color: colors.textPrimary }]}>
-            {lleno ? "⚠️ Llegaste al máximo: " : "Tu equipo: "}
+            {lleno ? (
+              <>
+                <IconoEnLinea nombre="warning-outline" color={colors.avisoTexto} /> Llegaste al máximo:{" "}
+              </>
+            ) : (
+              "Tu equipo: "
+            )}
             {suscripcion.profesionalesCobrados} de {planes?.maximoProfesionales ?? 10} profesionales que atienden
             clientes · nivel {suscripcion.planEquipo.nombre}.
           </Text>
@@ -658,7 +665,8 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                 <FotoBarbero nombre={personal.nombre} color={colors.primaryText} />
               )}
               <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-                {miPerfil?.nombre ?? personal.nombre} 👑
+                {miPerfil?.nombre ?? personal.nombre}{" "}
+                <IconoEnLinea nombre="shield-checkmark-outline" color={colors.primaryText} />
               </Text>
               {yo.error ? (
                 <>
@@ -712,7 +720,8 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                 onCambiar={(foto) => cambiarFoto(b, foto)}
               />
               <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-                {b.nombre} {b.esAdmin ? "👑" : null}
+                {b.nombre}{" "}
+                {b.esAdmin ? <IconoEnLinea nombre="shield-checkmark-outline" color={colors.primaryText} /> : null}
               </Text>
               <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
                 {soyYo(b.id) ? "Tú · " : ""}

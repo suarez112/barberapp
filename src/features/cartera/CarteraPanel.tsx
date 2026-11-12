@@ -10,6 +10,7 @@ import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import ProyeccionCartera, { PeriodoActual } from "./ProyeccionCartera";
 import TableroCartera from "./TableroCartera";
 import { useCartera } from "./useCartera";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Periodo = "DIARIO" | "SEMANAL" | "MENSUAL";
 
@@ -135,7 +136,9 @@ function MiCartera({ token }: { token: string }) {
 
   return (
     <View>
-      <Text style={[s.titulo, { color: colors.primaryText }]}>💰 MI CARTERA Y GANANCIAS</Text>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>
+        <IconoEnLinea nombre="wallet-outline" color={colors.primaryText} /> MI CARTERA Y GANANCIAS
+      </Text>
 
       {/* Selector Diario / Semanal / Mensual */}
       <View

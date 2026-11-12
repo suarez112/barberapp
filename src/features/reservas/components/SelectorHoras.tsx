@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { ComponentProps, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { Paleta } from "@/theme/paleta";
 import { horario24AMinutos } from "@/utils/disponibilidad";
 import type { HoraDisponible } from "../../agenda/api";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Props = {
   horarios: HoraDisponible[];
@@ -14,10 +15,10 @@ type Props = {
 };
 
 // Las horas se reparten en tres momentos del día (en minutos desde la medianoche)
-const GRUPOS = [
-  { nombre: "Mañana", icono: "☀️", desde: 0, hasta: 720 }, // antes de las 12:00
-  { nombre: "Tarde", icono: "🌤️", desde: 720, hasta: 1080 }, // 12:00 a 5:59 PM
-  { nombre: "Noche", icono: "🌙", desde: 1080, hasta: 1440 }, // 6:00 PM en adelante
+const GRUPOS: { nombre: string; icono: ComponentProps<typeof IconoEnLinea>["nombre"]; desde: number; hasta: number }[] = [
+  { nombre: "Mañana", icono: "sunny-outline", desde: 0, hasta: 720 }, // antes de las 12:00
+  { nombre: "Tarde", icono: "partly-sunny-outline", desde: 720, hasta: 1080 }, // 12:00 a 5:59 PM
+  { nombre: "Noche", icono: "moon-outline", desde: 1080, hasta: 1440 }, // 6:00 PM en adelante
 ];
 
 // "13:00" -> "1:00": solo la hora de inicio; el momento del día lo da el grupo
@@ -100,7 +101,7 @@ export default function SelectorHoras({
               accessibilityHint={abierto ? "Oculta estas horas" : "Muestra estas horas"}
             >
               <Text style={[s.tituloGrupo, { color: colors.textSecondary }]}>
-                {grupo.icono} {grupo.nombre.toUpperCase()} (
+                <IconoEnLinea nombre={grupo.icono} color={colors.textSecondary} /> {grupo.nombre.toUpperCase()} (
                 {horasDelGrupo.length})
               </Text>
               <Ionicons

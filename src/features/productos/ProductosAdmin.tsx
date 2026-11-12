@@ -160,7 +160,8 @@ export default function ProductosAdmin({ token }: { token: string }) {
   return (
     <View>
       <Acordeon
-        titulo={enEdicion ? "✏️ EDITANDO PRODUCTO" : "➕ AGREGAR NUEVO PRODUCTO"}
+        titulo={enEdicion ? "EDITANDO PRODUCTO" : "AGREGAR NUEVO PRODUCTO"}
+        icono={enEdicion ? "create-outline" : "add-circle-outline"}
         abierto={abierto}
         onAlternar={alternar}
         style={styles.acordeon}

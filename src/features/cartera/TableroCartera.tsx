@@ -22,6 +22,7 @@ import { useFechaRegistro } from "./useFechaRegistro";
 import { useReportesAvanzados } from "./useReportesAvanzados";
 import { useReportesCartera } from "./useReportesCartera";
 import { useResumenCartera } from "./useResumenCartera";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 const PERIODOS: { valor: PeriodoResumen; texto: string }[] = [
   { valor: "hoy", texto: "Día" },
@@ -219,7 +220,9 @@ export default function TableroCartera({ token }: { token: string }) {
 
   return (
     <View>
-      <Text style={[s.titulo, { color: colors.primaryText }]}>💰 CARTERA DEL NEGOCIO</Text>
+      <Text style={[s.titulo, { color: colors.primaryText }]}>
+        <IconoEnLinea nombre="wallet-outline" color={colors.primaryText} /> CARTERA DEL NEGOCIO
+      </Text>
 
       <View style={[s.segmento, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
         {PERIODOS.map((op) => (
