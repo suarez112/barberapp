@@ -122,7 +122,12 @@ export default function Desplegable<T extends string | number>({
       </View>
 
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={cerrar}>
-        <Pressable style={styles.overlay} onPress={cerrar}>
+        <Pressable
+          style={styles.overlay}
+          onPress={cerrar}
+          accessibilityLabel="Cerrar la lista"
+          accessibilityHint="Cierra la lista sin cambiar la opción elegida"
+        >
           {/* El Pressable interno evita que tocar la lista cierre el modal */}
           <Pressable
             style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}

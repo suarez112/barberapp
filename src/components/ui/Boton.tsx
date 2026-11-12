@@ -25,7 +25,7 @@ type Props = {
 };
 
 // "ENTRAR AL NEGOCIO" -> "Entrar al negocio": los lectores no deletrean las mayúsculas
-const comoFrase = (texto: string) =>
+export const comoFrase = (texto: string) =>
   texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 
 export default function Boton({

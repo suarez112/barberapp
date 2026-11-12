@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useSyncExternalStore } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { comoFrase } from "@/components/ui/Boton";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES, textoSobre } from "@/theme/paleta";
 import { dialogoActual, suscribirDialogos, TipoDialogo } from "@/utils/dialogos";
@@ -23,6 +24,8 @@ export default function DialogoHost() {
 
   const { icono, color = colors.primary } = ESTILO[dialogo.tipo];
   const esConfirmacion = dialogo.tipo === "confirmacion";
+  const textoAceptar = (esConfirmacion && dialogo.textoAceptar) || "ACEPTAR";
+  const textoCancelar = dialogo.textoCancelar ?? "CANCELAR";
   const colorAceptar = dialogo.destructivo ? COLORES.rojo : colors.primary;
 
   return (
@@ -51,6 +54,7 @@ export default function DialogoHost() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={comoFrase(textoAceptar)}
             accessibilityHint={esConfirmacion ? "Confirma y continúa" : "Cierra este aviso"}
             style={({ pressed }) => [
               s.boton,
@@ -60,13 +64,14 @@ export default function DialogoHost() {
             onPress={() => dialogo.responder(true)}
           >
             <Text style={[s.textoBoton, { color: textoSobre(colorAceptar) }]}>
-              {(esConfirmacion && dialogo.textoAceptar) || "ACEPTAR"}
+              {textoAceptar}
             </Text>
           </Pressable>
 
           {esConfirmacion && (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={comoFrase(textoCancelar)}
               accessibilityHint="Cierra sin hacer cambios"
               style={({ pressed }) => [
                 s.botonSecundario,
@@ -76,7 +81,7 @@ export default function DialogoHost() {
               onPress={() => dialogo.responder(false)}
             >
               <Text style={[s.textoSecundario, { color: colors.textPrimary }]}>
-                {dialogo.textoCancelar ?? "CANCELAR"}
+                {textoCancelar}
               </Text>
             </Pressable>
           )}

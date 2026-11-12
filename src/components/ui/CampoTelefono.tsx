@@ -82,7 +82,12 @@ export default function CampoTelefono({
       />
 
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={cerrar}>
-        <Pressable style={styles.fondo} onPress={cerrar} accessibilityLabel="Cerrar lista de países">
+        <Pressable
+          style={styles.fondo}
+          onPress={cerrar}
+          accessibilityLabel="Cerrar lista de países"
+          accessibilityHint="Cierra la lista sin cambiar el país"
+        >
           {/* El Pressable interno evita que tocar la lista cierre el modal */}
           <Pressable
             style={[styles.lista, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
