@@ -39,6 +39,13 @@ export type Paleta = {
   cardSelectedBg: string;
   inputBg: string;
   bottomBarBg: string;
+  // Sección elegida del menú lateral: fondo y texto (el borde es COLORES.bordeDestacado)
+  activoBg: string;
+  activoTexto: string;
+  // Zona para subir una foto: fondo, icono y texto (el borde es COLORES.bordeDestacado)
+  zonaFotoBg: string;
+  zonaFotoIcono: string;
+  zonaFotoTexto: string;
 };
 
 // Colores fijos que no dependen del negocio ni del tema
@@ -56,11 +63,54 @@ export const COLORES = {
   azul: "#1D4ED8", // información, cita pendiente
   neutro: "#374151", // inactivo, cerrado, suspendido
   whatsapp: "#25D366",
-  // Fondo atenuado detrás de una ventana modal (sirve en ambos temas)
+  // Fondo atenuado detrás de toda ventana modal y sobre una foto que se está subiendo
+  // (una sola opacidad en toda la app; sirve en ambos temas)
   velo: "rgba(0, 0, 0, 0.55)",
+  // Sombra de los botones flotantes
+  sombra: "#000",
+  // Borde amarillo de lo destacado (sección elegida, zona para subir una foto)
+  bordeDestacado: "#EAB308",
+  // Botón de la cabecera sobre una franja siempre oscura
+  botonSobreOscuroBg: "rgba(0, 0, 0, 0.35)",
+  botonSobreOscuroBorde: "rgba(250, 204, 21, 0.45)",
+  botonSobreOscuroIcono: "#FACC15",
+  // Subtítulo sobre la franja oscura de la marca
+  subtituloSobreOscuro: "#D1D5DB",
+  // Bloque gris muy suave que se lee sobre cualquier fondo (resumen de la cita)
+  bloqueSuave: "rgba(128, 128, 128, 0.08)",
   // Barras de las estadísticas: amarillo normal y amarillo oscuro para la destacada (se leen en ambos temas)
   barra: "#FACC15",
   barraDestacada: "#EAB308",
+} as const;
+
+// Celdas de la tabla de bloqueos (features/bloqueos), iguales en ambos temas salvo las libres
+export const COLORES_BLOQUEOS = {
+  soloEseDiaBorde: "#991B1B",
+  cadaSemanaFondo: "#FFEDD5",
+  cadaSemanaBorde: "#C2410C",
+  conCitaBorde: "#14532D",
+  libreOscuroFondo: "#2A2A2A",
+  libreOscuroBorde: "#404040",
+  libreClaroFondo: "#E5E7EB",
+  libreClaroBorde: "#D1D5DB",
+} as const;
+
+// Animación de inicio (features/inicio): siempre oscura, sea cual sea el tema
+export const COLORES_INICIO = {
+  fondo: "#000000",
+  oro: "#FFC107",
+  oroClaro: "#FFE27A",
+  oroOscuro: "#FF9800",
+  brillo: "#FFFFFF",
+  nubeClara: "#4A4D55",
+  nubeOscura: "#1A1B1F",
+} as const;
+
+// Series de los gráficos del superadmin, una versión por tema. Tonos de fuerza parecida
+// para que ninguno domine
+export const COLORES_GRAFICOS = {
+  claro: ["#2563EB", "#0D9488", "#D97706", "#7C3AED", "#DB2777", "#16A34A", "#0891B2", "#64748B"],
+  oscuro: ["#60A5FA", "#2DD4BF", "#FBBF24", "#A78BFA", "#F472B6", "#4ADE80", "#22D3EE", "#94A3B8"],
 } as const;
 
 // Colores fijos de la página principal web (features/landing). Es un diseño claro propio,
@@ -88,6 +138,12 @@ export const COLORES_LANDING = {
   verdeFondo: "#DCFCE7",
   azul: "#1D4ED8",
   azulFondo: "#DBEAFE",
+  // Cabecera fija casi opaca, fondo al pasar el ratón por el botón de contorno
+  // y etiqueta amarilla translúcida sobre la franja oscura
+  cabeceraFondo: "rgba(255, 255, 255, 0.97)",
+  contornoHover: "rgba(255, 255, 255, 0.08)",
+  etiquetaAmarillaFondo: "rgba(250, 204, 21, 0.12)",
+  etiquetaAmarillaBorde: "rgba(250, 204, 21, 0.35)",
 } as const;
 
 // Contraste WCAG entre dos colores "#RRGGBB" o "#RGB"
@@ -181,5 +237,10 @@ export const crearPaleta = (
     secundarioTexto: esOscuro ? "#FFFFFF" : "#111827",
     inputBg: esOscuro ? "#171717" : "#FFFFFF",
     bottomBarBg: esOscuro ? "#141414" : "#FFFFFF",
+    activoBg: esOscuro ? "rgba(234, 179, 8, 0.16)" : "#FEF3C7",
+    activoTexto: esOscuro ? "#FFFFFF" : "#111827",
+    zonaFotoBg: esOscuro ? "rgba(234, 179, 8, 0.10)" : "#FFFBEB",
+    zonaFotoIcono: esOscuro ? "#FACC15" : "#A16207",
+    zonaFotoTexto: esOscuro ? "#FFFFFF" : "#713F12",
   };
 };

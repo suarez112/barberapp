@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 
 // Botón flotante de la agenda: abre la hoja para agendar una cita desde el panel
 export default function BotonNuevaCita({ onPress }: { onPress: () => void }) {
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
     paddingRight: 18,
     borderRadius: 26,
     elevation: 6,
-    shadowColor: "#000",
+    shadowColor: COLORES.sombra,
     shadowOpacity: 0.3,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },

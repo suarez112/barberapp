@@ -5,6 +5,7 @@ import FotoImagen from "@/components/ui/FotoImagen";
 import ZonaFoto from "@/components/ui/ZonaFoto";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   fotoUrl: string | null;
@@ -45,7 +46,7 @@ export default function FotoNegocio({ fotoUrl, onGuardar }: Props) {
           <FotoImagen uri={mostrada} style={styles.foto} accessibilityLabel="Foto del negocio" />
           {guardando ? (
           <View style={styles.subiendo} accessibilityLabel="Subiendo la foto" accessibilityLiveRegion="polite">
-            <ActivityIndicator size="large" color="#fff" />
+            <ActivityIndicator size="large" color={COLORES.blanco} />
             <Text style={styles.textoSubiendo}>Subiendo foto…</Text>
           </View>
           ) : null}
@@ -100,11 +101,11 @@ const styles = StyleSheet.create({
   zonaVacia: { aspectRatio: 4 / 3, marginBottom: 8 },
   subiendo: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: COLORES.velo,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
-  textoSubiendo: { color: "#fff", fontWeight: "bold" },
+  textoSubiendo: { color: COLORES.blanco, fontWeight: "bold" },
   aviso: { fontSize: 12, fontWeight: "600", marginBottom: 4 },
 });

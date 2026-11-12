@@ -193,7 +193,7 @@ export default function LandingScreen() {
       {/* CABECERA */}
       <View
         accessibilityRole="banner"
-        style={{ backgroundColor: "rgba(255,255,255,0.97)", borderBottomWidth: 1, borderBottomColor: C.borde, zIndex: 5 }}
+        style={{ backgroundColor: C.cabeceraFondo, borderBottomWidth: 1, borderBottomColor: C.borde, zIndex: 5 }}
       >
         <Contenedor style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 72, gap: movil ? 8 : 16 }}>
           <Animated.View entering={entrada(0)}>
@@ -247,8 +247,8 @@ export default function LandingScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 8,
-                  backgroundColor: "rgba(250,204,21,0.12)",
-                  borderColor: "rgba(250,204,21,0.35)",
+                  backgroundColor: C.etiquetaAmarillaFondo,
+                  borderColor: C.etiquetaAmarillaBorde,
                   borderWidth: 1,
                   paddingVertical: 6,
                   paddingHorizontal: 14,

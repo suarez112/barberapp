@@ -6,6 +6,7 @@ import AnimacionInicio from "@/features/inicio/AnimacionInicio";
 import SeleccionRolScreen from "@/features/inicio/SeleccionRolScreen";
 import { useSesionLista } from "@/features/sesion/RestaurarSesionProvider";
 import { usePersonal } from "@/features/sesion/usePersonal";
+import { useAppTheme } from "@/theme/ThemeProvider";
 
 // Página principal: solo existe en la web. En Android e iOS la condición se resuelve al compilar,
 // así que ni sus textos ni sus precios entran en la app del celular.
@@ -24,6 +25,7 @@ export default function InicioRoute() {
   const { lista } = useSesionLista();
   const personal = usePersonal();
   const { usuario } = useCuenta();
+  const { colors } = useAppTheme();
   const [animada, setAnimada] = useState(animacionMostrada);
   const terminarAnimacion = useCallback(() => {
     animacionMostrada = true;
@@ -35,7 +37,7 @@ export default function InicioRoute() {
   }
   // Web: sin sesión se ve la página principal; con sesión se va al panel como en el celular
   if (PaginaPrincipalWeb) {
-    if (!lista) return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+    if (!lista) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
     if (personal) return <Redirect href={personal.esCuentaAdmin ? "/admin" : "/panel"} />;
     if (usuario?.rol === "cliente") return <Redirect href="/mis-negocios" />;
     return <PaginaPrincipalWeb />;

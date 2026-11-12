@@ -12,16 +12,14 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Stop } from "react-native-svg";
 import { APP_NOMBRE } from "@/config/app";
+import { COLORES_INICIO } from "@/theme/paleta";
 
 // Total of the whole intro (the brief asks for 2.5 s at most)
 const DURACION_MS = 2400;
 const DURACION_MOVIMIENTO_REDUCIDO_MS = 1400;
 
 // The intro is always dark, whatever the app theme is: fixed colors on purpose
-const FONDO = "#000000";
-const ORO = "#FFC107";
-const ORO_CLARO = "#FFE27A";
-const ORO_OSCURO = "#FF9800";
+const { fondo: FONDO, oro: ORO, oroClaro: ORO_CLARO, oroOscuro: ORO_OSCURO } = COLORES_INICIO;
 
 const logoImagen = require("../../../assets/logo-app.webp");
 
@@ -109,7 +107,7 @@ function Resplandor({ id }: { id: string }) {
     <Svg width="100%" height="100%" viewBox="-100 -100 200 200">
       <Defs>
         <RadialGradient id={id} cx="0" cy="0" r="100" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={1} />
+          <Stop offset="0" stopColor={COLORES_INICIO.brillo} stopOpacity={1} />
           <Stop offset="0.12" stopColor={ORO_CLARO} stopOpacity={0.95} />
           <Stop offset="0.4" stopColor={ORO} stopOpacity={0.4} />
           <Stop offset="1" stopColor={ORO_OSCURO} stopOpacity={0} />
@@ -149,8 +147,8 @@ function Nubes() {
     <Svg width="100%" height="100%" viewBox="-100 -100 200 200">
       <Defs>
         <RadialGradient id="nube" cx="0.5" cy="0.5" r="0.5">
-          <Stop offset="0" stopColor="#4A4D55" stopOpacity={0.85} />
-          <Stop offset="1" stopColor="#1A1B1F" stopOpacity={0} />
+          <Stop offset="0" stopColor={COLORES_INICIO.nubeClara} stopOpacity={0.85} />
+          <Stop offset="1" stopColor={COLORES_INICIO.nubeOscura} stopOpacity={0} />
         </RadialGradient>
       </Defs>
       {manchas.map((m, i) => (
@@ -164,7 +162,7 @@ function Particulas({ puntos }: { puntos: { x: number; y: number; radio: number 
   return (
     <Svg width="100%" height="100%" viewBox="-100 -100 200 200">
       {puntos.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y} r={p.radio} fill={i % 3 === 0 ? "#FFFFFF" : ORO_CLARO} />
+        <Circle key={i} cx={p.x} cy={p.y} r={p.radio} fill={i % 3 === 0 ? COLORES_INICIO.brillo : ORO_CLARO} />
       ))}
     </Svg>
   );
@@ -315,7 +313,7 @@ export default function AnimacionInicio({ onTerminar }: { onTerminar: () => void
           <Svg width={28} height={28} viewBox="-100 -100 200 200">
             <Defs>
               <RadialGradient id="puntaBarra" cx="0" cy="0" r="100" gradientUnits="userSpaceOnUse">
-                <Stop offset="0" stopColor="#FFFFFF" stopOpacity={1} />
+                <Stop offset="0" stopColor={COLORES_INICIO.brillo} stopOpacity={1} />
                 <Stop offset="0.35" stopColor={ORO_CLARO} stopOpacity={0.8} />
                 <Stop offset="1" stopColor={ORO} stopOpacity={0} />
               </RadialGradient>

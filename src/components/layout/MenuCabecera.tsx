@@ -7,6 +7,7 @@ import Tocable from "@/components/ui/Tocable";
 import { useNotificaciones } from "@/features/notificaciones/NotificacionesProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { PreferenciaTema } from "@/theme/preferenciaTema";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   visible: boolean;
@@ -163,7 +164,7 @@ export default function MenuCabecera({ visible, onCerrar, onSalir }: Props) {
 }
 
 const styles = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  fondo: { flex: 1, backgroundColor: COLORES.velo },
   hoja: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,

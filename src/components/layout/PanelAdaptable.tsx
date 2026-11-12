@@ -12,6 +12,7 @@ import {
 import Tocable from "@/components/ui/Tocable";
 import CampanaNotificaciones from "@/features/notificaciones/centro/CampanaNotificaciones";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 import BotonCabecera from "./BotonCabecera";
 import BotonTema from "./BotonTema";
 import MenuCabecera from "./MenuCabecera";
@@ -58,12 +59,8 @@ type Props<Id extends string> = {
 
 // Colores de la sección elegida: amarillo suave con borde amarillo y texto legible
 function useColoresActivo() {
-  const { colors, esOscuro } = useAppTheme();
-  return {
-    fondo: esOscuro ? "rgba(234, 179, 8, 0.16)" : "#FEF3C7",
-    borde: "#EAB308",
-    texto: esOscuro ? colors.textPrimary : "#111827",
-  };
+  const { colors } = useAppTheme();
+  return { fondo: colors.activoBg, borde: COLORES.bordeDestacado, texto: colors.activoTexto };
 }
 
 function BotonMenuLateral({
@@ -296,6 +293,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: COLORES.velo,
   },
 });

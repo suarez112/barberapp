@@ -35,6 +35,7 @@ import { useNegocio } from "../../negocio/NegocioProvider";
 import SelectorHoras from "../../reservas/components/SelectorHoras";
 import { useAvisarError } from "../../sesion/useAvisarError";
 import { Personal } from "../../sesion/usePersonal";
+import { COLORES } from "@/theme/paleta";
 import {
   consultarDisponibilidadPanel,
   crearCitaPanel,
@@ -588,7 +589,7 @@ function FilaCliente({
 
 const styles = StyleSheet.create({
   raiz: { flex: 1, justifyContent: "flex-end" },
-  fondo: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  fondo: { ...StyleSheet.absoluteFill, backgroundColor: COLORES.velo },
   hoja: {
     maxHeight: "92%",
     borderTopLeftRadius: 20,

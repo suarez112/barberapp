@@ -13,7 +13,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Tocable from "@/components/ui/Tocable";
 import { APP_LEMA } from "@/config/app";
-import { COLORES_LANDING } from "@/theme/paleta";
+import { COLORES_LANDING, COLORES } from "@/theme/paleta";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import BotonTema from "./BotonTema";
 
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   franjaBaja: { paddingBottom: 14 },
   logoBajo: { width: 44, height: 44, borderRadius: 12 },
   tituloBajo: { fontSize: 20, marginTop: 8 },
-  subtitulo: { color: "#D1D5DB", fontSize: 14, marginTop: 6, textAlign: "center" },
+  subtitulo: { color: COLORES.subtituloSobreOscuro, fontSize: 14, marginTop: 6, textAlign: "center" },
   volver: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   logo: { width: 84, height: 84, borderRadius: 20, marginTop: 4 },
   lema: { color: COLORES_LANDING.amarillo, fontSize: 14, fontWeight: "bold", marginTop: 14, textAlign: "center" },

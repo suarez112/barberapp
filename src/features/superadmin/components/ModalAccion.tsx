@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { COLORES } from "@/theme/paleta";
 
 type Props = {
   titulo: string;
@@ -71,7 +72,7 @@ export default function ModalAccion({
 }
 
 const styles = StyleSheet.create({
-  fondo: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0,0,0,0.6)" },
+  fondo: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: COLORES.velo },
   centro: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   tarjeta: { width: "100%", maxWidth: 480, maxHeight: "90%", borderWidth: 1, borderRadius: 12, padding: 24 },
   titulo: { fontSize: 20, fontWeight: "bold", marginBottom: 6 },
