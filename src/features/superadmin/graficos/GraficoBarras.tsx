@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   fila: { flexDirection: "row", alignItems: "center", gap: 12 },
   etiqueta: { width: 120 },
   texto: { fontSize: 13 },
-  detalle: { fontSize: 11, marginTop: 1 },
+  detalle: { fontSize: 12, marginTop: 1 },
   pista: { flex: 1, height: 14, justifyContent: "center" },
   // Barra fina con el extremo de los datos redondeado
   barra: { height: 12, minWidth: 3, borderTopRightRadius: 4, borderBottomRightRadius: 4 },

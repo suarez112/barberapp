@@ -56,5 +56,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 8,
   },
-  botonTexto: { fontSize: 11, fontWeight: "bold" },
+  botonTexto: { fontSize: 12, fontWeight: "bold" },
 });

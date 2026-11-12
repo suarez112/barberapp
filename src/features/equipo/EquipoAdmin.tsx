@@ -760,8 +760,8 @@ const styles = StyleSheet.create({
   botonPlanes: { marginTop: 10 },
   tituloLista: { marginTop: 20 },
   flex: { flex: 1 },
-  usuario: { fontSize: 10, marginTop: 2 },
-  ayuda: { fontSize: 11, marginTop: 2, marginBottom: 8 },
+  usuario: { fontSize: 12, marginTop: 2 },
+  ayuda: { fontSize: 12, marginTop: 2, marginBottom: 8 },
   interruptor: {
     flexDirection: "row",
     alignItems: "center",

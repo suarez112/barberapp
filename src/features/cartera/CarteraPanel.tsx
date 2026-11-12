@@ -240,7 +240,7 @@ const s = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center",
   },
-  textoSegmento: { fontSize: 11, fontWeight: "bold" },
+  textoSegmento: { fontSize: 12, fontWeight: "bold" },
   navegador: {
     flexDirection: "row",
     alignItems: "center",
@@ -263,8 +263,8 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
   numero: { fontSize: 20, fontWeight: "bold" },
-  textoTarjeta: { fontSize: 11, marginTop: 4, textAlign: "center" },
+  textoTarjeta: { fontSize: 12, marginTop: 4, textAlign: "center" },
   negrita: { fontWeight: "bold" },
   infoText: { fontSize: 13, marginVertical: 10 },
-  nota: { fontSize: 11, marginTop: 8 },
+  nota: { fontSize: 12, marginTop: 8 },
 });

@@ -97,6 +97,6 @@ const styles = StyleSheet.create({
   sinFoto: { alignItems: "center", justifyContent: "center" },
   cuerpo: { padding: 10 },
   nombre: { fontWeight: "bold" },
-  descripcion: { fontSize: 11, marginTop: 2 },
+  descripcion: { fontSize: 12, marginTop: 2 },
   precio: { fontWeight: "bold", marginTop: 4 },
 });

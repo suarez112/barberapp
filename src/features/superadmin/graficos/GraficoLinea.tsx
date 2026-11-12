@@ -15,7 +15,7 @@ type Props = {
   color?: string;
 };
 
-const MARGEN = { izq: 40, der: 12, arriba: 12, abajo: 26 };
+const MARGEN = { izq: 44, der: 12, arriba: 12, abajo: 26 };
 const MARCAS_Y = 3;
 
 // Redondea hacia arriba a 1, 2 o 5 por una potencia de 10 (el tope del eje)
@@ -77,7 +77,7 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
           {marcasY.map((v) => (
             <g key={v}>
               <line x1={MARGEN.izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} stroke={colors.cardBorder} strokeWidth={1} />
-              <text x={MARGEN.izq - 6} y={y(v) + 4} textAnchor="end" fontSize={11} fill={colors.textSecondary}>
+              <text x={MARGEN.izq - 6} y={y(v) + 4} textAnchor="end" fontSize={12} fill={colors.textSecondary}>
                 {formatearNumero(Math.round(v))}
               </text>
             </g>
@@ -88,7 +88,7 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
               x={x(i)}
               y={alto - 6}
               textAnchor={marcasX.length < 2 ? "middle" : k === 0 ? "start" : k === marcasX.length - 1 ? "end" : "middle"}
-              fontSize={11}
+              fontSize={12}
               fill={colors.textSecondary}
             >
               {puntos[i].etiqueta}
@@ -138,6 +138,6 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
 
 const styles = StyleSheet.create({
   globo: { position: "absolute", top: 8, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  globoEtiqueta: { fontSize: 11 },
+  globoEtiqueta: { fontSize: 12 },
   globoValor: { fontSize: 15, fontWeight: "bold" },
 });

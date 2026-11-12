@@ -175,7 +175,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   tituloGrupo: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
     letterSpacing: 1,
   },
@@ -190,6 +190,6 @@ const s = StyleSheet.create({
     gap: 2,
   },
   textoChip: { fontSize: 14, fontWeight: "bold" },
-  textoMarca: { fontSize: 10, fontWeight: "bold", lineHeight: 13 },
+  textoMarca: { fontSize: 12, fontWeight: "bold", lineHeight: 16 },
   sinHoras: { fontSize: 13, marginVertical: 10 },
 });

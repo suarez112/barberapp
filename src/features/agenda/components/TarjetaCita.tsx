@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   cliente: { flexShrink: 1, fontSize: 15, fontWeight: "bold" },
   servicio: { fontSize: 13 },
   precio: { fontSize: 13, fontWeight: "bold" },
-  nota: { fontSize: 11, marginTop: 8 },
+  nota: { fontSize: 12, marginTop: 8 },
   alerta: { fontWeight: "bold" },
   acciones: { flexDirection: "row", gap: 10, marginTop: 4 },
   zonaBoton: { flex: 1, minHeight: 44, justifyContent: "center" },
@@ -188,6 +188,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  botonEstadoTexto: { fontWeight: "bold", fontSize: 11 },
+  botonEstadoTexto: { fontWeight: "bold", fontSize: 12 },
   whatsapp: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
 });

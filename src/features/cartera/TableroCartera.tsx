@@ -396,8 +396,8 @@ const s = StyleSheet.create({
   filaTarjetas: { flexDirection: "row", gap: 8 },
   tarjeta: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, borderRadius: 8, borderWidth: 1, alignItems: "center" },
   numero: { fontSize: 17, fontWeight: "bold" },
-  textoTarjeta: { fontSize: 11, marginTop: 4, textAlign: "center" },
-  ayuda: { fontSize: 11, marginBottom: 8 },
+  textoTarjeta: { fontSize: 12, marginTop: 4, textAlign: "center" },
+  ayuda: { fontSize: 12, marginBottom: 8 },
   vacio: { fontSize: 13, marginVertical: 6 },
   filaBarra: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   presionado: { opacity: 0.6 },
@@ -412,5 +412,5 @@ const s = StyleSheet.create({
   filaDetalle: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
   etiquetaDetalle: { fontSize: 13 },
   valorDetalle: { fontSize: 13, fontWeight: "bold" },
-  nota: { fontSize: 11, marginTop: 12 },
+  nota: { fontSize: 12, marginTop: 12 },
 });

@@ -30,7 +30,7 @@ function Barras({ alturas, activa, alto }: { alturas: number[]; activa: number; 
 function Avatar({ letra }: { letra: string }) {
   return (
     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.oscuro, alignItems: "center", justifyContent: "center" }}>
-      <T style={{ color: C.amarillo, fontSize: 10, fontWeight: "800" }}>{letra}</T>
+      <T style={{ color: C.amarillo, fontSize: 12, fontWeight: "800" }}>{letra}</T>
     </View>
   );
 }
@@ -104,7 +104,7 @@ export function PanelEjemplo() {
         padding: 12,
       }}
     >
-      <T style={{ color: C.gris, fontSize: 11, fontWeight: "600", marginBottom: 4 }}>{titulo}</T>
+      <T style={{ color: C.gris, fontSize: 12, fontWeight: "600", marginBottom: 4 }}>{titulo}</T>
       <T style={{ fontSize: 18, fontWeight: "700" }}>{valor}</T>
     </View>
   );

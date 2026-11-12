@@ -68,5 +68,5 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   pestana: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 10, marginHorizontal: 2 },
-  label: { fontSize: 11, marginTop: 3, fontWeight: "600" },
+  label: { fontSize: 12, marginTop: 3, fontWeight: "600" },
 });

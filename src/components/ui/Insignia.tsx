@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "bold",
   },
   suave: { borderWidth: 1, fontWeight: "600", letterSpacing: 0.5 },

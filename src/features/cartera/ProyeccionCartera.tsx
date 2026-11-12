@@ -81,5 +81,5 @@ const s = StyleSheet.create({
   fila: { flexDirection: "row", gap: 10, marginTop: 4 },
   tarjeta: { flex: 1, padding: 16, borderRadius: 8, borderWidth: 1, alignItems: "center" },
   numero: { fontSize: 20, fontWeight: "bold" },
-  texto: { fontSize: 11, marginTop: 4, textAlign: "center" },
+  texto: { fontSize: 12, marginTop: 4, textAlign: "center" },
 });

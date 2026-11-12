@@ -257,7 +257,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  etiqueta: { fontSize: 10, fontWeight: "bold", letterSpacing: 1 },
+  etiqueta: { fontSize: 12, fontWeight: "bold", letterSpacing: 1 },
   valor: { fontSize: 15, fontWeight: "bold", marginTop: 2 },
   precio: { fontSize: 15, fontWeight: "bold" },
   linea: { height: 1, marginVertical: 12 },
@@ -268,7 +268,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: "flex-start",
   },
-  textoNota: { flex: 1, fontSize: 11, lineHeight: 15 },
+  textoNota: { flex: 1, fontSize: 12, lineHeight: 16 },
   botonCalendario: {
     width: "100%",
     flexDirection: "row",

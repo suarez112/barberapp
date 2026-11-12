@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 8,
   },
-  nombre: { fontSize: 10, fontWeight: "bold" },
+  nombre: { fontSize: 12, fontWeight: "bold" },
   numero: { fontSize: 20, fontWeight: "bold", marginVertical: 2 },
-  mes: { fontSize: 9 },
+  mes: { fontSize: 12 },
 });
