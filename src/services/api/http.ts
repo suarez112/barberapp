@@ -141,23 +141,26 @@ export async function request<T>(
     signal?.removeEventListener("abort", cancelar);
   }
 
+  if (!response.ok) throw errorDeRespuesta(response.status, texto);
   const data = leerJSON(texto);
-  if (!response.ok) {
-    // Un error sin JSON (ej. página de un proxy) conserva su código de estado
-    const cuerpo = data as (DatosError & { error?: unknown }) | undefined;
-    const mensaje = cuerpo?.error;
-    const datos =
-      typeof cuerpo?.codigo === "string"
-        ? { codigo: cuerpo.codigo, funcion: cuerpo.funcion, planRequerido: cuerpo.planRequerido }
-        : undefined;
-    throw new ApiError(typeof mensaje === "string" ? mensaje : "", response.status, datos);
-  }
   // Una respuesta exitosa que no es JSON (ej. portal cautivo) no viene del backend
   if (data === NO_ES_JSON) throw new ErrorDeConexion(texto, "respuesta-invalida");
   return data as T;
 }
 
 const NO_ES_JSON = Symbol("NO_ES_JSON");
+
+// Respuesta de error del backend: { error, codigo?, funcion?, planRequerido? }.
+// Un error sin JSON (ej. página de un proxy) conserva su código de estado
+function errorDeRespuesta(status: number, texto: string) {
+  const cuerpo = leerJSON(texto) as (DatosError & { error?: unknown }) | undefined;
+  const mensaje = cuerpo?.error;
+  const datos =
+    typeof cuerpo?.codigo === "string"
+      ? { codigo: cuerpo.codigo, funcion: cuerpo.funcion, planRequerido: cuerpo.planRequerido }
+      : undefined;
+  return new ApiError(typeof mensaje === "string" ? mensaje : "", status, datos);
+}
 
 // Cuerpo vacío (ej. 204 No Content) → undefined
 function leerJSON(texto: string): unknown {
@@ -177,21 +180,28 @@ export const mensajeDeError = (error: unknown, porDefecto: string) =>
 export const esFuncionNoIncluida = (error: unknown) =>
   error instanceof ApiError && error.status === 403 && error.datos?.codigo === "funcion_no_incluida";
 
-// Descarga una imagen que exige el token (ej. un QR de pago) y devuelve una URL local
-// (blob:) para mostrarla. Un <Image source={{ uri }}> no puede mandar el encabezado
-// Authorization y recibiría 401. Solo web: quien la pidió debe liberar la URL con
-// URL.revokeObjectURL al terminar.
-export async function descargarImagen(
+type OpcionesDescarga = {
+  token: string;
+  signal?: AbortSignal;
+  // Por defecto 15 s; un reporte grande necesita más
+  tiempoLimiteMs?: number;
+};
+
+// Descarga un archivo que exige el token (una imagen, un reporte). `leer` saca el contenido
+// de la respuesta y corre dentro del mismo tiempo límite. Lanza los mismos errores que
+// request(): ApiError, ErrorDeConexion o PeticionCancelada.
+export async function descargarConToken<T>(
   ruta: string,
-  { token, signal }: { token: string; signal?: AbortSignal },
-): Promise<string> {
+  { token, signal, tiempoLimiteMs = TIEMPO_LIMITE_MS }: OpcionesDescarga,
+  leer: (respuesta: Response) => Promise<T>,
+): Promise<T> {
   if (signal?.aborted) throw new PeticionCancelada();
   const controlador = new AbortController();
   let agotado = false;
   const temporizador = setTimeout(() => {
     agotado = true;
     controlador.abort();
-  }, TIEMPO_LIMITE_MS);
+  }, tiempoLimiteMs);
   const cancelar = () => controlador.abort();
   signal?.addEventListener("abort", cancelar);
 
@@ -200,13 +210,8 @@ export async function descargarImagen(
       headers: { Authorization: `Bearer ${token}` },
       signal: controlador.signal,
     });
-    if (!respuesta.ok) {
-      const cuerpo = leerJSON(await respuesta.text()) as { error?: unknown } | undefined;
-      throw new ApiError(typeof cuerpo?.error === "string" ? cuerpo.error : "", respuesta.status);
-    }
-    const tipo = respuesta.headers.get("content-type") ?? "";
-    if (!tipo.startsWith("image/")) throw new ErrorDeConexion(tipo, "respuesta-invalida");
-    return URL.createObjectURL(await respuesta.blob());
+    if (!respuesta.ok) throw errorDeRespuesta(respuesta.status, await respuesta.text());
+    return await leer(respuesta);
   } catch (error) {
     if (error instanceof ApiError || error instanceof ErrorDeConexion) throw error;
     if (agotado) throw new ErrorDeConexion(error, "tiempo-agotado");
@@ -217,3 +222,14 @@ export async function descargarImagen(
     signal?.removeEventListener("abort", cancelar);
   }
 }
+
+// Descarga una imagen que exige el token (ej. un QR de pago) y devuelve una URL local
+// (blob:) para mostrarla. Un <Image source={{ uri }}> no puede mandar el encabezado
+// Authorization y recibiría 401. Solo web: quien la pidió debe liberar la URL con
+// URL.revokeObjectURL al terminar.
+export const descargarImagen = (ruta: string, opciones: OpcionesDescarga): Promise<string> =>
+  descargarConToken(ruta, opciones, async (respuesta) => {
+    const tipo = respuesta.headers.get("content-type") ?? "";
+    if (!tipo.startsWith("image/")) throw new ErrorDeConexion(tipo, "respuesta-invalida");
+    return URL.createObjectURL(await respuesta.blob());
+  });
