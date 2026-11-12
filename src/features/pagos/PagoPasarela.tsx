@@ -1,6 +1,3 @@
-import { Redirect, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import Chips from "@/components/ui/Chips";
@@ -9,10 +6,23 @@ import { Aviso, describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError, esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearPesos } from "@/utils/formato";
-import { PlanSuscripcion, obtenerSuscripcion, Suscripcion } from "../cuenta/api";
+import { Redirect, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useVolver } from "../ayuda/volverAyuda";
+import {
+  obtenerSuscripcion,
+  PlanSuscripcion,
+  Suscripcion,
+} from "../cuenta/api";
 import { nivelPara, precioPara } from "../planes/cobro";
 import { usePlanes } from "../planes/usePlanes";
-import { useVolver } from "../ayuda/volverAyuda";
 import { useSesionLista } from "../sesion/RestaurarSesionProvider";
 import { usePersonal } from "../sesion/usePersonal";
 import { crearOrden } from "./api";
@@ -27,15 +37,26 @@ const PERIODOS = [
 // y 403 (negocio suspendido) traen su motivo en el mensaje del servidor. El 503 (pagos sin configurar)
 // también, pero describirError lo cubre con un texto genérico de 5xx: aquí se muestra el del servidor.
 const avisoDeOrden = (e: unknown): Aviso => {
-  const aviso = describirError(e, { titulo: "No se pudo iniciar el pago", porDefecto: "No se pudo iniciar el pago." });
-  return e instanceof ApiError && e.status === 503 && e.message ? { titulo: aviso.titulo, mensaje: e.message } : aviso;
+  const aviso = describirError(e, {
+    titulo: "No se pudo iniciar el pago",
+    porDefecto: "No se pudo iniciar el pago.",
+  });
+  return e instanceof ApiError && e.status === 503 && e.message
+    ? { titulo: aviso.titulo, mensaje: e.message }
+    : aviso;
 };
 
 // Lo elegido en Planes llega como /pagar?profesionales=<n>&periodo=<mensual|anual>.
 // Solo cuenta si ambos son válidos; si no, se ignora y se elige aquí.
 type Elegido = { profesionales: number; periodo: PlanSuscripcion };
-const leerElegido = (profesionales: unknown, periodo: unknown): Elegido | null => {
-  const n = typeof profesionales === "string" && /^\d+$/.test(profesionales) ? Number(profesionales) : NaN;
+const leerElegido = (
+  profesionales: unknown,
+  periodo: unknown,
+): Elegido | null => {
+  const n =
+    typeof profesionales === "string" && /^\d+$/.test(profesionales)
+      ? Number(profesionales)
+      : NaN;
   if (!Number.isInteger(n) || n < 1) return null;
   if (periodo !== "mensual" && periodo !== "anual") return null;
   return { profesionales: n, periodo };
@@ -50,11 +71,20 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   const { lista } = useSesionLista();
   const personal = usePersonal();
   const { planes, error: errorPlanes, reintentar } = usePlanes();
-  const parametros = useLocalSearchParams<{ profesionales?: string; periodo?: string }>();
-  const [elegido] = useState(() => leerElegido(parametros.profesionales, parametros.periodo));
+  const parametros = useLocalSearchParams<{
+    profesionales?: string;
+    periodo?: string;
+  }>();
+  const [elegido] = useState(() =>
+    leerElegido(parametros.profesionales, parametros.periodo),
+  );
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
-  const [profesionales, setProfesionales] = useState<number | null>(elegido?.profesionales ?? null);
-  const [periodo, setPeriodo] = useState<PlanSuscripcion>(elegido?.periodo ?? "mensual");
+  const [profesionales, setProfesionales] = useState<number | null>(
+    elegido?.profesionales ?? null,
+  );
+  const [periodo, setPeriodo] = useState<PlanSuscripcion>(
+    elegido?.periodo ?? "mensual",
+  );
   const [error, setError] = useState<Aviso | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -67,7 +97,9 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
     obtenerSuscripcion(token, controlador.signal)
       .then((s) => {
         setSuscripcion(s);
-        setProfesionales((actual) => actual ?? Math.max(1, s.profesionalesCobrados));
+        setProfesionales(
+          (actual) => actual ?? Math.max(1, s.profesionalesCobrados),
+        );
         if (s.plan && !elegido) setPeriodo(s.plan);
       })
       .catch((e) => {
@@ -90,7 +122,10 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
     setEnviando(true);
     setError(null);
     try {
-      const creada = await crearOrden(token, { profesionales: cantidad, periodo });
+      const creada = await crearOrden(token, {
+        profesionales: cantidad,
+        periodo,
+      });
       // La pasarela cobra el monto de la orden: si no es el precio mostrado, no se redirige
       if (creada.monto !== precio) {
         setError({
@@ -100,10 +135,14 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
         setEnviando(false);
         return;
       }
-      if (typeof creada.urlPago !== "string" || !creada.urlPago.startsWith("https://")) {
+      if (
+        typeof creada.urlPago !== "string" ||
+        !creada.urlPago.startsWith("https://")
+      ) {
         setError({
           titulo: "No se pudo iniciar el pago",
-          mensaje: "La dirección de la pasarela de pago no es segura. No se cobró nada. Intenta de nuevo más tarde.",
+          mensaje:
+            "La dirección de la pasarela de pago no es segura. No se cobró nada. Intenta de nuevo más tarde.",
         });
         setEnviando(false);
         return;
@@ -116,28 +155,78 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
     }
   };
 
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const restablecerBoton = () => setEnviando(false);
+    const alCambiarVisibilidad = () => {
+      if (document.visibilityState === "visible") {
+        setEnviando(false);
+      }
+    };
+
+    window.addEventListener("pageshow", restablecerBoton);
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+
+    return () => {
+      window.removeEventListener("pageshow", restablecerBoton);
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+    };
+  }, []);
+
   const contenido = () => {
     if (!lista) {
-      return <ActivityIndicator accessibilityLabel="Cargando" color={colors.primaryText} style={styles.cargando} />;
+      return (
+        <ActivityIndicator
+          accessibilityLabel="Cargando"
+          color={colors.primaryText}
+          style={styles.cargando}
+        />
+      );
     }
-    if (!personal) return <Redirect href={{ pathname: "/login", params: { volverA: "/pagar" } }} />;
+    if (!personal)
+      return (
+        <Redirect
+          href={{ pathname: "/login", params: { volverA: "/pagar" } }}
+        />
+      );
     if (!personal.esAdmin) {
-      return <Text style={[styles.texto, { color: colors.textSecondary }]}>Solo un administrador puede pagar el plan.</Text>;
+      return (
+        <Text style={[styles.texto, { color: colors.textSecondary }]}>
+          Solo un administrador puede pagar el plan.
+        </Text>
+      );
     }
     if (errorPlanes) {
       return (
         <View>
-          <Text style={[styles.texto, { color: colors.peligroTexto }]}>{errorPlanes}</Text>
-          <Boton titulo="REINTENTAR" ayuda="Vuelve a cargar los precios" variante="secundario" onPress={reintentar} />
+          <Text style={[styles.texto, { color: colors.peligroTexto }]}>
+            {errorPlanes}
+          </Text>
+          <Boton
+            titulo="REINTENTAR"
+            ayuda="Vuelve a cargar los precios"
+            variante="secundario"
+            onPress={reintentar}
+          />
         </View>
       );
     }
     if (!planes || precio === null || profesionales === null) {
-      return <ActivityIndicator accessibilityLabel="Cargando precios" color={colors.primaryText} style={styles.cargando} />;
+      return (
+        <ActivityIndicator
+          accessibilityLabel="Cargando precios"
+          color={colors.primaryText}
+          style={styles.cargando}
+        />
+      );
     }
 
     const nivel = nivelPara(planes, cantidad);
-    const opciones = Array.from({ length: maximo - minimo + 1 }, (_, i) => minimo + i).map((n) => ({
+    const opciones = Array.from(
+      { length: maximo - minimo + 1 },
+      (_, i) => minimo + i,
+    ).map((n) => ({
       valor: n,
       etiqueta: `${n} ${n === 1 ? "profesional" : "profesionales"}`,
     }));
@@ -155,10 +244,14 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
               onCambiar={setProfesionales}
             />
             {minimo > 1 ? (
-              <Text style={[styles.nota, { color: colors.textSecondary }]}>Mínimo {minimo}: ya atienden clientes hoy.</Text>
+              <Text style={[styles.nota, { color: colors.textSecondary }]}>
+                Mínimo {minimo}: ya atienden clientes hoy.
+              </Text>
             ) : null}
 
-            <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>Periodo</Text>
+            <Text style={[styles.etiqueta, { color: colors.textPrimary }]}>
+              Periodo
+            </Text>
             <Chips opciones={PERIODOS} valor={periodo} onCambiar={setPeriodo} />
           </>
         )}
@@ -166,16 +259,24 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
         <View
           accessible
           accessibilityLabel={`Resumen: ${cantidad} ${cantidad === 1 ? "profesional" : "profesionales"}, plan ${periodo}, ${formatearPesos(precio)} pesos`}
-          style={[styles.resumen, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          style={[
+            styles.resumen,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         >
-          <Text style={[styles.resumenTitulo, { color: colors.textSecondary }]}>RESUMEN</Text>
+          <Text style={[styles.resumenTitulo, { color: colors.textSecondary }]}>
+            RESUMEN
+          </Text>
           <Text style={[styles.resumenLinea, { color: colors.textPrimary }]}>
-            {cantidad} {cantidad === 1 ? "profesional" : "profesionales"} · Nivel {nivel.nombre}
+            {cantidad} {cantidad === 1 ? "profesional" : "profesionales"} ·
+            Nivel {nivel.nombre}
           </Text>
           <Text style={[styles.resumenLinea, { color: colors.textPrimary }]}>
             Plan {periodo === "mensual" ? "mensual" : "anual"}
           </Text>
-          <Text style={[styles.total, { color: colors.textPrimary }]}>${formatearPesos(precio)}</Text>
+          <Text style={[styles.total, { color: colors.textPrimary }]}>
+            ${formatearPesos(precio)}
+          </Text>
           <Text style={[styles.nota, { color: colors.textSecondary }]}>
             {planes.moneda} {periodo === "mensual" ? "al mes" : "al año"}
           </Text>
@@ -183,8 +284,12 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
 
         {error ? (
           <View accessibilityLiveRegion="polite" style={styles.error}>
-            <Text style={[styles.errorTitulo, { color: colors.peligroTexto }]}>{error.titulo}</Text>
-            <Text style={[styles.errorTexto, { color: colors.peligroTexto }]}>{error.mensaje}</Text>
+            <Text style={[styles.errorTitulo, { color: colors.peligroTexto }]}>
+              {error.titulo}
+            </Text>
+            <Text style={[styles.errorTexto, { color: colors.peligroTexto }]}>
+              {error.mensaje}
+            </Text>
           </View>
         ) : null}
         <Boton
@@ -200,7 +305,10 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.pagina}>
-        <Text accessibilityRole="header" style={[styles.titulo, { color: colors.textPrimary }]}>
+        <Text
+          accessibilityRole="header"
+          style={[styles.titulo, { color: colors.textPrimary }]}
+        >
           Pagar mi plan
         </Text>
         {modoPrueba ? <AvisoModoPrueba /> : null}
@@ -211,14 +319,29 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  pagina: { paddingVertical: 20, width: "100%", maxWidth: 720, alignSelf: "center" },
+  pagina: {
+    paddingVertical: 20,
+    width: "100%",
+    maxWidth: 720,
+    alignSelf: "center",
+  },
   titulo: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
   cargando: { marginTop: 30 },
   texto: { fontSize: 14, marginBottom: 12 },
   nota: { fontSize: 12, marginTop: 4 },
   etiqueta: { fontSize: 14, fontWeight: "600", marginTop: 16, marginBottom: 8 },
-  resumen: { borderWidth: 1, borderRadius: 12, padding: 16, marginVertical: 16 },
-  resumenTitulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 8 },
+  resumen: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 16,
+  },
+  resumenTitulo: {
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
   resumenLinea: { fontSize: 15, marginBottom: 2 },
   total: { fontSize: 32, fontWeight: "bold", marginTop: 8 },
   error: { marginBottom: 12 },
