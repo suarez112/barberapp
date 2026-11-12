@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  textoNumero: { color: COLORES.blanco, fontSize: 11, fontWeight: "bold" },
+  textoNumero: { color: COLORES.blanco, fontSize: 12, fontWeight: "bold" },
   fondo: {
     position: "absolute",
     top: 0,
@@ -324,5 +324,5 @@ const styles = StyleSheet.create({
   textos: { flex: 1, gap: 2 },
   avisoTitulo: { fontSize: 14 },
   negrita: { fontWeight: "bold" },
-  fecha: { fontSize: 11, marginTop: 2 },
+  fecha: { fontSize: 12, marginTop: 2 },
 });

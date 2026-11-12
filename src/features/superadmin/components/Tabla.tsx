@@ -82,6 +82,6 @@ const styles = StyleSheet.create({
   },
   encabezado: { minHeight: 44, borderTopWidth: 0 },
   celda: { paddingRight: 12, justifyContent: "center" },
-  titulo: { fontSize: 11, fontWeight: "bold", letterSpacing: 0.8 },
+  titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 0.8 },
   vacio: { padding: 24, textAlign: "center", fontSize: 14, borderTopWidth: 1 },
 });

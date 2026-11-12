@@ -79,5 +79,5 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   nombre: { fontSize: 12, fontWeight: "bold" },
-  comision: { fontSize: 10 },
+  comision: { fontSize: 12 },
 });

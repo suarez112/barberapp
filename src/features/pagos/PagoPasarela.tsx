@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   nota: { fontSize: 12, marginTop: 4 },
   etiqueta: { fontSize: 14, fontWeight: "600", marginTop: 16, marginBottom: 8 },
   resumen: { borderWidth: 1, borderRadius: 12, padding: 16, marginVertical: 16 },
-  resumenTitulo: { fontSize: 11, fontWeight: "bold", letterSpacing: 1, marginBottom: 8 },
+  resumenTitulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 8 },
   resumenLinea: { fontSize: 15, marginBottom: 2 },
   total: { fontSize: 32, fontWeight: "bold", marginTop: 8 },
   error: { marginBottom: 12 },

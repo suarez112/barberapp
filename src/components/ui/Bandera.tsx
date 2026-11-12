@@ -43,5 +43,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   imagen: { width: "100%", height: "100%" },
-  codigo: { fontSize: 9, fontWeight: "bold" },
+  codigo: { fontSize: 12, fontWeight: "bold" },
 });

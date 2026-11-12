@@ -80,6 +80,6 @@ const styles = StyleSheet.create({
   fila: { flexDirection: "row", alignItems: "center", gap: 8 },
   flex: { flex: 1 },
   titulo: { fontSize: 12, fontWeight: "bold" },
-  detalle: { fontSize: 11, marginTop: 2 },
-  estado: { fontSize: 10, fontWeight: "bold" },
+  detalle: { fontSize: 12, marginTop: 2 },
+  estado: { fontSize: 12, fontWeight: "bold" },
 });

@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
   },
-  version: { fontSize: 11, textAlign: "right", marginBottom: 4 },
+  version: { fontSize: 12, textAlign: "right", marginBottom: 4 },
   titulo: { fontSize: 17, fontWeight: "bold", marginBottom: 8 },
   // flexShrink: con un texto largo el botón Cerrar sigue a la vista
   contenido: { flexGrow: 0, flexShrink: 1 },

@@ -131,5 +131,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: "center",
   },
-  bloqueoTexto: { fontSize: 11, fontWeight: "bold" },
+  bloqueoTexto: { fontSize: 12, fontWeight: "bold" },
 });

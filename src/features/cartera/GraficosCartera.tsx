@@ -148,11 +148,11 @@ const s = StyleSheet.create({
   filaBarra: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   etiquetaBarra: { width: 96 },
   textoBarra: { fontSize: 13 },
-  detalleBarra: { fontSize: 11, marginTop: 1 },
+  detalleBarra: { fontSize: 12, marginTop: 1 },
   pista: { flex: 1, height: 18, borderRadius: 5, borderWidth: 1, overflow: "hidden" },
   relleno: { height: "100%", borderRadius: 4 },
   valorBarra: { width: 28, fontSize: 13, fontWeight: "bold", textAlign: "right" },
-  escala: { fontSize: 11, marginBottom: 4 },
+  escala: { fontSize: 12, marginBottom: 4 },
   grafico: {
     height: ALTO_GRAFICO,
     flexDirection: "row",
@@ -162,6 +162,6 @@ const s = StyleSheet.create({
   },
   columna: { flex: 1, justifyContent: "flex-end" },
   ejeX: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-  textoEje: { fontSize: 11 },
+  textoEje: { fontSize: 12 },
   pie: { fontSize: 12, marginTop: 8 },
 });

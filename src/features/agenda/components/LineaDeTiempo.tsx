@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   vacio: { borderWidth: 1, borderRadius: 10, padding: 16, marginTop: 4 },
   vacioTexto: { fontSize: 14, textAlign: "center" },
   marca: { position: "absolute", left: 0, right: 0, height: ALTO_MARCA, flexDirection: "row", alignItems: "center" },
-  horaMarca: { width: ANCHO_HORAS, fontSize: 11, textAlign: "right", paddingRight: 6 },
+  horaMarca: { width: ANCHO_HORAS, fontSize: 12, textAlign: "right", paddingRight: 6 },
   linea: { flex: 1, height: 1 },
   zona: { position: "absolute", top: 0, bottom: 0, left: ANCHO_HORAS + 4, right: 8 },
   cita: {
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   cliente: { fontSize: 12, fontWeight: "bold", flexShrink: 1 },
-  servicio: { fontSize: 11, flexShrink: 1 },
+  servicio: { fontSize: 12, flexShrink: 1 },
   bloqueo: {
     position: "absolute",
     left: 0,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  textoBloqueo: { fontSize: 11, fontWeight: "bold", paddingHorizontal: 6, borderRadius: 4, overflow: "hidden" },
+  textoBloqueo: { fontSize: 12, fontWeight: "bold", paddingHorizontal: 6, borderRadius: 4, overflow: "hidden" },
   ahora: { position: "absolute", left: ANCHO_HORAS - 4, right: 0, height: 8, flexDirection: "row", alignItems: "center" },
   puntoAhora: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORES.rojo },
   lineaAhora: { flex: 1, height: 2, backgroundColor: COLORES.rojo },

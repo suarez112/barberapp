@@ -341,7 +341,7 @@ export default function EstadisticasCartera({
 
 const s = StyleSheet.create({
   tituloGrande: { fontSize: 13, fontWeight: "bold", letterSpacing: 1, marginTop: 30, marginBottom: 2 },
-  ayuda: { fontSize: 11, marginBottom: 8 },
+  ayuda: { fontSize: 12, marginBottom: 8 },
   vacio: { fontSize: 13, marginVertical: 6 },
   etiquetaRango: { fontSize: 12, fontWeight: "bold", marginTop: 6 },
   bloque: { marginTop: 4 },
@@ -352,7 +352,7 @@ const s = StyleSheet.create({
   textosCambio: { flex: 1 },
   etiquetaCambio: { fontSize: 12 },
   valorCambio: { fontSize: 17, fontWeight: "bold", marginTop: 2 },
-  antes: { fontSize: 11, marginTop: 2 },
+  antes: { fontSize: 12, marginTop: 2 },
   indicador: { flexDirection: "row", alignItems: "center", gap: 2, minHeight: 44 },
   textoIndicador: { fontSize: 14, fontWeight: "bold" },
   divisor: { flexDirection: "row", height: 18, borderRadius: 5, borderWidth: 1, overflow: "hidden" },

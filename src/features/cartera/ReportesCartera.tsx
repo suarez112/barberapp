@@ -290,12 +290,12 @@ const s = StyleSheet.create({
   error: { fontSize: 13, marginVertical: 10 },
   cargando: { marginVertical: 20 },
   actualizando: { opacity: 0.6 },
-  ayuda: { fontSize: 11, marginBottom: 8 },
+  ayuda: { fontSize: 12, marginBottom: 8 },
   resumen: { fontSize: 13, fontWeight: "bold", marginBottom: 8 },
   filaBarra: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   etiquetaBarra: { width: 96 },
   nombreBarra: { fontSize: 13, fontWeight: "600" },
-  detalleBarra: { fontSize: 11 },
+  detalleBarra: { fontSize: 12 },
   pista: { flex: 1, height: 18, borderRadius: 5, borderWidth: 1, overflow: "hidden" },
   relleno: { height: "100%", borderRadius: 4 },
   valorBarra: { width: 52, fontSize: 13, fontWeight: "bold", textAlign: "right" },
@@ -305,7 +305,7 @@ const s = StyleSheet.create({
   ingresoServicio: { fontSize: 13, fontWeight: "bold" },
   marcas: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
   marca: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "bold",
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -314,8 +314,9 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   filaMapa: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 3 },
-  horaMapa: { width: 40, fontSize: 10 },
-  diaMapa: { flex: 1, fontSize: 10, fontWeight: "bold", textAlign: "center" },
+  // 52 px: "12 p. m." cabe en una línea a 12 px
+  horaMapa: { width: 52, fontSize: 12 },
+  diaMapa: { flex: 1, fontSize: 12, fontWeight: "bold", textAlign: "center" },
   celda: {
     flex: 1,
     height: 28,
@@ -325,5 +326,5 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  numeroCelda: { fontSize: 10, fontWeight: "bold" },
+  numeroCelda: { fontSize: 12, fontWeight: "bold" },
 });

@@ -505,7 +505,8 @@ export default function BloqueoSemanal({
                     <Text style={[s.diaNum, { color: colors.textPrimary }]}>{d.num}</Text>
                   )}
                   {cerrado ? (
-                    <Text style={[s.cerrado, { color: colors.textSecondary }]}>Cerrado</Text>
+                    // "—" como en las casillas y la leyenda: "Cerrado" a 12 px no cabe en la columna
+                    <Text style={[s.cerrado, { color: colors.textSecondary }]}>—</Text>
                   ) : null}
                 </TouchableOpacity>
               );
@@ -652,7 +653,7 @@ const s = StyleSheet.create({
   contenedor: { marginTop: 10 },
   titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 10 },
   tituloLista: { marginTop: 16 },
-  ayuda: { fontSize: 11, lineHeight: 15, marginVertical: 10 },
+  ayuda: { fontSize: 12, lineHeight: 16, marginVertical: 10 },
   cargando: { marginVertical: 20 },
   tarjeta: { borderRadius: 10, borderWidth: 1, padding: 8 },
   flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
@@ -666,8 +667,9 @@ const s = StyleSheet.create({
   centro: { flexDirection: "row", alignItems: "center", gap: 8 },
   textoSemana: { fontSize: 14, fontWeight: "bold", letterSpacing: 1 },
   fila: { flexDirection: "row", alignItems: "center" },
-  colHora: { width: 52, justifyContent: "center" },
-  hora: { fontSize: 9 },
+  // 60 px: "08:00 AM" cabe en una línea a 12 px
+  colHora: { width: 60, justifyContent: "center" },
+  hora: { fontSize: 12 },
   cabDia: {
     flex: 1,
     alignItems: "center",
@@ -679,9 +681,9 @@ const s = StyleSheet.create({
     marginHorizontal: 1.5,
     marginBottom: 4,
   },
-  diaNom: { fontSize: 9, fontWeight: "bold" },
+  diaNom: { fontSize: 12, fontWeight: "bold" },
   diaNum: { fontSize: 14, fontWeight: "bold" },
-  cerrado: { fontSize: 8, fontWeight: "bold" },
+  cerrado: { fontSize: 12, fontWeight: "bold" },
   cerradoCelda: { fontSize: 12 },
   celda: {
     overflow: "hidden",
@@ -707,7 +709,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  textoLeyenda: { fontSize: 11 },
+  textoLeyenda: { fontSize: 12 },
   itemLista: {
     flexDirection: "row",
     alignItems: "center",

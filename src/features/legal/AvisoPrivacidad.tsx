@@ -77,5 +77,5 @@ const styles = StyleSheet.create({
   enlace: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingLeft: 46 },
   textoEnlace: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
   caja: { borderWidth: 1, borderRadius: 10, padding: 12 },
-  titulo: { fontSize: 11, fontWeight: "bold", letterSpacing: 1, marginBottom: 4 },
+  titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 4 },
 });
