@@ -205,7 +205,7 @@ function FormularioCrear({ onListo }: { onListo: () => void }) {
     try {
       const respuesta = await registrarCliente({
         nombre: valores.nombre.trim(),
-        // E.164 ("+573162781393") y su indicativo
+        // E.164 ("+573001234567") y su indicativo
         ...telefono,
         ...(correo ? { correo } : {}),
         ...(usuario ? { usuario } : {}),

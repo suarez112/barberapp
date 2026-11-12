@@ -78,7 +78,7 @@ export default function ClientesTab({ token }: { token: string }) {
     <View>
       <CampoTexto
         etiqueta="Buscar cliente"
-        placeholder="ej: Juan o 316 278"
+        placeholder="ej: Juan o 300 123"
         ayuda="Busca por nombre o por teléfono"
         value={c.busqueda}
         onChangeText={c.setBusqueda}

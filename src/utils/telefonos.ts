@@ -8,7 +8,7 @@ import {
 } from "libphonenumber-js/max";
 
 // Teléfonos con libphonenumber-js (metadatos completos), con las mismas reglas del
-// backend (src/shared/telefonos.ts): se envían en E.164 ("+573162781393").
+// backend (src/shared/telefonos.ts): se envían en E.164 ("+573001234567").
 
 export const PAIS_POR_DEFECTO: CountryCode = "CO";
 
@@ -49,11 +49,11 @@ export const normalizarTelefono = (
   return null;
 };
 
-// Colombia se agrupa 3-3-4 ("316 278 1393"); libphonenumber lo deja en "316 2781393"
+// Colombia se agrupa 3-3-4 ("300 123 4567"); libphonenumber lo deja en "300 1234567"
 const formatoColombia = (digitos: string) =>
   [digitos.slice(0, 3), digitos.slice(3, 6), digitos.slice(6)].filter(Boolean).join(" ");
 
-// Máscara de Colombia mientras se escribe: "3162781393" -> "(316) 278-1393".
+// Máscara de Colombia mientras se escribe: "3001234567" -> "(300) 123-4567".
 // El paréntesis se cierra al escribir el cuarto dígito, para que borrar se sienta natural.
 const mascaraColombia = (d: string) => {
   const area = d.slice(0, 3);
@@ -62,7 +62,7 @@ const mascaraColombia = (d: string) => {
   return `(${area}) ${resto.slice(0, 3)}${resto.length > 3 ? `-${resto.slice(3)}` : ""}`;
 };
 
-// Número nacional mientras se escribe: "3162781393" -> "(316) 278-1393" en Colombia;
+// Número nacional mientras se escribe: "3001234567" -> "(300) 123-4567" en Colombia;
 // en los demás países, el formato nacional de cada uno
 export const formatearMientrasEscribe = (pais: CountryCode, digitos: string) => {
   const d = digitos.slice(0, MAXIMO_DIGITOS);
@@ -94,7 +94,7 @@ export const separarPais = (
   return { pais, digitos: digitos.slice(formateador.getCallingCode()?.length ?? 0) };
 };
 
-// Teléfono guardado para mostrar: "+573162781393" -> { pais: "CO", texto: "+57 316 278 1393" }.
+// Teléfono guardado para mostrar: "+573001234567" -> { pais: "CO", texto: "+57 300 123 4567" }.
 // Los antiguos (solo dígitos) se arman con su indicativo; si no se entienden, tal cual (sin país).
 export const telefonoMostrado = (
   telefono?: string | null,

@@ -10,7 +10,7 @@ type Props = {
   sufijo?: string;
 };
 
-// Teléfono guardado con la bandera de su país: "🇨🇴 +57 316 278 1393" pero con imagen
+// Teléfono guardado con la bandera de su país: "🇨🇴 +57 300 123 4567" pero con imagen
 export default function TelefonoConBandera({ telefono, indicativo, style, sufijo }: Props) {
   const { pais, texto } = telefonoMostrado(telefono, indicativo);
   return (
