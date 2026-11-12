@@ -14,11 +14,33 @@ export type SesionGuardada =
 
 const disponible = Platform.OS !== "web";
 
+const esObjeto = (dato: unknown): dato is Record<string, unknown> =>
+  typeof dato === "object" && dato !== null;
+const esTexto = (dato: unknown): dato is string => typeof dato === "string" && dato !== "";
+
+// Lo guardado puede venir de una versión anterior de la app o estar dañado:
+// se revisa lo mínimo que la app usa antes de abrir la sesión
+const esSesionGuardada = (dato: unknown): dato is SesionGuardada => {
+  if (!esObjeto(dato) || !esTexto(dato.token)) return false;
+  if (dato.tipo === "personal") {
+    return esObjeto(dato.barbero) && esTexto(dato.barbero.id) && esTexto(dato.barbero.nombre);
+  }
+  if (dato.tipo === "cuenta") {
+    return esObjeto(dato.usuario) && esTexto(dato.usuario.id) && esTexto(dato.usuario.rol);
+  }
+  return false;
+};
+
 export async function leerSesion(): Promise<SesionGuardada | null> {
   if (!disponible) return null;
   try {
     const texto = await SecureStore.getItemAsync(CLAVE);
-    return texto ? (JSON.parse(texto) as SesionGuardada) : null;
+    if (!texto) return null;
+    const dato: unknown = JSON.parse(texto);
+    if (esSesionGuardada(dato)) return dato;
+    console.error("La sesión guardada no tiene la forma esperada; se descarta.");
+    await borrarSesion();
+    return null;
   } catch (error) {
     console.error("No se pudo leer la sesión guardada:", error);
     return null;
