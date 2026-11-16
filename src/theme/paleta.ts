@@ -51,7 +51,7 @@ export type Paleta = {
 // Colores fijos que no dependen del negocio ni del tema
 export const COLORES = {
   primarioPorDefecto: "#EAB308",
-  secundarioPorDefecto: "#0D0D0D",
+  secundarioPorDefecto: "#0F172A",
   textoSobrePrimario: "#000",
   blanco: "#FFF",
   negro: "#111",
@@ -89,8 +89,8 @@ export const COLORES_BLOQUEOS = {
   cadaSemanaFondo: "#FFEDD5",
   cadaSemanaBorde: "#C2410C",
   conCitaBorde: "#14532D",
-  libreOscuroFondo: "#2A2A2A",
-  libreOscuroBorde: "#404040",
+  libreOscuroFondo: "#1E293B",
+  libreOscuroBorde: "#334155",
   libreClaroFondo: "#E5E7EB",
   libreClaroBorde: "#D1D5DB",
 } as const;
@@ -109,8 +109,26 @@ export const COLORES_INICIO = {
 // Series de los gráficos del superadmin, una versión por tema. Tonos de fuerza parecida
 // para que ninguno domine
 export const COLORES_GRAFICOS = {
-  claro: ["#2563EB", "#0D9488", "#D97706", "#7C3AED", "#DB2777", "#16A34A", "#0891B2", "#64748B"],
-  oscuro: ["#60A5FA", "#2DD4BF", "#FBBF24", "#A78BFA", "#F472B6", "#4ADE80", "#22D3EE", "#94A3B8"],
+  claro: [
+    "#2563EB",
+    "#0D9488",
+    "#D97706",
+    "#7C3AED",
+    "#DB2777",
+    "#16A34A",
+    "#0891B2",
+    "#64748B",
+  ],
+  oscuro: [
+    "#60A5FA",
+    "#2DD4BF",
+    "#FBBF24",
+    "#A78BFA",
+    "#F472B6",
+    "#4ADE80",
+    "#22D3EE",
+    "#94A3B8",
+  ],
 } as const;
 
 // Colores fijos de la página principal web (features/landing). Es un diseño claro propio,
@@ -184,7 +202,9 @@ export const colorLegible = (color: string, fondo: string, minimo = 4.5) => {
 export const textoSobre = (fondo: string) => {
   const f = aRgb(fondo);
   if (!f) return COLORES.textoSobrePrimario;
-  return contraste([0, 0, 0], f) >= contraste([255, 255, 255], f) ? "#000000" : "#FFFFFF";
+  return contraste([0, 0, 0], f) >= contraste([255, 255, 255], f)
+    ? "#000000"
+    : "#FFFFFF";
 };
 
 // Mezcla `color` con `fondo`: t = 0 deja el fondo, t = 1 deja el color
@@ -208,39 +228,41 @@ export const crearPaleta = (
   const onPrimary = textoSobre(primary);
   const fondo = esOscuro
     ? (empresa?.colorSecundario ?? COLORES.secundarioPorDefecto)
-    : "#F3F4F6";
+    : "#F8FAFC";
   return {
     bg: fondo,
-    headerBg: esOscuro ? "#1A1A1A" : "#FFFFFF",
-    cardBg: esOscuro ? "#171717" : "#FFFFFF",
-    cardBorder: esOscuro ? "#262626" : "#E5E7EB",
-    textPrimary: esOscuro ? "#FFFFFF" : "#111827",
-    textSecondary: esOscuro ? "#A3A3A3" : "#4B5563",
+    headerBg: esOscuro ? "#0B1120" : "#FFFFFF",
+    cardBg: esOscuro ? "#1E293B" : "#FFFFFF",
+    cardBorder: esOscuro ? "#334155" : "#E2E8F0",
+    textPrimary: esOscuro ? "#F8FAFC" : "#0F172A",
+    textSecondary: esOscuro ? "#94A3B8" : "#475569",
     primary,
-    primaryText: esOscuro ? colorLegible(primary, "#171717") : "#111827",
+    primaryText: esOscuro ? colorLegible(primary, "#1E293B") : "#0F172A",
     onPrimary,
     peligroTexto: esOscuro ? "#F87171" : "#B91C1C",
     exitoTexto: esOscuro ? "#4ADE80" : "#15803D",
     avisoTexto: esOscuro ? "#FB923C" : "#B45309",
     infoTexto: esOscuro ? "#60A5FA" : "#1D4ED8",
-    apagadoTexto: esOscuro ? "#9CA3AF" : "#5B6470",
-    inputBorder: esOscuro ? "#737373" : "#868E96",
-    inputBorderFoco: esOscuro ? colorLegible(primary, "#171717") : "#111827",
+    apagadoTexto: esOscuro ? "#94A3B8" : "#64748B",
+    inputBorder: esOscuro ? "#475569" : "#94A3B8",
+    inputBorderFoco: esOscuro ? colorLegible(primary, "#1E293B") : "#0F172A",
     error: esOscuro ? "#F87171" : "#B91C1C",
-    cardSelectedBg: esOscuro ? "#262419" : mezclar(primary, "#FFFFFF", 0.3),
-    inicialesBg: esOscuro ? "#262626" : "#E5E7EB",
-    inicialesTexto: esOscuro ? colorLegible(primary, "#262626") : "#111827",
-    seleccionBg: esOscuro ? "transparent" : primary,
-    seleccionTexto: esOscuro ? colorLegible(primary, "#141414") : onPrimary,
-    secundarioBg: esOscuro ? "#262626" : "#FFFFFF",
-    secundarioBorde: esOscuro ? "#737373" : "#6B7280",
-    secundarioTexto: esOscuro ? "#FFFFFF" : "#111827",
-    inputBg: esOscuro ? "#171717" : "#FFFFFF",
-    bottomBarBg: esOscuro ? "#141414" : "#FFFFFF",
+    cardSelectedBg: esOscuro
+      ? mezclar(primary, "#1E293B", 0.16)
+      : mezclar(primary, "#FFFFFF", 0.25),
+    inicialesBg: esOscuro ? "#334155" : "#E2E8F0",
+    inicialesTexto: esOscuro ? colorLegible(primary, "#334155") : "#0F172A",
+    seleccionBg: esOscuro ? "rgba(234, 179, 8, 0.16)" : primary,
+    seleccionTexto: esOscuro ? colorLegible(primary, "#111827") : onPrimary,
+    secundarioBg: esOscuro ? "#1E293B" : "#FFFFFF",
+    secundarioBorde: esOscuro ? "#475569" : "#CBD5E1",
+    secundarioTexto: esOscuro ? "#F8FAFC" : "#0F172A",
+    inputBg: esOscuro ? "#162033" : "#FFFFFF",
+    bottomBarBg: esOscuro ? "#0B1120" : "#FFFFFF",
     activoBg: esOscuro ? "rgba(234, 179, 8, 0.16)" : "#FEF3C7",
-    activoTexto: esOscuro ? "#FFFFFF" : "#111827",
+    activoTexto: esOscuro ? "#F8FAFC" : "#0F172A",
     zonaFotoBg: esOscuro ? "rgba(234, 179, 8, 0.10)" : "#FFFBEB",
     zonaFotoIcono: esOscuro ? "#FACC15" : "#A16207",
-    zonaFotoTexto: esOscuro ? "#FFFFFF" : "#713F12",
+    zonaFotoTexto: esOscuro ? "#F8FAFC" : "#713F12",
   };
 };
