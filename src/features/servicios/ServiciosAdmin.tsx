@@ -1,5 +1,4 @@
 import Cuadricula from "@/components/layout/Cuadricula";
-import { StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
@@ -14,9 +13,10 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { Servicio } from "@/types";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio, textoDuracion } from "@/utils/formato";
+import { StyleSheet, Text, View } from "react-native";
+import { useGuia } from "../guia/guiaContexto";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
-import { useGuia } from "../guia/guiaContexto";
 import { actualizarServicio, crearServicio, eliminarServicio } from "./api";
 
 // Duraciones que se ofrecen al crear o editar un servicio: de 10 min a 2 h 30, de 10 en 10
@@ -40,15 +40,31 @@ export default function ServiciosAdmin({ token }: { token: string }) {
   const { servicios, setServicios } = useNegocio();
   const avisarError = useAvisarError();
   const { refrescar: refrescarGuia } = useGuia();
-  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
-    useFormularioEdicion(VACIO, aCampos);
+  const {
+    abierto,
+    alternar,
+    enEdicion,
+    campos,
+    cambiar,
+    errores,
+    setErrores,
+    editar,
+    reiniciar,
+  } = useFormularioEdicion(VACIO, aCampos);
 
   const guardar = async () => {
     const precio = leerPrecio(campos.precio);
     const duracionMin = campos.duracion;
     const nuevos = {
-      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del servicio, por ejemplo Corte clásico." } : {}),
-      ...(isNaN(precio) ? { precio: "Escribe el precio en pesos, por ejemplo 35.000." } : {}),
+      ...(!campos.nombre.trim()
+        ? {
+            nombre:
+              "Escribe el nombre del servicio, por ejemplo Corte clásico.",
+          }
+        : {}),
+      ...(isNaN(precio)
+        ? { precio: "Escribe el precio en pesos, por ejemplo 35.000." }
+        : {}),
       ...(!duracionMin ? { duracion: "Elige cuánto dura el servicio." } : {}),
     };
     setErrores(nuevos);
@@ -60,14 +76,28 @@ export default function ServiciosAdmin({ token }: { token: string }) {
 
     try {
       if (enEdicion) {
-        const actualizado = await actualizarServicio(token, enEdicion.id, datos);
-        setServicios((prev) => prev.map((s) => (s.id === actualizado.id ? actualizado : s)));
-        avisar("¡Actualizado!", `Servicio "${actualizado.nombre}" modificado con éxito.`, "exito");
+        const actualizado = await actualizarServicio(
+          token,
+          enEdicion.id,
+          datos,
+        );
+        setServicios((prev) =>
+          prev.map((s) => (s.id === actualizado.id ? actualizado : s)),
+        );
+        avisar(
+          "¡Actualizado!",
+          `Servicio "${actualizado.nombre}" modificado con éxito.`,
+          "exito",
+        );
       } else {
         const nuevo = await crearServicio(token, datos);
         setServicios((prev) => [...prev, nuevo]);
         refrescarGuia();
-        avisar("¡Servicio Creado!", `${nuevo.nombre} agregado al catálogo.`, "exito");
+        avisar(
+          "¡Servicio Creado!",
+          `${nuevo.nombre} agregado al catálogo.`,
+          "exito",
+        );
       }
       reiniciar();
     } catch (e) {
@@ -79,6 +109,7 @@ export default function ServiciosAdmin({ token }: { token: string }) {
     const ok = await confirmar({
       titulo: "Confirmar",
       mensaje: `¿Eliminar servicio "${s.nombre}"? Las citas ya agendadas no cambian.`,
+      textoAceptar: "ELIMINAR SERVICIO",
       destructivo: true,
     });
     if (!ok) return;
@@ -132,7 +163,11 @@ export default function ServiciosAdmin({ token }: { token: string }) {
         />
         <BotonesFormulario
           tituloGuardar={enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR SERVICIO"}
-          ayudaGuardar={enEdicion ? "Guarda los cambios del servicio" : "Agrega el servicio al catálogo"}
+          ayudaGuardar={
+            enEdicion
+              ? "Guarda los cambios del servicio"
+              : "Agrega el servicio al catálogo"
+          }
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
@@ -142,35 +177,42 @@ export default function ServiciosAdmin({ token }: { token: string }) {
         SERVICIOS ACTIVOS ({servicios.length})
       </TituloSeccion>
       <Cuadricula>
-      {servicios.map((s) => (
-        <TarjetaFila key={s.id}>
-          <View style={styles.flex}>
-            <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-              {s.nombre}
-            </Text>
-            <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-              {s.duracionMin ? textoDuracion(s.duracionMin) : s.duracion} · $
-              {formatearPesos(s.precio)}
-            </Text>
-          </View>
-          <View style={styles.acciones}>
-            <BotonIcono
-              icono="create-outline"
-              color={colors.primaryText}
-              etiqueta={`Editar ${s.nombre}`}
-              ayuda="Abre el servicio en el formulario de arriba"
-              onPress={() => editar(s)}
-            />
-            <BotonIcono
-              icono="trash-outline"
-              color={colors.peligroTexto}
-              etiqueta={`Eliminar ${s.nombre}`}
-              ayuda="Pide confirmación antes de eliminarlo"
-              onPress={() => eliminar(s)}
-            />
-          </View>
-        </TarjetaFila>
-      ))}
+        {servicios.map((s) => (
+          <TarjetaFila key={s.id}>
+            <View style={styles.flex}>
+              <Text
+                style={[estilosTexto.titulo, { color: colors.textPrimary }]}
+              >
+                {s.nombre}
+              </Text>
+              <Text
+                style={[
+                  estilosTexto.subtitulo,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                {s.duracionMin ? textoDuracion(s.duracionMin) : s.duracion} · $
+                {formatearPesos(s.precio)}
+              </Text>
+            </View>
+            <View style={styles.acciones}>
+              <BotonIcono
+                icono="create-outline"
+                color={colors.primaryText}
+                etiqueta={`Editar ${s.nombre}`}
+                ayuda="Abre el servicio en el formulario de arriba"
+                onPress={() => editar(s)}
+              />
+              <BotonIcono
+                icono="trash-outline"
+                color={colors.peligroTexto}
+                etiqueta={`Eliminar ${s.nombre}`}
+                ayuda="Pide confirmación antes de eliminarlo"
+                onPress={() => eliminar(s)}
+              />
+            </View>
+          </TarjetaFila>
+        ))}
       </Cuadricula>
     </>
   );

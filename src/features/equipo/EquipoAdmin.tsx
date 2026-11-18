@@ -1,25 +1,43 @@
-import Cuadricula from "@/components/layout/Cuadricula";
-import { useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
 import FotoBarbero from "@/components/FotoBarbero";
+import Cuadricula from "@/components/layout/Cuadricula";
 import Boton from "@/components/ui/Boton";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
-import CampoTexto from "@/components/ui/CampoTexto";
 import CampoClave from "@/components/ui/CampoClave";
-import { claveValida, MENSAJE_CLAVE } from "@/utils/clave";
+import CampoTexto from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
 import { estilosTexto } from "@/components/ui/estilosTexto";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import VentanaFormulario from "@/components/ui/VentanaFormulario";
+import { PAGOS_EN_APP } from "@/config/pagos";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
-import { useAppTheme } from "@/theme/ThemeProvider";
-import { COLORES } from "@/theme/paleta";
 import { ApiError } from "@/services/api/http";
+import { COLORES } from "@/theme/paleta";
+import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero, RolEquipo } from "@/types";
+import { claveValida, MENSAJE_CLAVE } from "@/utils/clave";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
+import { FotoElegida } from "@/utils/imagenes";
+import { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
+import { Suscripcion } from "../cuenta/api";
 import { useNegocio } from "../negocio/NegocioProvider";
+import {
+  AVISO_SIN_REEMBOLSO,
+  calcularCargoNuevo,
+  textoCargoNuevo,
+} from "../planes/cobro";
+import FuncionBloqueada from "../planes/FuncionBloqueada";
+import { useFunciones } from "../planes/funcionesContexto";
+import PlanesModal from "../planes/PlanesModal";
 import { useSesion } from "../sesion/SesionProvider";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { Personal } from "../sesion/usePersonal";
@@ -30,16 +48,8 @@ import {
   eliminarProfesional,
   subirFotoProfesional,
 } from "./api";
-import { FotoElegida } from "@/utils/imagenes";
-import { Suscripcion } from "../cuenta/api";
-import FuncionBloqueada from "../planes/FuncionBloqueada";
-import { AVISO_SIN_REEMBOLSO, calcularCargoNuevo, textoCargoNuevo } from "../planes/cobro";
-import { useFunciones } from "../planes/funcionesContexto";
-import PlanesModal from "../planes/PlanesModal";
 import PrivacidadTelefonos from "./PrivacidadTelefonos";
 import { useYoAtiendo } from "./useYoAtiendo";
-import { PAGOS_EN_APP } from "@/config/pagos";
-import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 const ROLES = [
   { valor: "admin", etiqueta: "Administrador" },
@@ -70,7 +80,8 @@ const VACIO: Campos = {
 };
 const PORCENTAJE_POR_DEFECTO = 50;
 
-const rolDe = (b: Barbero): RolEquipo => b.rol ?? (b.esAdmin ? "admin" : "empleado");
+const rolDe = (b: Barbero): RolEquipo =>
+  b.rol ?? (b.esAdmin ? "admin" : "empleado");
 
 const aCampos = (b: Barbero): Campos => ({
   nombre: b.nombre,
@@ -84,7 +95,9 @@ const aCampos = (b: Barbero): Campos => ({
 
 // 409 del backend cuando el negocio ya tiene el máximo de profesionales
 const esEquipoLleno = (e: unknown) =>
-  e instanceof ApiError && e.status === 409 && /hasta \d+ profesionales/i.test(e.message);
+  e instanceof ApiError &&
+  e.status === 409 &&
+  /hasta \d+ profesionales/i.test(e.message);
 
 type Props = {
   personal: Personal;
@@ -94,7 +107,11 @@ type Props = {
   onEquipoCambiado?: () => void;
 };
 
-export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }: Props) {
+export default function EquipoAdmin({
+  personal,
+  suscripcion,
+  onEquipoCambiado,
+}: Props) {
   const { colors } = useAppTheme();
   const { barberos, setBarberos } = useNegocio();
   const { actualizarBarberoLogueado } = useSesion();
@@ -103,8 +120,17 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   // Roles y comisiones son del plan Equipo en adelante; sin ellas esos campos no se envían
   const puedeRoles = incluida("roles");
   const puedeComisiones = incluida("comisiones");
-  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
-    useFormularioEdicion(VACIO, aCampos);
+  const {
+    abierto,
+    alternar,
+    enEdicion,
+    campos,
+    cambiar,
+    errores,
+    setErrores,
+    editar,
+    reiniciar,
+  } = useFormularioEdicion(VACIO, aCampos);
   const [verPlanes, setVerPlanes] = useState(false);
   const [guardando, setGuardando] = useState(false);
   // Evita dos guardados seguidos (dos toques rápidos llegan antes de que cambie el estado)
@@ -118,7 +144,9 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
   const yo = useYoAtiendo(token, cuentaAdmin);
   const [editandoMiPerfil, setEditandoMiPerfil] = useState(false);
   const miPerfilId = yo.estado?.barberoId ?? null;
-  const miPerfil = miPerfilId ? (barberos.find((b) => b.id === miPerfilId) ?? yo.estado?.perfil ?? null) : null;
+  const miPerfil = miPerfilId
+    ? (barberos.find((b) => b.id === miPerfilId) ?? yo.estado?.perfil ?? null)
+    : null;
   const atiendoYo = yo.estado?.atiendeClientes ?? false;
   // Los demás, con quien usa la app (un integrante administrador) primero
   const otros = barberos
@@ -133,7 +161,11 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
 
   // Agrega o reemplaza al profesional en la lista (agenda y reservas quedan al día)
   const reflejar = (b: Barbero) =>
-    setBarberos((prev) => (prev.some((x) => x.id === b.id) ? prev.map((x) => (x.id === b.id ? b : x)) : [...prev, b]));
+    setBarberos((prev) =>
+      prev.some((x) => x.id === b.id)
+        ? prev.map((x) => (x.id === b.id ? b : x))
+        : [...prev, b],
+    );
 
   const editarMiPerfil = () => {
     if (!yo.estado) return;
@@ -170,10 +202,16 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
 
   const validarYGuardar = async () => {
     const clave = campos.clave.trim();
-    const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
+    const pct = campos.porcentaje.trim()
+      ? Number(campos.porcentaje)
+      : PORCENTAJE_POR_DEFECTO;
     const nuevos = {
-      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del integrante." } : {}),
-      ...(!campos.usuario.trim() ? { usuario: "Escribe el usuario con el que entrará a la app." } : {}),
+      ...(!campos.nombre.trim()
+        ? { nombre: "Escribe el nombre del integrante." }
+        : {}),
+      ...(!campos.usuario.trim()
+        ? { usuario: "Escribe el usuario con el que entrará a la app." }
+        : {}),
       ...(!enEdicion && !clave
         ? { clave: "Escribe una contraseña nueva." }
         : clave && !claveValida(clave)
@@ -190,19 +228,31 @@ export default function EquipoAdmin({ personal, suscripcion, onEquipoCambiado }:
     }
 
     // Antes de guardar: si suma un profesional al cobro, mostrar cuánto; si lo quita, avisar que no hay reembolso
-    const sumaCobro = campos.atiendeClientes && (!enEdicion || enEdicion.atiendeClientes === false);
-    const restaCobro = !campos.atiendeClientes && !!enEdicion && enEdicion.atiendeClientes !== false;
+    const sumaCobro =
+      campos.atiendeClientes &&
+      (!enEdicion || enEdicion.atiendeClientes === false);
+    const restaCobro =
+      !campos.atiendeClientes &&
+      !!enEdicion &&
+      enEdicion.atiendeClientes !== false;
     if (!PAGOS_EN_APP) {
       // En el celular no se habla de cobros
     } else if (sumaCobro) {
       const cobro =
         planes && suscripcion
-          ? textoCargoNuevo(calcularCargoNuevo(planes, suscripcion, suscripcion.profesionalesCobrados))
+          ? textoCargoNuevo(
+              calcularCargoNuevo(
+                planes,
+                suscripcion,
+                suscripcion.profesionalesCobrados,
+              ),
+            )
           : "Esto suma un profesional a tu cobro.";
       const ok = await confirmar({
         titulo: "Sumar un profesional a tu cobro",
         mensaje: `${campos.nombre.trim()} atenderá clientes y cuenta como un profesional más.
 ${cobro}`,
+        textoAceptar: "SUMAR Y GUARDAR",
       });
       if (!ok) return;
     } else if (restaCobro) {
@@ -210,6 +260,7 @@ ${cobro}`,
         titulo: "Dejar de cobrar a este profesional",
         mensaje: `${campos.nombre.trim()} ya no atenderá clientes.
 ${AVISO_SIN_REEMBOLSO}`,
+        textoAceptar: "DEJAR DE COBRAR",
         destructivo: true,
       });
       if (!ok) return;
@@ -221,7 +272,11 @@ ${AVISO_SIN_REEMBOLSO}`,
       especialidad: campos.especialidad.trim() || null,
       ...(puedeComisiones ? { porcentajeGanancia: pct } : {}),
       // Sin roles todos son empleados; al editar no se toca el rol que ya tenían
-      ...(puedeRoles ? { rol: campos.rol } : enEdicion ? {} : { rol: "empleado" as const }),
+      ...(puedeRoles
+        ? { rol: campos.rol }
+        : enEdicion
+          ? {}
+          : { rol: "empleado" as const }),
       atiendeClientes: campos.atiendeClientes,
       // Al editar, la contraseña vacía deja la actual
       ...(clave ? { clave } : {}),
@@ -230,7 +285,11 @@ ${AVISO_SIN_REEMBOLSO}`,
     try {
       if (enEdicion) {
         reemplazar(await actualizarProfesional(token, enEdicion.id, datos));
-        avisar("¡Actualizado!", `Los datos de "${datos.nombre}" han sido guardados.`, "exito");
+        avisar(
+          "¡Actualizado!",
+          `Los datos de "${datos.nombre}" han sido guardados.`,
+          "exito",
+        );
       } else {
         const nuevo = await crearProfesional(token, datos);
         setBarberos((prev) => [...prev, nuevo]);
@@ -247,7 +306,10 @@ ${AVISO_SIN_REEMBOLSO}`,
         avisarEquipoLleno((e as ApiError).message);
         return;
       }
-      avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "Usuario en uso" });
+      avisarError(e, {
+        titulo: "No se pudo guardar",
+        tituloConflicto: "Usuario en uso",
+      });
     }
   };
 
@@ -255,10 +317,14 @@ ${AVISO_SIN_REEMBOLSO}`,
   // ajusta el cobro) y nombre, especialidad y comisión por PATCH /equipo/:id
   const guardarMiPerfil = async () => {
     const conPerfil = !!miPerfil || campos.atiendeClientes;
-    const pct = campos.porcentaje.trim() ? Number(campos.porcentaje) : PORCENTAJE_POR_DEFECTO;
+    const pct = campos.porcentaje.trim()
+      ? Number(campos.porcentaje)
+      : PORCENTAJE_POR_DEFECTO;
     const nuevos = conPerfil
       ? {
-          ...(!campos.nombre.trim() ? { nombre: "Escribe tu nombre como lo verán tus clientes." } : {}),
+          ...(!campos.nombre.trim()
+            ? { nombre: "Escribe tu nombre como lo verán tus clientes." }
+            : {}),
           ...(puedeComisiones && (isNaN(pct) || pct < 0 || pct > 100)
             ? { porcentaje: "Escribe un número de 0 a 100, por ejemplo 50." }
             : {}),
@@ -274,20 +340,29 @@ ${AVISO_SIN_REEMBOLSO}`,
     if (cambiaAtiende && !campos.atiendeClientes) {
       const ok = await confirmar({
         titulo: "Dejar de atender clientes",
-        mensaje: `Dejarás de aparecer al reservar y de recibir citas nuevas. Tus citas actuales se conservan.
+        mensaje:
+          `Dejarás de aparecer al reservar y de recibir citas nuevas. Tus citas actuales se conservan.
 ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`.trim(),
+        textoAceptar: "DEJAR DE ATENDER",
         destructivo: true,
       });
       if (!ok) return;
     } else if (cambiaAtiende && PAGOS_EN_APP) {
       const cobro =
         planes && suscripcion
-          ? textoCargoNuevo(calcularCargoNuevo(planes, suscripcion, suscripcion.profesionalesCobrados))
+          ? textoCargoNuevo(
+              calcularCargoNuevo(
+                planes,
+                suscripcion,
+                suscripcion.profesionalesCobrados,
+              ),
+            )
           : "Esto suma un profesional a tu cobro.";
       const ok = await confirmar({
         titulo: "Sumar un profesional a tu cobro",
         mensaje: `Atender clientes tú también cuenta como un profesional más.
 ${cobro}`,
+        textoAceptar: "SUMAR Y GUARDAR",
       });
       if (!ok) return;
     }
@@ -304,12 +379,22 @@ ${cobro}`,
       if (perfil) {
         const especialidad = campos.especialidad.trim();
         const datos = {
-          ...(campos.nombre.trim() !== perfil.nombre ? { nombre: campos.nombre.trim() } : {}),
-          ...(especialidad !== (perfil.especialidad ?? "") ? { especialidad: especialidad || null } : {}),
-          ...(puedeComisiones && pct !== perfil.porcentajeGanancia ? { porcentajeGanancia: pct } : {}),
+          ...(campos.nombre.trim() !== perfil.nombre
+            ? { nombre: campos.nombre.trim() }
+            : {}),
+          ...(especialidad !== (perfil.especialidad ?? "")
+            ? { especialidad: especialidad || null }
+            : {}),
+          ...(puedeComisiones && pct !== perfil.porcentajeGanancia
+            ? { porcentajeGanancia: pct }
+            : {}),
         };
         if (Object.keys(datos).length > 0) {
-          const actualizado = await actualizarProfesional(token, perfil.id, datos);
+          const actualizado = await actualizarProfesional(
+            token,
+            perfil.id,
+            datos,
+          );
           reflejar(actualizado);
           yo.setEstado((e) => (e ? { ...e, perfil: actualizado } : e));
         }
@@ -329,7 +414,10 @@ ${cobro}`,
         avisarEquipoLleno((e as ApiError).message);
         return;
       }
-      avisarError(e, { titulo: "No se pudo guardar", tituloConflicto: "No se pudo activar" });
+      avisarError(e, {
+        titulo: "No se pudo guardar",
+        tituloConflicto: "No se pudo activar",
+      });
     }
   };
 
@@ -342,10 +430,14 @@ ${cobro}`,
   const eliminar = async (b: Barbero) => {
     const ok = await confirmar({
       titulo: "Confirmar",
-      mensaje: `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.${
-        b.atiendeClientes === false ? "" : `
+      mensaje:
+        `¿Deseas retirar a ${b.nombre} del equipo? Ya no podrá iniciar sesión ni recibir reservas.${
+          b.atiendeClientes === false
+            ? ""
+            : `
 ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
-      }`.trim(),
+        }`.trim(),
+      textoAceptar: "RETIRAR",
       destructivo: true,
     });
     if (!ok) return;
@@ -357,7 +449,10 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
       avisar("Eliminado", `${b.nombre} retirado.`, "exito");
     } catch (e) {
       // 409: tiene citas pendientes
-      avisarError(e, { titulo: "No se pudo eliminar", tituloConflicto: "Tiene citas pendientes" });
+      avisarError(e, {
+        titulo: "No se pudo eliminar",
+        tituloConflicto: "Tiene citas pendientes",
+      });
     }
   };
 
@@ -379,7 +474,8 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
   const lleno = !!suscripcion && suscripcion.cupoDisponible <= 0;
   // Foto del que se edita (la de la lista, que se actualiza al cambiarla)
   const fotoEdicion = enEdicion?.id
-    ? (barberos.find((b) => b.id === enEdicion.id) ?? (editandoMiPerfil ? miPerfil : null))
+    ? (barberos.find((b) => b.id === enEdicion.id) ??
+      (editandoMiPerfil ? miPerfil : null))
     : null;
 
   return (
@@ -388,18 +484,26 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
         <View
           style={[
             styles.cupo,
-            { backgroundColor: colors.cardBg, borderColor: lleno ? colors.avisoTexto : colors.cardBorder },
+            {
+              backgroundColor: colors.cardBg,
+              borderColor: lleno ? colors.avisoTexto : colors.cardBorder,
+            },
           ]}
         >
           <Text style={[styles.textoCupo, { color: colors.textPrimary }]}>
             {lleno ? (
               <>
-                <IconoEnLinea nombre="warning-outline" color={colors.avisoTexto} /> Llegaste al máximo:{" "}
+                <IconoEnLinea
+                  nombre="warning-outline"
+                  color={colors.avisoTexto}
+                />{" "}
+                Llegaste al máximo:{" "}
               </>
             ) : (
               "Tu equipo: "
             )}
-            {suscripcion.profesionalesCobrados} de {planes?.maximoProfesionales ?? 10} profesionales que atienden
+            {suscripcion.profesionalesCobrados} de{" "}
+            {planes?.maximoProfesionales ?? 10} profesionales que atienden
             clientes · nivel {suscripcion.planEquipo.nombre}.
           </Text>
           <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
@@ -422,7 +526,11 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
       ) : null}
 
       {PAGOS_EN_APP ? (
-        <PlanesModal visible={verPlanes} onCerrar={() => setVerPlanes(false)} suscripcion={suscripcion} />
+        <PlanesModal
+          visible={verPlanes}
+          onCerrar={() => setVerPlanes(false)}
+          suscripcion={suscripcion}
+        />
       ) : null}
 
       <Boton
@@ -435,7 +543,13 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
       {/* Crear y editar en una ventana: la lista de abajo no se mueve */}
       <VentanaFormulario
         visible={abierto}
-        titulo={editandoMiPerfil ? "Mi perfil" : enEdicion ? `Editar a ${enEdicion.nombre}` : "Nuevo integrante"}
+        titulo={
+          editandoMiPerfil
+            ? "Mi perfil"
+            : enEdicion
+              ? `Editar a ${enEdicion.nombre}`
+              : "Nuevo integrante"
+        }
         descripcion={
           editandoMiPerfil
             ? "Tú · Administrador. Tu usuario y tu contraseña son los de tu cuenta."
@@ -456,18 +570,33 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
               editable
               onCambiar={(foto) => cambiarFoto(fotoEdicion, foto)}
             />
-            <Text style={[styles.ayuda, styles.flex, { color: colors.textSecondary }]}>
-              Toca la foto para cambiarla: es la que ven los clientes al reservar.
+            <Text
+              style={[
+                styles.ayuda,
+                styles.flex,
+                { color: colors.textSecondary },
+              ]}
+            >
+              Toca la foto para cambiarla: es la que ven los clientes al
+              reservar.
             </Text>
           </View>
         ) : null}
 
         {editandoMiPerfil ? (
           <View
-            style={[styles.interruptor, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder }]}
+            style={[
+              styles.interruptor,
+              {
+                backgroundColor: colors.inputBg,
+                borderColor: colors.cardBorder,
+              },
+            ]}
           >
             <View style={styles.flex}>
-              <Text style={[styles.textoInterruptor, { color: colors.textPrimary }]}>
+              <Text
+                style={[styles.textoInterruptor, { color: colors.textPrimary }]}
+              >
                 Yo también atiendo clientes
               </Text>
               <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
@@ -489,14 +618,19 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
 
         {editandoMiPerfil && !miPerfil && !campos.atiendeClientes ? (
           <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
-            Activa &quot;Yo también atiendo clientes&quot; para tener foto, especialidad y comisión.
+            Activa &quot;Yo también atiendo clientes&quot; para tener foto,
+            especialidad y comisión.
           </Text>
         ) : (
           <CampoTexto
             etiqueta="Nombre completo"
             obligatorio
             error={errores.nombre}
-            ayuda={editandoMiPerfil ? "Tu nombre como lo verán los clientes al reservar" : "Nombre del integrante como lo verán los clientes"}
+            ayuda={
+              editandoMiPerfil
+                ? "Tu nombre como lo verán los clientes al reservar"
+                : "Nombre del integrante como lo verán los clientes"
+            }
             placeholder="ej: Carlos Gómez"
             autoCapitalize="words"
             autoComplete="off"
@@ -530,7 +664,9 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                   ? "Déjala vacía para no cambiarla. Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
                   : "Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial"
               }
-              placeholder={enEdicion ? "ej: vacía = no cambiar" : "ej: MiClave#2026"}
+              placeholder={
+                enEdicion ? "ej: vacía = no cambiar" : "ej: MiClave#2026"
+              }
               autoComplete="off"
               textContentType="newPassword"
               // Al editar, vacía no cambia nada: los requisitos aparecen al escribir
@@ -552,7 +688,8 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                   onCambiar={(rol) => {
                     cambiar("rol")(rol);
                     // En un integrante nuevo, el interruptor sigue el valor por defecto del rol
-                    if (!enEdicion) cambiar("atiendeClientes")(atiendePorDefecto(rol));
+                    if (!enEdicion)
+                      cambiar("atiendeClientes")(atiendePorDefecto(rol));
                   }}
                 />
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
@@ -569,10 +706,21 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
               />
             )}
             <View
-              style={[styles.interruptor, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder }]}
+              style={[
+                styles.interruptor,
+                {
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.cardBorder,
+                },
+              ]}
             >
               <View style={styles.flex}>
-                <Text style={[styles.textoInterruptor, { color: colors.textPrimary }]}>
+                <Text
+                  style={[
+                    styles.textoInterruptor,
+                    { color: colors.textPrimary },
+                  ]}
+                >
                   Atiende clientes
                 </Text>
                 <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
@@ -662,15 +810,30 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                   onCambiar={(foto) => cambiarFoto(miPerfil, foto)}
                 />
               ) : (
-                <FotoBarbero nombre={personal.nombre} color={colors.primaryText} />
+                <FotoBarbero
+                  nombre={personal.nombre}
+                  color={colors.primaryText}
+                />
               )}
-              <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
+              <Text
+                style={[estilosTexto.titulo, { color: colors.textPrimary }]}
+              >
                 {miPerfil?.nombre ?? personal.nombre}{" "}
-                <IconoEnLinea nombre="shield-checkmark-outline" color={colors.primaryText} />
+                <IconoEnLinea
+                  nombre="shield-checkmark-outline"
+                  color={colors.primaryText}
+                />
               </Text>
               {yo.error ? (
                 <>
-                  <Text style={[estilosTexto.subtitulo, { color: colors.peligroTexto }]}>{yo.error}</Text>
+                  <Text
+                    style={[
+                      estilosTexto.subtitulo,
+                      { color: colors.peligroTexto },
+                    ]}
+                  >
+                    {yo.error}
+                  </Text>
                   <Boton
                     titulo="REINTENTAR"
                     ayuda="Vuelve a cargar tu perfil"
@@ -680,16 +843,32 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                   />
                 </>
               ) : !yo.estado ? (
-                <ActivityIndicator color={colors.primaryText} style={styles.cargandoYo} />
+                <ActivityIndicator
+                  color={colors.primaryText}
+                  style={styles.cargandoYo}
+                />
               ) : (
                 <>
-                  <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-                    Tú · Administrador · {atiendoYo ? "Atiende clientes" : "No atiende clientes"}
+                  <Text
+                    style={[
+                      estilosTexto.subtitulo,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Tú · Administrador ·{" "}
+                    {atiendoYo ? "Atiende clientes" : "No atiende clientes"}
                   </Text>
                   {miPerfil ? (
-                    <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
+                    <Text
+                      style={[
+                        estilosTexto.subtitulo,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
                       {miPerfil.especialidad || "Sin especialidad"}
-                      {puedeComisiones ? ` · Comisión: ${miPerfil.porcentajeGanancia}%` : ""}
+                      {puedeComisiones
+                        ? ` · Comisión: ${miPerfil.porcentajeGanancia}%`
+                        : ""}
                     </Text>
                   ) : null}
                 </>
@@ -719,21 +898,42 @@ ${PAGOS_EN_APP ? AVISO_SIN_REEMBOLSO : ""}`
                 editable
                 onCambiar={(foto) => cambiarFoto(b, foto)}
               />
-              <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
+              <Text
+                style={[estilosTexto.titulo, { color: colors.textPrimary }]}
+              >
                 {b.nombre}{" "}
-                {b.esAdmin ? <IconoEnLinea nombre="shield-checkmark-outline" color={colors.primaryText} /> : null}
+                {b.esAdmin ? (
+                  <IconoEnLinea
+                    nombre="shield-checkmark-outline"
+                    color={colors.primaryText}
+                  />
+                ) : null}
               </Text>
-              <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
+              <Text
+                style={[
+                  estilosTexto.subtitulo,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 {soyYo(b.id) ? "Tú · " : ""}
                 {rolDe(b) === "admin" ? "Administrador" : "Empleado"}
-                {b.atiendeClientes === false ? " · No atiende clientes" : " · Atiende clientes"}
+                {b.atiendeClientes === false
+                  ? " · No atiende clientes"
+                  : " · Atiende clientes"}
               </Text>
-              <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
+              <Text
+                style={[
+                  estilosTexto.subtitulo,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 {b.especialidad || "Sin especialidad"}
                 {puedeComisiones ? ` · Comisión: ${b.porcentajeGanancia}%` : ""}
               </Text>
               {b.usuario ? (
-                <Text style={[styles.usuario, { color: colors.textSecondary }]}>Usuario: {b.usuario}</Text>
+                <Text style={[styles.usuario, { color: colors.textSecondary }]}>
+                  Usuario: {b.usuario}
+                </Text>
               ) : null}
             </View>
 
@@ -782,7 +982,12 @@ const styles = StyleSheet.create({
   },
   textoInterruptor: { fontSize: 14, fontWeight: "600" },
   acciones: { flexDirection: "row", gap: 12 },
-  fotoEdicion: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
+  fotoEdicion: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
   reintentar: { marginTop: 8 },
   cargandoYo: { alignSelf: "flex-start", marginTop: 6 },
 });
