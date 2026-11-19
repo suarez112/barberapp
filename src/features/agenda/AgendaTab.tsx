@@ -1,8 +1,8 @@
 import Cuadricula from "@/components/layout/Cuadricula";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Chips from "@/components/ui/Chips";
+import EstadoVacio from "@/components/ui/EstadoVacio";
 import SelectorDias from "@/components/ui/SelectorDias";
-import TextoInfo from "@/components/ui/TextoInfo";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero, BloqueoHorario, Dia, EstadoCita } from "@/types";
 import { horaAMinutos, horarioDelDia } from "@/utils/disponibilidad";
@@ -215,7 +215,14 @@ export default function AgendaTab({
         <View style={styles.bloqueContenido}>
           <Chips opciones={FILTROS} valor={filtro} onCambiar={setFiltro} />
           {visibles.length === 0 ? (
-            <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>
+            <EstadoVacio
+              titulo={MENSAJE_VACIO[filtro]}
+              mensaje={
+                filtro === "todas"
+                  ? "Cuando alguien reserve, la cita aparecerá aquí."
+                  : undefined
+              }
+            />
           ) : (
             <Cuadricula>
               {visibles.map((c) => (
