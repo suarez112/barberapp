@@ -1,15 +1,22 @@
-import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import FotoImagen from "@/components/ui/FotoImagen";
-import { ComponentProps, useEffect, useState } from "react";
-import { Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { enlacePublicoDe } from "@/config/app";
-import { registrarCausa } from "@/services/api/errores";
 import { obtenerPerfilPublico, PerfilPublico } from "@/features/negocio/api";
+import { registrarCausa } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { mostrarAvisoFlotante } from "@/utils/avisoFlotante";
 import { avisar } from "@/utils/dialogos";
 import { resumenHorario, textoDiasAtencion } from "@/utils/formato";
+import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
+import { ComponentProps, useEffect, useState } from "react";
+import {
+  Linking,
+  Pressable,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 // Qué hace cada botón, para el lector de pantalla
 const AYUDAS: Record<string, string> = {
@@ -17,7 +24,8 @@ const AYUDAS: Record<string, string> = {
   Compartir: "Comparte el enlace del negocio por otra app",
   "Cómo llegar": "Abre el mapa con la ubicación del negocio",
   "Contactar por WhatsApp": "Abre un chat de WhatsApp con el negocio",
-  "Cambiar de negocio": "Vuelve a la pantalla para escribir el código de otro negocio",
+  "Cambiar de negocio":
+    "Vuelve a la pantalla para escribir el código de otro negocio",
 };
 
 type Props = {
@@ -51,7 +59,9 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       style={({ pressed }) => [styles.enlace, pressed && styles.presionado]}
     >
       <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
-      <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>Cambiar de negocio</Text>
+      <Text style={[styles.textoEnlace, { color: colors.textSecondary }]}>
+        Cambiar de negocio
+      </Text>
     </Pressable>
   ) : null;
 
@@ -73,7 +83,11 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       mostrarAvisoFlotante("Copiado");
     } catch (error) {
       registrarCausa("Copiar código", error);
-      avisar("No se pudo copiar", "Intenta de nuevo o anota el código.", "error");
+      avisar(
+        "No se pudo copiar",
+        "Intenta de nuevo o anota el código.",
+        "error",
+      );
     }
   };
 
@@ -84,7 +98,11 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       });
     } catch (error) {
       registrarCausa("Compartir código", error);
-      avisar("No se pudo compartir", "Intenta de nuevo o copia el código.", "error");
+      avisar(
+        "No se pudo compartir",
+        "Intenta de nuevo o copia el código.",
+        "error",
+      );
     }
   };
 
@@ -94,7 +112,11 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       await Linking.openURL(perfil.googleMapsUrl);
     } catch (error) {
       registrarCausa("Cómo llegar", error);
-      avisar("No se pudo abrir el mapa", "Revisa que tengas Google Maps o un navegador.", "error");
+      avisar(
+        "No se pudo abrir el mapa",
+        "Revisa que tengas Google Maps o un navegador.",
+        "error",
+      );
     }
   };
 
@@ -104,7 +126,11 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       await Linking.openURL(perfil.whatsappUrl);
     } catch (error) {
       registrarCausa("Contactar por WhatsApp", error);
-      avisar("No se pudo abrir WhatsApp", "Revisa que tengas WhatsApp o un navegador.", "error");
+      avisar(
+        "No se pudo abrir WhatsApp",
+        "Revisa que tengas WhatsApp o un navegador.",
+        "error",
+      );
     }
   };
 
@@ -112,6 +138,7 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
     icono: ComponentProps<typeof Ionicons>["name"],
     texto: string,
     onPress: () => void,
+    soloIcono = false,
   ) => (
     <Pressable
       accessibilityRole="button"
@@ -120,20 +147,30 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.boton,
-        { borderColor: colors.primary },
+        soloIcono && styles.botonIcono,
+        { borderColor: colors.cardBorder },
         pressed && styles.presionado,
       ]}
     >
-      <Ionicons name={icono} size={16} color={colors.primaryText} />
-      <Text style={[styles.textoBoton, { color: colors.primaryText }]}>{texto}</Text>
+      <Ionicons name={icono} size={16} color={colors.textPrimary} />
+      {!soloIcono && (
+        <Text style={[styles.textoBoton, { color: colors.textPrimary }]}>
+          {texto}
+        </Text>
+      )}
     </Pressable>
   );
 
-  const dato = (icono: ComponentProps<typeof Ionicons>["name"], texto: string | null) =>
+  const dato = (
+    icono: ComponentProps<typeof Ionicons>["name"],
+    texto: string | null,
+  ) =>
     texto ? (
       <View style={styles.dato}>
         <Ionicons name={icono} size={14} color={colors.primaryText} />
-        <Text style={[styles.textoDato, { color: colors.textSecondary }]}>{texto}</Text>
+        <Text style={[styles.textoDato, { color: colors.textSecondary }]}>
+          {texto}
+        </Text>
       </View>
     ) : null;
 
@@ -164,25 +201,43 @@ export default function InfoNegocio({ codigo, onCambiarNegocio }: Props) {
         {dato("time-outline", horario)}
 
         <View style={[styles.codigo, { borderColor: colors.cardBorder }]}>
-          <Text style={[styles.textoCodigo, { color: colors.textSecondary }]}>
-            Código del negocio:{" "}
-            <Text style={[styles.valorCodigo, { color: colors.textPrimary }]}>
-              {perfil.codigoAcceso}
+          <View style={styles.filaCodigo}>
+            <Text
+              style={[
+                styles.textoCodigo,
+                { color: colors.textSecondary, flex: 1 },
+              ]}
+            >
+              Código del negocio:{" "}
+              <Text style={[styles.valorCodigo, { color: colors.textPrimary }]}>
+                {perfil.codigoAcceso}
+              </Text>
             </Text>
-          </Text>
-          <View style={styles.botones}>
-            {boton("copy-outline", "Copiar", copiarCodigo)}
-            {boton("share-social-outline", "Compartir", compartirCodigo)}
+            <View style={[styles.botones, { flexShrink: 0 }]}>
+              {boton("copy-outline", "Copiar", copiarCodigo, true)}
+              {boton(
+                "share-social-outline",
+                "Compartir",
+                compartirCodigo,
+                true,
+              )}
+            </View>
           </View>
         </View>
 
         {perfil.googleMapsUrl ? (
-          <View style={styles.botones}>{boton("navigate-outline", "Cómo llegar", comoLlegar)}</View>
+          <View style={styles.botones}>
+            {boton("navigate-outline", "Cómo llegar", comoLlegar)}
+          </View>
         ) : null}
         {/* Solo si el negocio configuró su WhatsApp de contacto */}
         {perfil.whatsappUrl ? (
           <View style={styles.botones}>
-            {boton("logo-whatsapp", "Contactar por WhatsApp", contactarWhatsApp)}
+            {boton(
+              "logo-whatsapp",
+              "Contactar por WhatsApp",
+              contactarWhatsApp,
+            )}
           </View>
         ) : null}
         {cambiarNegocio}
@@ -197,6 +252,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
     marginTop: 10,
+  },
+  filaCodigo: { flexDirection: "row", alignItems: "center", gap: 10 },
+  botonIcono: {
+    flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 44,
+    width: 44,
+    paddingHorizontal: 0,
   },
   foto: { width: "100%", aspectRatio: 16 / 9 },
   cuerpo: { padding: 14, gap: 4 },
@@ -229,5 +293,9 @@ const styles = StyleSheet.create({
     minHeight: 44,
     marginTop: 4,
   },
-  textoEnlace: { fontSize: 13, fontWeight: "bold", textDecorationLine: "underline" },
+  textoEnlace: {
+    fontSize: 13,
+    fontWeight: "bold",
+    textDecorationLine: "underline",
+  },
 });
