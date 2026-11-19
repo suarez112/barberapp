@@ -1,5 +1,3 @@
-import { ReactNode, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import Desplegable from "@/components/ui/Desplegable";
 import SeccionPlegable from "@/components/ui/SeccionPlegable";
@@ -7,9 +5,11 @@ import TituloSeccion from "@/components/ui/TituloSeccion";
 import { ZONAS_HORARIAS } from "@/data/zonasHorarias";
 import { useTelefono } from "@/hooks/useTelefono";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { telefonoMostrado } from "@/utils/telefonos";
 import { avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { horario24AMinutos, minutosAHora } from "@/utils/disponibilidad";
+import { telefonoMostrado } from "@/utils/telefonos";
+import { ReactNode, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { CambiosEmpresa, DatosEmpresa, PerfilEmpresa } from "../../cuenta/api";
 import CamposEmpresa from "../../cuenta/formulario/CamposEmpresa";
 import {
@@ -17,9 +17,9 @@ import {
   camposCambiados,
   Errores,
   sinErrores,
-  ValoresEmpresa,
   validarEmpresa,
   valoresDesdePerfil,
+  ValoresEmpresa,
 } from "../../cuenta/formulario/validarEmpresa";
 
 type Props = {
@@ -27,13 +27,26 @@ type Props = {
   onGuardar: (cambios: CambiosEmpresa) => Promise<boolean>;
 };
 
-const DIAS_LARGOS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DIAS_LARGOS = [
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+];
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
 
 // 0 a 48 horas de anticipación mínima para cancelar o reprogramar
 const OPCIONES_ANTICIPACION = Array.from({ length: 49 }, (_, h) => ({
   valor: h,
-  etiqueta: h === 0 ? "Sin límite (hasta el último momento)" : h === 1 ? "1 hora" : `${h} horas`,
+  etiqueta:
+    h === 0
+      ? "Sin límite (hasta el último momento)"
+      : h === 1
+        ? "1 hora"
+        : `${h} horas`,
 }));
 
 const textoAnticipacion = (h: number) =>
@@ -48,7 +61,8 @@ const opcionesZona = (actual: string) =>
 const nombreZona = (zona: string) =>
   ZONAS_HORARIAS.find((z) => z.valor === zona)?.etiqueta ?? zona;
 
-const hora = (hhmm: string | null) => (hhmm ? minutosAHora(horario24AMinutos(hhmm)) : "");
+const hora = (hhmm: string | null) =>
+  hhmm ? minutosAHora(horario24AMinutos(hhmm)) : "";
 
 // Solo se envían los campos que cambiaron. Departamento y municipio van juntos.
 const cambiosEntre = (antes: PerfilEmpresa, despues: DatosEmpresa) => {
@@ -59,7 +73,12 @@ const cambiosEntre = (antes: PerfilEmpresa, despues: DatosEmpresa) => {
           k === "horario"
             ? antes.horario.map((h) =>
                 h.abierto
-                  ? { dia: h.dia, abierto: true, apertura: h.apertura, cierre: h.cierre }
+                  ? {
+                      dia: h.dia,
+                      abierto: true,
+                      apertura: h.apertura,
+                      cierre: h.cierre,
+                    }
                   : { dia: h.dia, abierto: false },
               )
             : antes[k];
@@ -81,7 +100,9 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState<Errores<CampoEmpresa>>({});
   const whatsapp = useTelefono();
-  const [anticipacion, setAnticipacion] = useState(perfil.anticipacionCancelacionHoras);
+  const [anticipacion, setAnticipacion] = useState(
+    perfil.anticipacionCancelacionHoras,
+  );
   const [zona, setZona] = useState(perfil.zonaHoraria);
 
   const editar = (valores: ValoresEmpresa | null) => {
@@ -107,9 +128,13 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
     // WhatsApp: solo se envía si el usuario tocó el campo y el número cambió.
     // Vacío a propósito lo quita. Si el servidor no envió el número, dejarlo vacío no borra nada.
     const nuevoWhatsapp = contacto === "vacio" ? null : contacto.telefono;
-    if (whatsapp.tocado && nuevoWhatsapp !== (perfil.whatsappContacto ?? null)) {
+    if (
+      whatsapp.tocado &&
+      nuevoWhatsapp !== (perfil.whatsappContacto ?? null)
+    ) {
       cambios.whatsappContacto = nuevoWhatsapp;
-      if (contacto !== "vacio") cambios.indicativoWhatsapp = contacto.indicativo;
+      if (contacto !== "vacio")
+        cambios.indicativoWhatsapp = contacto.indicativo;
     }
     if (anticipacion !== perfil.anticipacionCancelacionHoras) {
       cambios.anticipacionCancelacionHoras = anticipacion;
@@ -123,6 +148,7 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
       const ok = await confirmar({
         titulo: "Cambiar código del negocio",
         mensaje: `Tus clientes deberán usar el nuevo código ${cambios.codigoAcceso} para ver tu negocio y reservar. El código ${perfil.codigoAcceso} dejará de funcionar de inmediato.`,
+        textoAceptar: "CAMBIAR CÓDIGO",
       });
       if (!ok) return;
     }
@@ -134,7 +160,11 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
 
   if (edicion) {
     return (
-      <SeccionPlegable titulo="Datos del negocio" icono="storefront-outline" abiertaAlInicio>
+      <SeccionPlegable
+        titulo="Datos del negocio"
+        icono="storefront-outline"
+        abiertaAlInicio
+      >
         <CamposEmpresa
           valores={edicion}
           codigoActual={perfil.codigoAcceso}
@@ -200,20 +230,35 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
   ];
 
   const tarjeta = (children: ReactNode) => (
-    <View style={[styles.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
+    <View
+      style={[
+        styles.tarjeta,
+        { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+      ]}
+    >
       {children}
     </View>
   );
-  const fila = (etiqueta: string, valor: string, color = colors.textPrimary) => (
+  const fila = (
+    etiqueta: string,
+    valor: string,
+    color = colors.textPrimary,
+  ) => (
     <View key={etiqueta} style={styles.fila}>
-      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>{etiqueta}</Text>
+      <Text style={[styles.etiqueta, { color: colors.textSecondary }]}>
+        {etiqueta}
+      </Text>
       <Text style={[styles.valor, { color }]}>{valor}</Text>
     </View>
   );
 
   return (
     <>
-      <SeccionPlegable titulo="Datos del negocio" icono="storefront-outline" abiertaAlInicio>
+      <SeccionPlegable
+        titulo="Datos del negocio"
+        icono="storefront-outline"
+        abiertaAlInicio
+      >
         {tarjeta(
           filas
             .filter((f): f is [string, string] => f !== null)
@@ -221,7 +266,8 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
         )}
         {!perfil.departamento ? (
           <Text style={[styles.nota, { color: colors.primaryText }]}>
-            Completa el departamento y el municipio de tu negocio en &quot;Editar datos&quot;.
+            Completa el departamento y el municipio de tu negocio en
+            &quot;Editar datos&quot;.
           </Text>
         ) : null}
         <Boton
@@ -237,7 +283,9 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
             const h = perfil.horario.find((x) => x.dia === dia);
             return fila(
               DIAS_LARGOS[dia],
-              h?.abierto ? `${hora(h.apertura)} a ${hora(h.cierre)}` : "Cerrado",
+              h?.abierto
+                ? `${hora(h.apertura)} a ${hora(h.cierre)}`
+                : "Cerrado",
               h?.abierto ? colors.textPrimary : colors.textSecondary,
             );
           }),
@@ -245,7 +293,12 @@ export default function DatosNegocio({ perfil, onGuardar }: Props) {
       </SeccionPlegable>
 
       <SeccionPlegable titulo="Cancelaciones" icono="close-circle-outline">
-        {tarjeta(fila("Cancelar o reprogramar", textoAnticipacion(perfil.anticipacionCancelacionHoras)))}
+        {tarjeta(
+          fila(
+            "Cancelar o reprogramar",
+            textoAnticipacion(perfil.anticipacionCancelacionHoras),
+          ),
+        )}
         <Text style={[styles.nota, { color: colors.textSecondary }]}>
           Para cambiarlo toca &quot;Editar datos&quot; en Datos del negocio.
         </Text>

@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
-import { ComponentProps, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Selector from "@/components/ui/Selector";
 import TextoInfo from "@/components/ui/TextoInfo";
+import {
+  colorIconoPagina,
+  estiloBotonPagina,
+} from "@/components/ui/estiloBotonPagina";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES, COLORES_BLOQUEOS } from "@/theme/paleta";
 import { Barbero, DiaHorario } from "@/types";
@@ -15,9 +15,18 @@ import {
   minutosAHora,
 } from "@/utils/disponibilidad";
 import { fechaISO, hoyColombiaISO, MESES_CORTOS } from "@/utils/fechas";
+import { Ionicons } from "@expo/vector-icons";
+import { ComponentProps, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useAgenda } from "../agenda/AgendaProvider";
-import { useAvisarError } from "../sesion/useAvisarError";
 import { useRefrescoPanel } from "../panel/RefrescoPanel";
+import { useAvisarError } from "../sesion/useAvisarError";
 import {
   Bloqueo,
   CitaCalendario,
@@ -28,7 +37,15 @@ import {
 } from "./api";
 
 const NOMBRES_DIA = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
-const DIAS_LARGOS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const DIAS_LARGOS = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
 const PASO_POR_DEFECTO = 30; // hasta que llega el intervalo del negocio
 const DIA_COMPLETO = { ini: 0, fin: 24 * 60 };
 
@@ -42,8 +59,18 @@ const MODOS = [
 // sólido; el símbolo (X, ↻, ✓) los distingue entre sí. Íconos dibujados: los caracteres
 // de texto se ven de tamaños distintos
 type Icono = ComponentProps<typeof Ionicons>["name"];
-type EstiloCelda = { fondo: string; borde: string; texto: string; simbolo: Icono };
-const SOLO_ESE_DIA: EstiloCelda = { fondo: COLORES.rojo, borde: COLORES_BLOQUEOS.soloEseDiaBorde, texto: COLORES.blanco, simbolo: "close" };
+type EstiloCelda = {
+  fondo: string;
+  borde: string;
+  texto: string;
+  simbolo: Icono;
+};
+const SOLO_ESE_DIA: EstiloCelda = {
+  fondo: COLORES.rojo,
+  borde: COLORES_BLOQUEOS.soloEseDiaBorde,
+  texto: COLORES.blanco,
+  simbolo: "close",
+};
 // El bloqueo semanal va en naranja suave con borde y símbolo oscuros (se lee en ambos temas)
 const CADA_SEMANA: EstiloCelda = {
   fondo: COLORES_BLOQUEOS.cadaSemanaFondo,
@@ -51,9 +78,20 @@ const CADA_SEMANA: EstiloCelda = {
   texto: COLORES_BLOQUEOS.cadaSemanaBorde,
   simbolo: "refresh",
 };
-const CON_CITA: EstiloCelda = { fondo: COLORES.verde, borde: COLORES_BLOQUEOS.conCitaBorde, texto: COLORES.blanco, simbolo: "checkmark" };
-const LIBRE_OSCURO = { fondo: COLORES_BLOQUEOS.libreOscuroFondo, borde: COLORES_BLOQUEOS.libreOscuroBorde };
-const LIBRE_CLARO = { fondo: COLORES_BLOQUEOS.libreClaroFondo, borde: COLORES_BLOQUEOS.libreClaroBorde };
+const CON_CITA: EstiloCelda = {
+  fondo: COLORES.verde,
+  borde: COLORES_BLOQUEOS.conCitaBorde,
+  texto: COLORES.blanco,
+  simbolo: "checkmark",
+};
+const LIBRE_OSCURO = {
+  fondo: COLORES_BLOQUEOS.libreOscuroFondo,
+  borde: COLORES_BLOQUEOS.libreOscuroBorde,
+};
+const LIBRE_CLARO = {
+  fondo: COLORES_BLOQUEOS.libreClaroFondo,
+  borde: COLORES_BLOQUEOS.libreClaroBorde,
+};
 
 // 750 -> "12:30" (formato 24 horas que pide el backend)
 const minutosA24 = (total: number) =>
@@ -92,7 +130,10 @@ const fechaCorta = (fecha: string) => {
 const tramo = (b: Bloqueo) =>
   b.todoElDia
     ? DIA_COMPLETO
-    : { ini: horario24AMinutos(b.horaInicio), fin: horario24AMinutos(b.horaFin) };
+    : {
+        ini: horario24AMinutos(b.horaInicio),
+        fin: horario24AMinutos(b.horaFin),
+      };
 
 const textoHoras = (b: Bloqueo) =>
   b.todoElDia
@@ -109,7 +150,12 @@ type Props = {
   horario?: DiaHorario[];
 };
 
-type DiaTabla = { diaSemana: number; diaNom: string; num: number; fecha: string };
+type DiaTabla = {
+  diaSemana: number;
+  diaNom: string;
+  num: number;
+  fecha: string;
+};
 
 // Horario de un profesional por semanas reales. Solo la administradora bloquea:
 // "Solo ese día" bloquea esa fecha; "Cada semana" se repite ese día todas las semanas.
@@ -137,8 +183,17 @@ export default function BloqueoSemanal({
 
   const lunes = lunesDe(new Date());
   const dias: DiaTabla[] = Array.from({ length: 7 }, (_, i) => {
-    const f = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + semanas * 7 + i);
-    return { diaSemana: f.getDay(), diaNom: NOMBRES_DIA[f.getDay()], num: f.getDate(), fecha: fechaISO(f) };
+    const f = new Date(
+      lunes.getFullYear(),
+      lunes.getMonth(),
+      lunes.getDate() + semanas * 7 + i,
+    );
+    return {
+      diaSemana: f.getDay(),
+      diaNom: NOMBRES_DIA[f.getDay()],
+      num: f.getDate(),
+      fecha: fechaISO(f),
+    };
   });
   const primero = dias[0];
   const ultimo = dias[6];
@@ -149,7 +204,12 @@ export default function BloqueoSemanal({
   // confirmó el servidor. Los demás provisionales (aún guardándose) se conservan para que
   // no parpadeen.
   const traer = (quitarTemporal?: string) =>
-    obtenerCalendarioBloqueos(token, desdeSemana, hastaSemana, profesional.id).then((r) => {
+    obtenerCalendarioBloqueos(
+      token,
+      desdeSemana,
+      hastaSemana,
+      profesional.id,
+    ).then((r) => {
       setPaso(r.intervaloMinutos || PASO_POR_DEFECTO);
       setCitasSemana(r.citas.filter((c) => c.barberoId === profesional.id));
       setBloqueos((prev) => [
@@ -214,11 +274,15 @@ export default function BloqueoSemanal({
 
   // Lo que se está liberando ya se ve libre
   const visibles = (bloqueos ?? []).filter((b) => !liberando.has(b.id));
-  const guardandoBloqueos = (bloqueos ?? []).filter((b) => esTemporal(b) || liberando.has(b.id));
+  const guardandoBloqueos = (bloqueos ?? []).filter(
+    (b) => esTemporal(b) || liberando.has(b.id),
+  );
 
   const delDia = (dia: DiaTabla, tipo: Modo) =>
     visibles.filter((b) =>
-      b.tipo === "fecha" ? tipo === "fecha" && b.fecha === dia.fecha : tipo === "semanal" && b.diaSemana === dia.diaSemana,
+      b.tipo === "fecha"
+        ? tipo === "fecha" && b.fecha === dia.fecha
+        : tipo === "semanal" && b.diaSemana === dia.diaSemana,
     );
 
   // Bloqueo de ese tipo que toca este rango de tiempo ese día
@@ -248,15 +312,29 @@ export default function BloqueoSemanal({
       hasta = Math.max(hasta, Math.min(cf, fin));
     }
     if (hasta <= desde) return null;
-    return { desde: (desde - ini) / (fin - ini), hasta: (hasta - ini) / (fin - ini) };
+    return {
+      desde: (desde - ini) / (fin - ini),
+      hasta: (hasta - ini) / (fin - ini),
+    };
   };
-  const hayCita = (fecha: string, ini: number, fin: number) => coberturaCita(fecha, ini, fin) !== null;
+  const hayCita = (fecha: string, ini: number, fin: number) =>
+    coberturaCita(fecha, ini, fin) !== null;
 
   // ¿Algún bloqueo de ese día espera la respuesta del servidor? (en el rango, si se da; o solo los de día completo)
-  const guardandoEn = (dia: DiaTabla, ini = 0, fin = 24 * 60, soloDiaCompleto = false) =>
+  const guardandoEn = (
+    dia: DiaTabla,
+    ini = 0,
+    fin = 24 * 60,
+    soloDiaCompleto = false,
+  ) =>
     guardandoBloqueos.some((b) => {
       if (soloDiaCompleto && !b.todoElDia) return false;
-      if (b.tipo === "fecha" ? b.fecha !== dia.fecha : b.diaSemana !== dia.diaSemana) return false;
+      if (
+        b.tipo === "fecha"
+          ? b.fecha !== dia.fecha
+          : b.diaSemana !== dia.diaSemana
+      )
+        return false;
       const t = tramo(b);
       return ini < t.fin && t.ini < fin;
     });
@@ -269,7 +347,9 @@ export default function BloqueoSemanal({
       await crearBloqueo(token, datos);
       await cargar(provisional.id);
     } catch (e) {
-      setBloqueos((prev) => (prev ?? []).filter((b) => b.id !== provisional.id));
+      setBloqueos((prev) =>
+        (prev ?? []).filter((b) => b.id !== provisional.id),
+      );
       avisarError(e, { titulo: "No se pudo bloquear" });
     }
   };
@@ -302,6 +382,7 @@ export default function BloqueoSemanal({
       const ok = await confirmar({
         titulo: "Liberar horario",
         mensaje: `¿Liberar el bloqueo de ${describir(b)}?`,
+        textoAceptar: "LIBERAR HORARIO",
       });
       if (!ok) return;
     }
@@ -326,7 +407,11 @@ export default function BloqueoSemanal({
       return;
     }
     if (hayCita(dia.fecha, ini, fin)) {
-      avisar("Hay una cita en ese horario", "Elige un horario libre para bloquear.", "aviso");
+      avisar(
+        "Hay una cita en ese horario",
+        "Elige un horario libre para bloquear.",
+        "aviso",
+      );
       return;
     }
     if (buscarBloqueo(dia, otro, ini, fin)) {
@@ -379,24 +464,31 @@ export default function BloqueoSemanal({
         modo === "fecha"
           ? `¿Bloquear el ${fechaCorta(dia.fecha)} completo? Los clientes no podrán reservar ese día con ${profesional.nombre}.`
           : `¿Bloquear todos los ${DIAS_LARGOS[dia.diaSemana]}? Los clientes no podrán reservar ningún ${DIAS_LARGOS[dia.diaSemana]} con ${profesional.nombre}.`,
+      textoAceptar: "BLOQUEAR DÍA",
     });
     if (!ok) return;
     crear(
       modo === "fecha"
         ? { barberoId: profesional.id, fecha: dia.fecha, todoElDia: true }
-        : { barberoId: profesional.id, diaSemana: dia.diaSemana, todoElDia: true },
+        : {
+            barberoId: profesional.id,
+            diaSemana: dia.diaSemana,
+            todoElDia: true,
+          },
     );
   };
 
   // Primero los de una fecha (por fecha), luego los semanales de lunes a domingo
-  const ordenados = visibles.filter((b) => !esTemporal(b)).sort((a, b) => {
-    if (a.tipo !== b.tipo) return a.tipo === "fecha" ? -1 : 1;
-    const orden =
-      a.tipo === "fecha"
-        ? (a.fecha ?? "").localeCompare(b.fecha ?? "")
-        : (((a.diaSemana ?? 0) + 6) % 7) - (((b.diaSemana ?? 0) + 6) % 7);
-    return orden || a.horaInicio.localeCompare(b.horaInicio);
-  });
+  const ordenados = visibles
+    .filter((b) => !esTemporal(b))
+    .sort((a, b) => {
+      if (a.tipo !== b.tipo) return a.tipo === "fecha" ? -1 : 1;
+      const orden =
+        a.tipo === "fecha"
+          ? (a.fecha ?? "").localeCompare(b.fecha ?? "")
+          : (((a.diaSemana ?? 0) + 6) % 7) - (((b.diaSemana ?? 0) + 6) % 7);
+      return orden || a.horaInicio.localeCompare(b.horaInicio);
+    });
 
   // Estado de una casilla: el bloqueo de ese día, luego el semanal. La cita se dibuja
   // encima, solo en la parte de la casilla que ocupa (ver coberturaCita)
@@ -407,7 +499,11 @@ export default function BloqueoSemanal({
   };
 
   const estadoDia = (dia: DiaTabla) =>
-    buscarDiaCompleto(dia, "fecha") ? SOLO_ESE_DIA : buscarDiaCompleto(dia, "semanal") ? CADA_SEMANA : null;
+    buscarDiaCompleto(dia, "fecha")
+      ? SOLO_ESE_DIA
+      : buscarDiaCompleto(dia, "semanal")
+        ? CADA_SEMANA
+        : null;
 
   return (
     <View style={s.contenedor}>
@@ -422,15 +518,16 @@ export default function BloqueoSemanal({
             {modo === "fecha"
               ? "Solo ese día: lo que bloquees aplica únicamente a esa fecha."
               : "Cada semana: lo que bloquees se repite todas las semanas ese mismo día."}{" "}
-            Toca una hora para bloquearla o liberarla, o toca el día de arriba para
-            bloquear el día completo. Cada casilla sigue el intervalo de horarios del negocio. Las horas con
-            &quot;—&quot; y los días &quot;Cerrado&quot; están fuera del horario del negocio.
+            Toca una hora para bloquearla o liberarla, o toca el día de arriba
+            para bloquear el día completo. Cada casilla sigue el intervalo de
+            horarios del negocio. Las horas con &quot;—&quot; y los días
+            &quot;Cerrado&quot; están fuera del horario del negocio.
           </Text>
         </>
       ) : (
         <Text style={[s.ayuda, { color: colors.textSecondary }]}>
-          Estos son tus horarios bloqueados y tus citas. Solo la administradora del
-          negocio puede bloquear o liberar horarios.
+          Estos son tus horarios bloqueados y tus citas. Solo la administradora
+          del negocio puede bloquear o liberar horarios.
         </Text>
       )}
 
@@ -438,7 +535,10 @@ export default function BloqueoSemanal({
         <ActivityIndicator color={colors.primaryText} style={s.cargando} />
       ) : (
         <View
-          style={[s.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          style={[
+            s.tarjeta,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         >
           <View style={s.navSemana}>
             <TouchableOpacity
@@ -450,7 +550,11 @@ export default function BloqueoSemanal({
               onPress={() => setSemanas(semanas - 1)}
               style={[s.flecha, estiloBotonPagina(colors, semanas > 0)]}
             >
-              <Ionicons name="chevron-back" size={22} color={colorIconoPagina(colors, semanas > 0)} />
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color={colorIconoPagina(colors, semanas > 0)}
+              />
             </TouchableOpacity>
             <View style={s.centro}>
               <Text style={[s.textoSemana, { color: colors.textPrimary }]}>
@@ -467,7 +571,11 @@ export default function BloqueoSemanal({
               onPress={() => setSemanas(semanas + 1)}
               style={[s.flecha, estiloBotonPagina(colors, true)]}
             >
-              <Ionicons name="chevron-forward" size={22} color={colorIconoPagina(colors, true)} />
+              <Ionicons
+                name="chevron-forward"
+                size={22}
+                color={colorIconoPagina(colors, true)}
+              />
             </TouchableOpacity>
           </View>
 
@@ -494,19 +602,37 @@ export default function BloqueoSemanal({
                     (cerrado || d.fecha < hoy) && s.apagado,
                   ]}
                 >
-                  <Text style={[s.diaNom, { color: estilo?.texto ?? colors.textSecondary }]}>
+                  <Text
+                    style={[
+                      s.diaNom,
+                      { color: estilo?.texto ?? colors.textSecondary },
+                    ]}
+                  >
                     {d.diaNom}
                   </Text>
                   {guardandoEn(d, 0, 24 * 60, true) ? (
-                    <ActivityIndicator size="small" color={estilo?.texto ?? colors.primaryText} style={s.iconoDia} />
+                    <ActivityIndicator
+                      size="small"
+                      color={estilo?.texto ?? colors.primaryText}
+                      style={s.iconoDia}
+                    />
                   ) : estilo ? (
-                    <Ionicons name={estilo.simbolo} size={20} color={estilo.texto} style={s.iconoDia} />
+                    <Ionicons
+                      name={estilo.simbolo}
+                      size={20}
+                      color={estilo.texto}
+                      style={s.iconoDia}
+                    />
                   ) : (
-                    <Text style={[s.diaNum, { color: colors.textPrimary }]}>{d.num}</Text>
+                    <Text style={[s.diaNum, { color: colors.textPrimary }]}>
+                      {d.num}
+                    </Text>
                   )}
                   {cerrado ? (
                     // "—" como en las casillas y la leyenda: "Cerrado" a 12 px no cabe en la columna
-                    <Text style={[s.cerrado, { color: colors.textSecondary }]}>—</Text>
+                    <Text style={[s.cerrado, { color: colors.textSecondary }]}>
+                      —
+                    </Text>
                   ) : null}
                 </TouchableOpacity>
               );
@@ -518,13 +644,16 @@ export default function BloqueoSemanal({
             return (
               <View key={ini} style={s.fila}>
                 <View style={s.colHora}>
-                  <Text style={[s.hora, { color: colors.textSecondary }]}>{minutosAHora(ini)}</Text>
+                  <Text style={[s.hora, { color: colors.textSecondary }]}>
+                    {minutosAHora(ini)}
+                  </Text>
                 </View>
                 {dias.map((d) => {
                   const fin = finDe(d.diaSemana, fila);
                   const bloqueo = estadoCelda(d, ini, fin);
                   const cita = coberturaCita(d.fecha, ini, fin);
-                  const completa = !!cita && cita.desde <= 0.01 && cita.hasta >= 0.99;
+                  const completa =
+                    !!cita && cita.desde <= 0.01 && cita.hasta >= 0.99;
                   // Una cita que llena la casilla la pinta toda; si no, solo su parte
                   const estilo = completa ? CON_CITA : bloqueo;
                   const abierto = abiertoEn(d.diaSemana, ini);
@@ -544,7 +673,9 @@ export default function BloqueoSemanal({
                           borderColor: estilo?.borde ?? LIBRE.borde,
                         },
                         (!abierto || d.fecha < hoy) && s.apagado,
-                        !abierto && !estilo && !cita && { backgroundColor: "transparent" },
+                        !abierto &&
+                          !estilo &&
+                          !cita && { backgroundColor: "transparent" },
                       ]}
                     >
                       {cita && !completa ? (
@@ -561,13 +692,31 @@ export default function BloqueoSemanal({
                         />
                       ) : null}
                       {guardando ? (
-                        <ActivityIndicator size="small" color={estilo?.texto ?? colors.primaryText} />
+                        <ActivityIndicator
+                          size="small"
+                          color={estilo?.texto ?? colors.primaryText}
+                        />
                       ) : cita ? (
-                        <Ionicons name={CON_CITA.simbolo} size={16} color={CON_CITA.texto} />
+                        <Ionicons
+                          name={CON_CITA.simbolo}
+                          size={16}
+                          color={CON_CITA.texto}
+                        />
                       ) : estilo ? (
-                        <Ionicons name={estilo.simbolo} size={16} color={estilo.texto} />
+                        <Ionicons
+                          name={estilo.simbolo}
+                          size={16}
+                          color={estilo.texto}
+                        />
                       ) : !abierto ? (
-                        <Text style={[s.cerradoCelda, { color: colors.textSecondary }]}>—</Text>
+                        <Text
+                          style={[
+                            s.cerradoCelda,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          —
+                        </Text>
                       ) : null}
                     </TouchableOpacity>
                   );
@@ -580,7 +729,11 @@ export default function BloqueoSemanal({
 
       <View style={s.leyenda}>
         <ItemLeyenda color={LIBRE.fondo} borde={LIBRE.borde} texto="Libre" />
-        <ItemLeyenda color="transparent" borde={LIBRE.borde} texto="— Cerrado" />
+        <ItemLeyenda
+          color="transparent"
+          borde={LIBRE.borde}
+          texto="— Cerrado"
+        />
         {[
           { estilo: SOLO_ESE_DIA, texto: "Solo ese día" },
           { estilo: CADA_SEMANA, texto: "Cada semana" },
@@ -606,12 +759,18 @@ export default function BloqueoSemanal({
       {ordenados.map((b) => (
         <View
           key={b.id}
-          style={[s.itemLista, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          style={[
+            s.itemLista,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         >
           <View
             style={[
               s.marca,
-              { backgroundColor: b.tipo === "fecha" ? SOLO_ESE_DIA.fondo : CADA_SEMANA.borde },
+              {
+                backgroundColor:
+                  b.tipo === "fecha" ? SOLO_ESE_DIA.fondo : CADA_SEMANA.borde,
+              },
             ]}
           />
           <Text style={[s.textoLista, { color: colors.textPrimary }]}>
@@ -635,28 +794,54 @@ export default function BloqueoSemanal({
   );
 }
 
-type Leyenda = { color: string; borde: string; texto: string; simbolo?: Icono; colorSimbolo?: string };
+type Leyenda = {
+  color: string;
+  borde: string;
+  texto: string;
+  simbolo?: Icono;
+  colorSimbolo?: string;
+};
 
-function ItemLeyenda({ color, borde, texto, simbolo, colorSimbolo = COLORES.blanco }: Leyenda) {
+function ItemLeyenda({
+  color,
+  borde,
+  texto,
+  simbolo,
+  colorSimbolo = COLORES.blanco,
+}: Leyenda) {
   const { colors } = useAppTheme();
   return (
     <View style={s.itemLeyenda}>
       <View style={[s.cuadro, { backgroundColor: color, borderColor: borde }]}>
-        {simbolo ? <Ionicons name={simbolo} size={11} color={colorSimbolo} /> : null}
+        {simbolo ? (
+          <Ionicons name={simbolo} size={11} color={colorSimbolo} />
+        ) : null}
       </View>
-      <Text style={[s.textoLeyenda, { color: colors.textSecondary }]}>{texto}</Text>
+      <Text style={[s.textoLeyenda, { color: colors.textSecondary }]}>
+        {texto}
+      </Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   contenedor: { marginTop: 10 },
-  titulo: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 10 },
+  titulo: {
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
   tituloLista: { marginTop: 16 },
   ayuda: { fontSize: 12, lineHeight: 16, marginVertical: 10 },
   cargando: { marginVertical: 20 },
   tarjeta: { borderRadius: 10, borderWidth: 1, padding: 8 },
-  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  flecha: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   navSemana: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -700,7 +885,13 @@ const s = StyleSheet.create({
   parteCita: { position: "absolute", left: 0, right: 0 },
   iconoDia: { marginVertical: 1 },
   leyenda: { flexDirection: "row", flexWrap: "wrap", marginTop: 12 },
-  itemLeyenda: { flexDirection: "row", alignItems: "center", gap: 6, marginRight: 14, marginBottom: 6 },
+  itemLeyenda: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginRight: 14,
+    marginBottom: 6,
+  },
   cuadro: {
     width: 16,
     height: 16,

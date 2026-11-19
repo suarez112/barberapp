@@ -1,4 +1,5 @@
 import {
+  Platform,
   Pressable,
   StyleProp,
   StyleSheet,
@@ -39,7 +40,6 @@ export default function Boton({
   textStyle,
 }: Props) {
   const { colors } = useAppTheme();
-  // Secundario: fondo y borde del tema (Cancelar, acciones de apoyo); no es negro ni amarillo
   const estilos = {
     primario: { backgroundColor: colors.primary, color: colors.onPrimary },
     secundario: {
@@ -60,10 +60,12 @@ export default function Boton({
       accessibilityState={{ disabled: deshabilitado }}
       disabled={deshabilitado}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={({ pressed, hovered }) => [
         styles.boton,
+        Platform.OS === "web" && !deshabilitado && styles.webInteractivo,
         fondo,
-        pressed && styles.presionado,
+        !deshabilitado && hovered && styles.hover,
+        !deshabilitado && pressed && styles.presionado,
         deshabilitado && styles.deshabilitado,
         style,
       ]}
@@ -80,12 +82,31 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 5,
   },
-  presionado: { opacity: 0.7 },
-  deshabilitado: { opacity: 0.5 },
-  texto: { fontWeight: "bold", fontSize: 14, letterSpacing: 1, textAlign: "center" },
+  webInteractivo: {
+    cursor: "pointer",
+    transitionProperty: "transform, opacity, background-color, border-color",
+    transitionDuration: "150ms",
+    transitionTimingFunction: "ease-out",
+  } as any,
+  hover: {
+    opacity: 0.9,
+  },
+  presionado: {
+    opacity: 0.8,
+    transform: [{ scale: 0.97 }],
+  },
+  deshabilitado: {
+    opacity: 0.5,
+  },
+  texto: {
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
 });

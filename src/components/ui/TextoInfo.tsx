@@ -1,10 +1,24 @@
 import { StyleSheet, Text } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
 
-// Aviso corto en rojo (lista vacía, paso pendiente)
-export default function TextoInfo({ children }: { children: React.ReactNode }) {
+type Props = {
+  children: React.ReactNode;
+  esError?: boolean;
+};
+
+// Aviso informativo neutro (lista vacía, paso pendiente) o de error explícito
+export default function TextoInfo({ children, esError = false }: Props) {
   const { colors } = useAppTheme();
-  return <Text style={[styles.texto, { color: colors.peligroTexto }]}>{children}</Text>;
+  return (
+    <Text
+      style={[
+        styles.texto,
+        { color: esError ? colors.peligroTexto : colors.textSecondary },
+      ]}
+    >
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({

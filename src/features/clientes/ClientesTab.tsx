@@ -1,7 +1,4 @@
 import Cuadricula from "@/components/layout/Cuadricula";
-import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import CampoTexto from "@/components/ui/CampoTexto";
 import Chips from "@/components/ui/Chips";
@@ -10,6 +7,9 @@ import { useAppTheme } from "@/theme/ThemeProvider";
 import { confirmar } from "@/utils/dialogos";
 import { normalizar } from "@/utils/formato";
 import { soloDigitos } from "@/utils/telefonos";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import { Bloqueado, Cliente } from "./api";
 import TarjetaBloqueado from "./components/TarjetaBloqueado";
@@ -44,6 +44,7 @@ export default function ClientesTab({ token }: { token: string }) {
     const ok = await confirmar({
       titulo: "Desbloquear cliente",
       mensaje: `¿Quieres que ${nombre} pueda volver a reservar?`,
+      textoAceptar: "DESBLOQUEAR",
     });
     if (ok) await c.desbloquear(id, nombre);
   };
@@ -55,6 +56,7 @@ export default function ClientesTab({ token }: { token: string }) {
       const ok = await confirmar({
         titulo: "Bloquear cliente",
         mensaje: `${cliente.nombre} ya no podrá reservar en tu negocio. ¿Continuar?`,
+        textoAceptar: "BLOQUEAR",
         destructivo: true,
       });
       if (ok) await c.bloquear(cliente);
@@ -85,7 +87,9 @@ export default function ClientesTab({ token }: { token: string }) {
         autoCorrect={false}
         autoComplete="off"
         returnKeyType="search"
-        izquierda={<Ionicons name="search" size={18} color={colors.textSecondary} />}
+        izquierda={
+          <Ionicons name="search" size={18} color={colors.textSecondary} />
+        }
         style={{ marginTop: 12 }}
       />
       <Chips opciones={filtros} valor={filtro} onCambiar={setFiltro} />
@@ -93,7 +97,10 @@ export default function ClientesTab({ token }: { token: string }) {
       {filtro === "todos" ? (
         <>
           {c.cargando ? (
-            <ActivityIndicator color={colors.primaryText} style={{ marginTop: 20 }} />
+            <ActivityIndicator
+              color={colors.primaryText}
+              style={{ marginTop: 20 }}
+            />
           ) : null}
           {c.error ? (
             <View>

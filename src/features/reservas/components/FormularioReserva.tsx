@@ -1,23 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import CampoTelefono from "@/components/ui/CampoTelefono";
 import CampoTexto from "@/components/ui/CampoTexto";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 import SelectorDias from "@/components/ui/SelectorDias";
+import TelefonoConBandera from "@/components/ui/TelefonoConBandera";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import CasillaAutorizacion from "@/features/legal/CasillaAutorizacion";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
-import { crearDia, mesCorto } from "@/utils/fechas";
+import { crearDia, fechaConDia, mesCorto } from "@/utils/fechas";
 import { telefonoMostrado } from "@/utils/telefonos";
-import TelefonoConBandera from "@/components/ui/TelefonoConBandera";
+import { Ionicons } from "@expo/vector-icons";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { EstadoReserva } from "../hooks/useReserva";
+import ResumenReserva from "./ResumenReserva";
 import SelectorHoras from "./SelectorHoras";
 import SelectorProfesional from "./SelectorProfesional";
 import SelectorServicio from "./SelectorServicio";
-import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Props = {
   reserva: EstadoReserva;
@@ -62,14 +63,14 @@ export default function FormularioReserva({ reserva }: Props) {
         onSeleccionar={elegirBarbero}
       />
 
-      <TituloSeccion>SERVICIO</TituloSeccion>
+      <TituloSeccion>PASO 2 · SERVICIO</TituloSeccion>
       <SelectorServicio
         servicios={servicios}
         seleccionado={servicio}
         onSeleccionar={elegirServicio}
       />
 
-      <TituloSeccion>PASO 2 · DÍA</TituloSeccion>
+      <TituloSeccion>PASO 3 · DÍA Y HORA</TituloSeccion>
       <SelectorDias
         desde={primerDia}
         hasta={ultimoDia}
@@ -86,13 +87,14 @@ export default function FormularioReserva({ reserva }: Props) {
       </TituloSeccion>
       {!barbero || !servicio ? (
         <TextoInfo>
-          <IconoEnLinea nombre="warning-outline" color={colors.peligroTexto} /> Selecciona primero un profesional y un servicio.
+          <IconoEnLinea nombre="warning-outline" color={colors.textSecondary} />{" "}
+          Selecciona primero un profesional y un servicio.
         </TextoInfo>
       ) : empresa && !horarioDelDia(empresa, dia.fechaFull) ? (
         <TextoInfo>El negocio no atiende este día. Elige otra fecha.</TextoInfo>
       ) : errorHoras ? (
         <View>
-          <TextoInfo>{errorHoras}</TextoInfo>
+          <TextoInfo esError>{errorHoras}</TextoInfo>
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar las horas disponibles"
@@ -111,18 +113,24 @@ export default function FormularioReserva({ reserva }: Props) {
         />
       )}
 
-      <TituloSeccion>PASO 3 · TUS DATOS</TituloSeccion>
+      <TituloSeccion>PASO 4 · TUS DATOS</TituloSeccion>
       {datosCuenta ? (
         // Cliente con sesión: sus datos se llenan solos
         <View
           accessible
-          accessibilityLabel={`Reservas con tu cuenta: ${datosCuenta.nombre}, ${telefonoMostrado(
-            datosCuenta.telefono,
-            datosCuenta.indicativo,
-          ).texto}`}
-          style={[styles.cuenta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          accessibilityLabel={`Reservas con tu cuenta: ${datosCuenta.nombre}, ${
+            telefonoMostrado(datosCuenta.telefono, datosCuenta.indicativo).texto
+          }`}
+          style={[
+            styles.cuenta,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         >
-          <Ionicons name="person-circle-outline" size={28} color={colors.primaryText} />
+          <Ionicons
+            name="person-circle-outline"
+            size={28}
+            color={colors.primaryText}
+          />
           <View style={styles.textosCuenta}>
             <Text style={[styles.nombreCuenta, { color: colors.textPrimary }]}>
               {datosCuenta.nombre}
@@ -167,6 +175,15 @@ export default function FormularioReserva({ reserva }: Props) {
         />
       ) : null}
 
+      {hora && servicio && barbero ? (
+        <ResumenReserva
+          servicio={servicio.nombre}
+          precio={servicio.precio}
+          profesional={barbero.nombre}
+          fecha={fechaConDia(dia.fechaFull)}
+          hora={hora}
+        />
+      ) : null}
       <Boton
         titulo="CONFIRMAR RESERVA"
         ayuda="Envía la reserva con el profesional, servicio, día y hora elegidos"

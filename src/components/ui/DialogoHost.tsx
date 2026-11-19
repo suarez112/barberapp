@@ -1,10 +1,21 @@
-import { Ionicons } from "@expo/vector-icons";
-import { ComponentProps, useSyncExternalStore } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { comoFrase } from "@/components/ui/Boton";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES, textoSobre } from "@/theme/paleta";
-import { dialogoActual, suscribirDialogos, TipoDialogo } from "@/utils/dialogos";
+import {
+  dialogoActual,
+  suscribirDialogos,
+  TipoDialogo,
+} from "@/utils/dialogos";
+import { Ionicons } from "@expo/vector-icons";
+import { ComponentProps, useSyncExternalStore } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 type Icono = ComponentProps<typeof Ionicons>["name"];
 
@@ -19,13 +30,25 @@ const ESTILO: Record<TipoDialogo, { icono: Icono; color?: string }> = {
 // Muestra los avisos de utils/dialogos con el mismo estilo del modal de cita confirmada
 export default function DialogoHost() {
   const { colors } = useAppTheme();
-  const dialogo = useSyncExternalStore(suscribirDialogos, dialogoActual, dialogoActual);
+  const dialogo = useSyncExternalStore(
+    suscribirDialogos,
+    dialogoActual,
+    dialogoActual,
+  );
   if (!dialogo) return null;
 
   const { icono, color = colors.primary } = ESTILO[dialogo.tipo];
   const esConfirmacion = dialogo.tipo === "confirmacion";
-  const textoAceptar = (esConfirmacion && dialogo.textoAceptar) || "ACEPTAR";
-  const textoCancelar = dialogo.textoCancelar ?? "CANCELAR";
+  const textoPorDefecto = esConfirmacion
+    ? dialogo.destructivo
+      ? "ELIMINAR"
+      : "CONFIRMAR"
+    : "ENTENDIDO";
+  const textoAceptar = (
+    (esConfirmacion && dialogo.textoAceptar) ||
+    textoPorDefecto
+  ).toUpperCase();
+  const textoCancelar = (dialogo.textoCancelar ?? "VOLVER").toUpperCase();
   const colorAceptar = dialogo.destructivo ? COLORES.rojo : colors.primary;
 
   return (
@@ -39,7 +62,10 @@ export default function DialogoHost() {
       <View style={s.overlay}>
         <View
           accessibilityRole="alert"
-          style={[s.tarjeta, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          style={[
+            s.tarjeta,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         >
           <View style={[s.aro, { backgroundColor: `${color}33` }]}>
             <View style={[s.circulo, { backgroundColor: color }]}>
@@ -47,18 +73,26 @@ export default function DialogoHost() {
             </View>
           </View>
 
-          <Text style={[s.titulo, { color: colors.textPrimary }]}>{dialogo.titulo}</Text>
+          <Text style={[s.titulo, { color: colors.textPrimary }]}>
+            {dialogo.titulo}
+          </Text>
           {dialogo.mensaje ? (
-            <Text style={[s.mensaje, { color: colors.textSecondary }]}>{dialogo.mensaje}</Text>
+            <Text style={[s.mensaje, { color: colors.textSecondary }]}>
+              {dialogo.mensaje}
+            </Text>
           ) : null}
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={comoFrase(textoAceptar)}
-            accessibilityHint={esConfirmacion ? "Confirma y continúa" : "Cierra este aviso"}
-            style={({ pressed }) => [
+            accessibilityHint={
+              esConfirmacion ? "Confirma y continúa" : "Cierra este aviso"
+            }
+            style={({ pressed, hovered }) => [
               s.boton,
+              Platform.OS === "web" && s.webInteractivo,
               { backgroundColor: colorAceptar },
+              hovered && s.hover,
               pressed && s.presionado,
             ]}
             onPress={() => dialogo.responder(true)}
@@ -73,14 +107,21 @@ export default function DialogoHost() {
               accessibilityRole="button"
               accessibilityLabel={comoFrase(textoCancelar)}
               accessibilityHint="Cierra sin hacer cambios"
-              style={({ pressed }) => [
+              style={({ pressed, hovered }) => [
                 s.botonSecundario,
-                { borderColor: colors.cardBorder },
+                Platform.OS === "web" && s.webInteractivo,
+                {
+                  borderColor: colors.secundarioBorde,
+                  backgroundColor: colors.secundarioBg,
+                },
+                hovered && s.hover,
                 pressed && s.presionado,
               ]}
               onPress={() => dialogo.responder(false)}
             >
-              <Text style={[s.textoSecundario, { color: colors.textPrimary }]}>
+              <Text
+                style={[s.textoSecundario, { color: colors.secundarioTexto }]}
+              >
                 {textoCancelar}
               </Text>
             </Pressable>
@@ -126,20 +167,31 @@ const s = StyleSheet.create({
   mensaje: { fontSize: 14, lineHeight: 20, marginTop: 8, textAlign: "center" },
   boton: {
     width: "100%",
-    paddingVertical: 15,
+    minHeight: 48,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 20,
   },
   textoBoton: { fontWeight: "bold", fontSize: 14, letterSpacing: 1 },
   botonSecundario: {
     width: "100%",
-    paddingVertical: 13,
+    minHeight: 46,
+    paddingVertical: 12,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 10,
   },
   textoSecundario: { fontWeight: "bold", fontSize: 13, letterSpacing: 1 },
-  presionado: { opacity: 0.7 },
+  webInteractivo: {
+    cursor: "pointer",
+    transitionProperty: "transform, opacity",
+    transitionDuration: "150ms",
+    transitionTimingFunction: "ease-out",
+  } as any,
+  hover: { opacity: 0.9 },
+  presionado: { opacity: 0.78, transform: [{ scale: 0.97 }] },
 });

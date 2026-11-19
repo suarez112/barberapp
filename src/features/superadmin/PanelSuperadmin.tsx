@@ -1,10 +1,16 @@
-import { Ionicons } from "@expo/vector-icons";
-import { ComponentProps, useState } from "react";
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Tocable from "@/components/ui/Tocable";
 import { APP_NOMBRE } from "@/config/app";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar, confirmar } from "@/utils/dialogos";
+import { Ionicons } from "@expo/vector-icons";
+import { ComponentProps, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import ActividadSuperadmin from "./ActividadSuperadmin";
 import CategoriasSuperadmin from "./CategoriasSuperadmin";
 import AvisoInactividad from "./components/AvisoInactividad";
@@ -40,7 +46,15 @@ type PropsBoton = {
 };
 
 // Una opción del menú lateral
-function BotonMenu({ icono, texto, ayuda, onPress, compacto, activo = false, color }: PropsBoton) {
+function BotonMenu({
+  icono,
+  texto,
+  ayuda,
+  onPress,
+  compacto,
+  activo = false,
+  color,
+}: PropsBoton) {
   const { colors } = useAppTheme();
   const colorTexto = activo ? colors.onPrimary : (color ?? colors.textPrimary);
   return (
@@ -50,10 +64,16 @@ function BotonMenu({ icono, texto, ayuda, onPress, compacto, activo = false, col
       accessibilityHint={ayuda}
       accessibilityState={{ selected: activo }}
       onPress={onPress}
-      style={[styles.item, compacto && styles.itemCompacto, activo && { backgroundColor: colors.primary }]}
+      style={[
+        styles.item,
+        compacto && styles.itemCompacto,
+        activo && { backgroundColor: colors.primary },
+      ]}
     >
       <Ionicons name={icono} size={22} color={colorTexto} />
-      {compacto ? null : <Text style={[styles.textoItem, { color: colorTexto }]}>{texto}</Text>}
+      {compacto ? null : (
+        <Text style={[styles.textoItem, { color: colorTexto }]}>{texto}</Text>
+      )}
     </Tocable>
   );
 }
@@ -71,7 +91,9 @@ export default function PanelSuperadmin() {
   const cerrarSesion = async () => {
     const seguir = await confirmar({
       titulo: "¿Cerrar sesión?",
-      mensaje: "Tendrás que escribir de nuevo tu contraseña y tu código de verificación.",
+      mensaje:
+        "Tendrás que escribir de nuevo tu contraseña y tu código de verificación.",
+      textoAceptar: "CERRAR SESIÓN",
     });
     if (seguir) salir();
   };
@@ -80,7 +102,11 @@ export default function PanelSuperadmin() {
   const { segundosRestantes, seguirConectado } = useInactividad({
     onVencer: () => {
       salir();
-      avisar("Sesión cerrada", "Cerramos tu sesión por 15 minutos sin actividad. Inicia sesión de nuevo.", "aviso");
+      avisar(
+        "Sesión cerrada",
+        "Cerramos tu sesión por 15 minutos sin actividad. Inicia sesión de nuevo.",
+        "aviso",
+      );
     },
   });
 
@@ -105,7 +131,9 @@ export default function PanelSuperadmin() {
         ]}
       >
         {compacto ? null : (
-          <Text style={[styles.marca, { color: colors.primaryText }]}>{APP_NOMBRE.toUpperCase()}</Text>
+          <Text style={[styles.marca, { color: colors.primaryText }]}>
+            {APP_NOMBRE.toUpperCase()}
+          </Text>
         )}
         <View style={styles.items}>
           {SECCIONES.map((s) => (
@@ -122,7 +150,10 @@ export default function PanelSuperadmin() {
         </View>
         <View style={[styles.pie, { borderColor: colors.cardBorder }]}>
           {compacto ? null : (
-            <Text numberOfLines={1} style={[styles.correo, { color: colors.textSecondary }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.correo, { color: colors.textSecondary }]}
+            >
               {correo}
             </Text>
           )}
@@ -144,11 +175,18 @@ export default function PanelSuperadmin() {
         </View>
       </View>
 
-      <ScrollView style={styles.contenido} contentContainerStyle={styles.contenidoInterno}>
+      <ScrollView
+        style={styles.contenido}
+        contentContainerStyle={styles.contenidoInterno}
+      >
         <View style={styles.columna}>
           {/* Cada sección carga sus datos al abrirse */}
-          {seccion === "inicio" && <InicioSuperadmin onVerNegocio={verNegocio} />}
-          {seccion === "negocios" && <NegociosSuperadmin idInicial={negocioAbierto} />}
+          {seccion === "inicio" && (
+            <InicioSuperadmin onVerNegocio={verNegocio} />
+          )}
+          {seccion === "negocios" && (
+            <NegociosSuperadmin idInicial={negocioAbierto} />
+          )}
           {seccion === "pqrs" && <PqrsSuperadmin />}
           {seccion === "categorias" && <CategoriasSuperadmin />}
           {seccion === "actividad" && <ActividadSuperadmin />}
@@ -156,7 +194,11 @@ export default function PanelSuperadmin() {
       </ScrollView>
 
       {segundosRestantes !== null ? (
-        <AvisoInactividad segundos={segundosRestantes} onSeguir={seguirConectado} onSalir={salir} />
+        <AvisoInactividad
+          segundos={segundosRestantes}
+          onSeguir={seguirConectado}
+          onSalir={salir}
+        />
       ) : null}
     </View>
   );
@@ -164,9 +206,20 @@ export default function PanelSuperadmin() {
 
 const styles = StyleSheet.create({
   pagina: { flexDirection: "row" },
-  menu: { width: 240, borderRightWidth: 1, paddingVertical: 24, paddingHorizontal: 12 },
+  menu: {
+    width: 240,
+    borderRightWidth: 1,
+    paddingVertical: 24,
+    paddingHorizontal: 12,
+  },
   menuCompacto: { width: 72, paddingHorizontal: 8 },
-  marca: { fontSize: 16, fontWeight: "bold", letterSpacing: 1.5, paddingHorizontal: 12, marginBottom: 24 },
+  marca: {
+    fontSize: 16,
+    fontWeight: "bold",
+    letterSpacing: 1.5,
+    paddingHorizontal: 12,
+    marginBottom: 24,
+  },
   items: { flex: 1, gap: 4 },
   pie: { gap: 4, borderTopWidth: 1, paddingTop: 12 },
   correo: { fontSize: 12, paddingHorizontal: 12, marginBottom: 8 },

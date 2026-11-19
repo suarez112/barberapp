@@ -1,26 +1,29 @@
 import Cuadricula from "@/components/layout/Cuadricula";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Chips from "@/components/ui/Chips";
+import EstadoVacio from "@/components/ui/EstadoVacio";
 import SelectorDias from "@/components/ui/SelectorDias";
-import TextoInfo from "@/components/ui/TextoInfo";
-import TituloSeccion from "@/components/ui/TituloSeccion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero, BloqueoHorario, Dia, EstadoCita } from "@/types";
 import { horaAMinutos, horarioDelDia } from "@/utils/disponibilidad";
 import { fechaConDia } from "@/utils/fechas";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { useNegocio } from "../negocio/NegocioProvider";
+import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { Personal } from "../sesion/usePersonal";
 import { useAgenda } from "./AgendaProvider";
+import { listarAgenda, listarBloqueosPublicos } from "./api";
 import HojaCita from "./components/HojaCita";
 import LineaDeTiempo from "./components/LineaDeTiempo";
 import TarjetaCita, { ESTADO_CITA } from "./components/TarjetaCita";
-import { listarAgenda, listarBloqueosPublicos } from "./api";
-import { useRefrescoPanel } from "../panel/RefrescoPanel";
 import { useAccionesCita } from "./useAccionesCita";
-import { guardarVistaAgenda, leerVistaAgenda, VistaAgenda } from "./vistaPreferida";
+import {
+  guardarVistaAgenda,
+  leerVistaAgenda,
+  VistaAgenda,
+} from "./vistaPreferida";
 
 type Filtro = "todas" | EstadoCita;
 
@@ -64,10 +67,14 @@ export default function AgendaTab({
   const [vista, setVista] = useState<VistaAgenda>("lista");
   const [citaAbiertaId, setCitaAbiertaId] = useState<string | null>(null);
   // Bloqueos con el profesional al que pertenecen, para no mostrar los de otro mientras carga
-  const [bloqueosCargados, setBloqueos] = useState<{ barberoId: string; lista: BloqueoHorario[] } | null>(
-    null,
-  );
-  const bloqueos = bloqueosCargados?.barberoId === profesional.id ? bloqueosCargados.lista : [];
+  const [bloqueosCargados, setBloqueos] = useState<{
+    barberoId: string;
+    lista: BloqueoHorario[];
+  } | null>(null);
+  const bloqueos =
+    bloqueosCargados?.barberoId === profesional.id
+      ? bloqueosCargados.lista
+      : [];
 
   // Se actualiza al deslizar, al volver a la app, cada 30 s y al llegar una notificación
   useRefrescoPanel(() => listarAgenda(personal.token).then(setCitas));
@@ -98,7 +105,11 @@ export default function AgendaTab({
             lista: lista.filter((b) => b.barberoId === profesional.id),
           }),
       )
-      .catch((e) => vigente && avisarError(e, { titulo: "No se pudieron cargar los bloqueos" }));
+      .catch(
+        (e) =>
+          vigente &&
+          avisarError(e, { titulo: "No se pudieron cargar los bloqueos" }),
+      );
     return () => {
       vigente = false;
     };
@@ -121,29 +132,49 @@ export default function AgendaTab({
     )
     .sort((a, b) => horaAMinutos(a.hora) - horaAMinutos(b.hora));
   const visibles =
-    filtro === "todas" ? citasDelDia : citasDelDia.filter((c) => c.estado === filtro);
-  const contar = (e: EstadoCita) => citasDelDia.filter((c) => c.estado === e).length;
+    filtro === "todas"
+      ? citasDelDia
+      : citasDelDia.filter((c) => c.estado === filtro);
+  const contar = (e: EstadoCita) =>
+    citasDelDia.filter((c) => c.estado === e).length;
 
   const citaAbierta = citasDelDia.find((c) => c.id === citaAbiertaId);
 
   return (
     <View>
-      <TituloSeccion>SELECCIONA EL DÍA A CONSULTAR</TituloSeccion>
       <SelectorDias seleccionado={dia} onSeleccionar={onCambiarDia} />
 
-      {/* Un solo botón a la derecha del título: muestra el ícono de la vista a la que se pasará */}
+      {/* Encabezado compacto: profesional en una sola línea + botón de cambio de vista */}
       <View style={styles.encabezado}>
-        <TituloSeccion style={styles.tituloAgenda}>
-          {profesional.nombre.toUpperCase()} · {fechaConDia(dia.fechaFull)}
-        </TituloSeccion>
+        <View style={styles.infoEncabezado}>
+          <Text
+            style={[styles.nombreProfesional, { color: colors.textPrimary }]}
+            numberOfLines={1}
+          >
+            {profesional.nombre}
+          </Text>
+          <Text
+            style={[styles.fechaSubtitulo, { color: colors.textSecondary }]}
+            numberOfLines={1}
+          >
+            {fechaConDia(dia.fechaFull)}
+          </Text>
+        </View>
         <BotonIcono
           icono={verLinea ? "list" : "time-outline"}
           color={colors.primaryText}
-          etiqueta={verLinea ? "Ver las citas en lista" : "Ver las citas en línea de tiempo"}
+          etiqueta={
+            verLinea
+              ? "Ver las citas en lista"
+              : "Ver las citas en línea de tiempo"
+          }
           ayuda="Cambia la forma de ver las citas del día"
-          tamano={24}
+          tamano={22}
           onPress={cambiarVista}
-          style={[styles.botonVista, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+          style={[
+            styles.botonVista,
+            { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+          ]}
         />
       </View>
 
@@ -161,10 +192,8 @@ export default function AgendaTab({
         />
       </View>
 
-      <TituloSeccion style={styles.tituloCitas}>CITAS DEL DÍA</TituloSeccion>
-
       {verLinea ? (
-        <>
+        <View style={styles.bloqueContenido}>
           <LineaDeTiempo
             fecha={dia.fechaFull}
             horario={empresa ? horarioDelDia(empresa, dia.fechaFull) : null}
@@ -181,43 +210,66 @@ export default function AgendaTab({
             onCancelar={cancelar}
             onCerrar={() => setCitaAbiertaId(null)}
           />
-        </>
-      ) : null}
-
-      {verLinea ? null : <Chips opciones={FILTROS} valor={filtro} onCambiar={setFiltro} />}
-
-      {verLinea ? null : visibles.length === 0 ? (
-        <TextoInfo>{MENSAJE_VACIO[filtro]}</TextoInfo>
+        </View>
       ) : (
-        <Cuadricula>
-          {visibles.map((c) => (
-          <TarjetaCita
-            key={c.id}
-            cita={c}
-            resaltada={c.id === citaResaltadaId}
-            puedeCompletar={puedeCompletar(c)}
-            esAdmin={personal.esAdmin}
-            onCompletar={completar}
-            onCancelar={cancelar}
-          />
-          ))}
-        </Cuadricula>
+        <View style={styles.bloqueContenido}>
+          <Chips opciones={FILTROS} valor={filtro} onCambiar={setFiltro} />
+          {visibles.length === 0 ? (
+            <EstadoVacio
+              titulo={MENSAJE_VACIO[filtro]}
+              mensaje={
+                filtro === "todas"
+                  ? "Cuando alguien reserve, la cita aparecerá aquí."
+                  : undefined
+              }
+            />
+          ) : (
+            <Cuadricula>
+              {visibles.map((c) => (
+                <TarjetaCita
+                  key={c.id}
+                  cita={c}
+                  resaltada={c.id === citaResaltadaId}
+                  puedeCompletar={puedeCompletar(c)}
+                  esAdmin={personal.esAdmin}
+                  onCompletar={completar}
+                  onCancelar={cancelar}
+                />
+              ))}
+            </Cuadricula>
+          )}
+        </View>
       )}
     </View>
   );
 }
 
-function Dato({ titulo, valor, color }: { titulo: string; valor: number; color?: string }) {
+function Dato({
+  titulo,
+  valor,
+  color,
+}: {
+  titulo: string;
+  valor: number;
+  color?: string;
+}) {
   const { colors } = useAppTheme();
   return (
     <View
-      style={[styles.dato, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+      style={[
+        styles.dato,
+        { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+      ]}
       accessible
       accessibilityLabel={`${titulo}: ${valor}`}
     >
-      {color ? <View style={[styles.punto, { backgroundColor: color }]} /> : null}
+      {color ? (
+        <View style={[styles.punto, { backgroundColor: color }]} />
+      ) : null}
       <Text style={[styles.valor, { color: colors.textPrimary }]}>{valor}</Text>
-      <Text style={[styles.titulo, { color: colors.textSecondary }]}>{titulo}</Text>
+      <Text style={[styles.titulo, { color: colors.textSecondary }]}>
+        {titulo}
+      </Text>
     </View>
   );
 }
@@ -226,22 +278,41 @@ const styles = StyleSheet.create({
   encabezado: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 15,
-    marginBottom: 10,
+    justifyContent: "space-between",
+    gap: 10,
+    marginTop: 12,
+    marginBottom: 8,
   },
-  tituloAgenda: { flex: 1, marginTop: 0, marginBottom: 0 },
-  botonVista: { width: 44, height: 44, borderRadius: 22, borderWidth: 1 },
+  infoEncabezado: {
+    flex: 1,
+    gap: 1,
+  },
+  nombreProfesional: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  fechaSubtitulo: {
+    fontSize: 12,
+    textTransform: "capitalize",
+  },
+  botonVista: { width: 40, height: 40, borderRadius: 20, borderWidth: 1 },
   resumen: { flexDirection: "row", gap: 8 },
-  tituloCitas: { marginTop: 28, marginBottom: 12 },
+  bloqueContenido: { marginTop: 12 },
   dato: {
     flex: 1,
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 7,
     alignItems: "center",
   },
-  punto: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 4 },
-  valor: { fontSize: 22, fontWeight: "bold" },
-  titulo: { fontSize: 12 },
+  punto: {
+    position: "absolute",
+    top: 7,
+    right: 7,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  valor: { fontSize: 19, fontWeight: "700" },
+  titulo: { fontSize: 11 },
 });

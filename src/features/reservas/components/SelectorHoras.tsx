@@ -1,10 +1,10 @@
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
+import type { Paleta } from "@/theme/paleta";
+import { horario24AMinutos } from "@/utils/disponibilidad";
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import type { Paleta } from "@/theme/paleta";
-import { horario24AMinutos } from "@/utils/disponibilidad";
 import type { HoraDisponible } from "../../agenda/api";
-import IconoEnLinea from "@/components/ui/IconoEnLinea";
 
 type Props = {
   horarios: HoraDisponible[];
@@ -15,7 +15,12 @@ type Props = {
 };
 
 // Las horas se reparten en tres momentos del día (en minutos desde la medianoche)
-const GRUPOS: { nombre: string; icono: ComponentProps<typeof IconoEnLinea>["nombre"]; desde: number; hasta: number }[] = [
+const GRUPOS: {
+  nombre: string;
+  icono: ComponentProps<typeof IconoEnLinea>["nombre"];
+  desde: number;
+  hasta: number;
+}[] = [
   { nombre: "Mañana", icono: "sunny-outline", desde: 0, hasta: 720 }, // antes de las 12:00
   { nombre: "Tarde", icono: "partly-sunny-outline", desde: 720, hasta: 1080 }, // 12:00 a 5:59 PM
   { nombre: "Noche", icono: "moon-outline", desde: 1080, hasta: 1440 }, // 6:00 PM en adelante
@@ -27,7 +32,10 @@ const horaCorta = (inicio: string) => {
   return `${Math.floor(min / 60) % 12 || 12}:${String(min % 60).padStart(2, "0")}`;
 };
 
-const grupoDeHora = (horarios: HoraDisponible[], hora: string): string | undefined => {
+const grupoDeHora = (
+  horarios: HoraDisponible[],
+  hora: string,
+): string | undefined => {
   const elegida = horarios.find((h) => h.hora === hora);
   if (!elegida) return undefined;
   const min = horario24AMinutos(elegida.inicio);
@@ -98,11 +106,16 @@ export default function SelectorHoras({
               accessibilityRole="button"
               accessibilityState={{ expanded: abierto }}
               accessibilityLabel={`${grupo.nombre}, ${horasDelGrupo.length} horas disponibles`}
-              accessibilityHint={abierto ? "Oculta estas horas" : "Muestra estas horas"}
+              accessibilityHint={
+                abierto ? "Oculta estas horas" : "Muestra estas horas"
+              }
             >
               <Text style={[s.tituloGrupo, { color: colors.textSecondary }]}>
-                <IconoEnLinea nombre={grupo.icono} color={colors.textSecondary} /> {grupo.nombre.toUpperCase()} (
-                {horasDelGrupo.length})
+                <IconoEnLinea
+                  nombre={grupo.icono}
+                  color={colors.textSecondary}
+                />{" "}
+                {grupo.nombre.toUpperCase()} ({horasDelGrupo.length})
               </Text>
               <Ionicons
                 name={abierto ? "chevron-up" : "chevron-down"}
@@ -132,26 +145,55 @@ export default function SelectorHoras({
                       accessibilityRole="button"
                       accessibilityState={{ selected: esSel }}
                       accessibilityLabel={`${h.hora}${h.pegada ? ", recomendada" : ""}`}
-                      accessibilityHint={esSel ? "Quita la hora elegida" : "Elige esta hora para la cita"}
+                      accessibilityHint={
+                        esSel
+                          ? "Quita la hora elegida"
+                          : "Elige esta hora para la cita"
+                      }
                       // Tocar la hora elegida la deselecciona
                       onPress={() => onSeleccionar(esSel ? "" : h.hora)}
                     >
                       <Text
                         style={[
                           s.textoChip,
-                          { color: esSel ? colors.onPrimary : colors.textPrimary },
+                          {
+                            color: esSel
+                              ? colors.onPrimary
+                              : colors.textPrimary,
+                          },
                         ]}
                       >
                         {horaCorta(h.inicio)}
                       </Text>
                       {/* El renglón existe siempre: así todas las casillas miden lo mismo */}
                       <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
                         style={[
                           s.textoMarca,
-                          { color: esSel ? colors.onPrimary : colors.primaryText },
+                          {
+                            color: esSel
+                              ? colors.onPrimary
+                              : colors.primaryText,
+                          },
                         ]}
                       >
-                        {h.pegada ? "★ Recomendada" : " "}
+                        {h.pegada ? (
+                          <>
+                            <Text
+                              style={{
+                                color: esSel
+                                  ? colors.onPrimary
+                                  : colors.primary,
+                              }}
+                            >
+                              ★
+                            </Text>{" "}
+                            Recomendada
+                          </>
+                        ) : (
+                          " "
+                        )}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -184,6 +226,7 @@ const s = StyleSheet.create({
   chip: {
     width: "31%",
     height: 56,
+    paddingHorizontal: 4,
     borderRadius: 6,
     borderWidth: 1,
     alignItems: "center",
@@ -191,6 +234,6 @@ const s = StyleSheet.create({
     gap: 2,
   },
   textoChip: { fontSize: 14, fontWeight: "bold" },
-  textoMarca: { fontSize: 12, fontWeight: "bold", lineHeight: 16 },
+  textoMarca: { fontSize: 11, fontWeight: "600", lineHeight: 15 },
   sinHoras: { fontSize: 13, marginVertical: 10 },
 });

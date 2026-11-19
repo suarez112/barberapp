@@ -1,9 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Tocable from "@/components/ui/Tocable";
+import IconoEnLinea from "@/components/ui/IconoEnLinea";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import Tocable from "@/components/ui/Tocable";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Barbero } from "@/types";
-import IconoEnLinea from "@/components/ui/IconoEnLinea";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   barberos: Barbero[];
@@ -25,7 +25,8 @@ export default function SelectorSupervision({
     <View style={compacto ? styles.compacto : styles.contenedor}>
       {compacto ? null : (
         <TituloSeccion style={styles.titulo}>
-          <IconoEnLinea nombre="eye-outline" color={colors.primaryText} /> SUPERVISAR AGENDA Y BALANCES DE:
+          <IconoEnLinea nombre="eye-outline" color={colors.primaryText} />{" "}
+          SUPERVISAR AGENDA Y BALANCES DE:
         </TituloSeccion>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -36,11 +37,16 @@ export default function SelectorSupervision({
               key={emp.id}
               accessibilityRole="button"
               accessibilityState={{ selected: esSel }}
-              accessibilityLabel={emp.esAdmin ? `${emp.nombre}, administrador` : emp.nombre}
+              accessibilityLabel={
+                emp.esAdmin ? `${emp.nombre}, administrador` : emp.nombre
+              }
               accessibilityHint="Muestra la agenda y la cartera de esta persona"
               style={[
                 styles.opcion,
-                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.cardBorder,
+                },
                 esSel && {
                   borderColor: colors.primary,
                   backgroundColor: colors.cardSelectedBg,
@@ -56,12 +62,19 @@ export default function SelectorSupervision({
               >
                 {emp.nombre}{" "}
                 {emp.esAdmin ? (
-                  <IconoEnLinea nombre="shield-checkmark-outline" color={esSel ? colors.primaryText : colors.textPrimary} />
+                  <IconoEnLinea
+                    nombre="shield-checkmark-outline"
+                    color={esSel ? colors.primaryText : colors.textPrimary}
+                  />
                 ) : null}
               </Text>
-              <Text style={[styles.comision, { color: colors.textSecondary }]}>
-                {emp.porcentajeGanancia}% Comisión
-              </Text>
+              {compacto ? null : (
+                <Text
+                  style={[styles.comision, { color: colors.textSecondary }]}
+                >
+                  {emp.porcentajeGanancia}% Comisión
+                </Text>
+              )}
             </Tocable>
           );
         })}

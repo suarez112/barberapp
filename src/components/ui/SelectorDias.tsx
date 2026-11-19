@@ -1,9 +1,17 @@
-import { Ionicons } from "@expo/vector-icons";
-import { colorIconoPagina, estiloBotonPagina } from "@/components/ui/estiloBotonPagina";
+import {
+  colorIconoPagina,
+  estiloBotonPagina,
+} from "@/components/ui/estiloBotonPagina";
 import { useArrastreConMouse } from "@/hooks/useArrastreConMouse";
+import { Ionicons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
-import { ScrollView, type ScrollViewInstance, StyleSheet, Text, View } from "react-native";
-import Tocable from "./Tocable";
+import {
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { Dia } from "../../types";
 import {
@@ -14,6 +22,7 @@ import {
   mesDeFecha,
   sumarMeses,
 } from "../../utils/fechas";
+import Tocable from "./Tocable";
 
 type Props = {
   seleccionado: Dia;
@@ -43,8 +52,12 @@ export default function SelectorDias({
   // No se navega a meses sin ningún día permitido
   const anterior = sumarMeses(mes, -1);
   const siguiente = sumarMeses(mes, 1);
-  const puedeRetroceder = diasDelMes(anterior).some((d) => permitido(d.fechaFull));
-  const puedeAvanzar = diasDelMes(siguiente).some((d) => permitido(d.fechaFull));
+  const puedeRetroceder = diasDelMes(anterior).some((d) =>
+    permitido(d.fechaFull),
+  );
+  const puedeAvanzar = diasDelMes(siguiente).some((d) =>
+    permitido(d.fechaFull),
+  );
 
   // Al abrir (y al cambiar de mes) la lista se desplaza sola hasta hoy, o hasta
   // el día elegido si hoy no está en este mes, dejando visible el día anterior.
@@ -54,7 +67,9 @@ export default function SelectorDias({
   const hoy = diaDeHoy().fechaFull;
   const indiceHoy = dias.findIndex((d) => d.fechaFull === hoy);
   const indiceInicial =
-    indiceHoy >= 0 ? indiceHoy : dias.findIndex((d) => d.fechaFull === seleccionado.fechaFull);
+    indiceHoy >= 0
+      ? indiceHoy
+      : dias.findIndex((d) => d.fechaFull === seleccionado.fechaFull);
   // Una sola vez por mes: después la persona desplaza la lista a su gusto
   const claveMes = `${mes.anio}-${mes.mes}`;
   const desplazadoEn = useRef<string | null>(null);
@@ -62,7 +77,10 @@ export default function SelectorDias({
     if (desplazadoEn.current === claveMes) return;
     desplazadoEn.current = claveMes;
     if (indiceInicial > 0)
-      lista.current?.scrollTo({ x: (indiceInicial - 1) * ANCHO_DIA, animated: false });
+      lista.current?.scrollTo({
+        x: (indiceInicial - 1) * ANCHO_DIA,
+        animated: false,
+      });
   };
 
   const flecha = (
@@ -80,7 +98,11 @@ export default function SelectorDias({
       style={[styles.flecha, estiloBotonPagina(colors, habilitada)]}
       onPress={onPress}
     >
-      <Ionicons name={icono} size={20} color={colorIconoPagina(colors, habilitada)} />
+      <Ionicons
+        name={icono}
+        size={20}
+        color={colorIconoPagina(colors, habilitada)}
+      />
     </Tocable>
   );
 
@@ -119,7 +141,10 @@ export default function SelectorDias({
               accessibilityHint="Elige este día"
               style={[
                 styles.dia,
-                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.cardBorder,
+                },
                 esSel && {
                   borderColor: colors.primary,
                   backgroundColor: colors.cardSelectedBg,
@@ -130,7 +155,13 @@ export default function SelectorDias({
                 if (!fueArrastre()) onSeleccionar(d);
               }}
             >
-              <Text style={[styles.nombre, { color: colors.apagadoTexto }, esSel && { color: colors.primaryText }]}>
+              <Text
+                style={[
+                  styles.nombre,
+                  { color: colors.apagadoTexto },
+                  esSel && { color: colors.primaryText },
+                ]}
+              >
                 {d.diaNom}
               </Text>
               <Text
@@ -153,7 +184,7 @@ export default function SelectorDias({
 }
 
 const styles = StyleSheet.create({
-  contenedor: { marginBottom: 15 },
+  contenedor: { marginTop: 15, marginBottom: 15 },
   cabecera: {
     flexDirection: "row",
     alignItems: "center",
@@ -161,7 +192,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tituloMes: { fontSize: 15, fontWeight: "bold" },
-  flecha: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  flecha: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dia: {
     width: 60,
     height: 75,

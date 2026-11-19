@@ -4,8 +4,8 @@ import { avisar, confirmar } from "@/utils/dialogos";
 import { fechaHoraCita } from "@/utils/fechas";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { Personal } from "../sesion/usePersonal";
-import { cancelarCita, completarCita } from "./api";
 import { useAgenda } from "./AgendaProvider";
+import { cancelarCita, completarCita } from "./api";
 
 // Completar y cancelar citas desde el panel (validado por el servidor)
 export function useAccionesCita(personal: Personal) {
@@ -25,18 +25,29 @@ export function useAccionesCita(personal: Personal) {
       return;
     }
     if (!MODO_PRUEBAS && new Date() < fechaHoraCita(c.fecha, c.hora)) {
-      avisar("Aún no es la hora", "No puedes completar una cita antes de su hora.");
+      avisar(
+        "Aún no es la hora",
+        "No puedes completar una cita antes de su hora.",
+      );
       return;
     }
     const confirmado = await confirmar({
       titulo: "Completar servicio",
       mensaje: `¿Confirmas que el servicio de ${c.cliente} ya se realizó? Se registrará la hora exacta.`,
+      textoAceptar: "COMPLETAR CITA",
     });
     if (!confirmado) return;
 
     try {
-      const { completadaEn, completadaPor } = await completarCita(c.id, personal.token);
-      actualizarCita(c.id, { estado: "COMPLETADA", completadaEn, completadaPor });
+      const { completadaEn, completadaPor } = await completarCita(
+        c.id,
+        personal.token,
+      );
+      actualizarCita(c.id, {
+        estado: "COMPLETADA",
+        completadaEn,
+        completadaPor,
+      });
     } catch (error) {
       avisarError(error, { titulo: "No se pudo completar" });
     }
@@ -46,6 +57,7 @@ export function useAccionesCita(personal: Personal) {
     const confirmado = await confirmar({
       titulo: "Cancelar cita",
       mensaje: `¿Cancelar la cita de ${c.cliente}?`,
+      textoAceptar: "CANCELAR CITA",
       destructivo: true,
     });
     if (!confirmado) return;

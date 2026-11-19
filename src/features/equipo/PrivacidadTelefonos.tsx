@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Switch, Text, View } from "react-native";
 import Boton from "@/components/ui/Boton";
 import { describirError, registrarCausa } from "@/services/api/errores";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { avisar } from "@/utils/dialogos";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { cambiarPrivacidadClientes, obtenerPrivacidadClientes } from "./api";
 
@@ -31,7 +37,12 @@ export default function PrivacidadTelefonos({ token }: { token: string }) {
       .catch((e) => {
         if (esCancelada(e)) return;
         registrarCausa("Privacidad de clientes", e);
-        setError(describirError(e, { titulo: "", porDefecto: "No se pudo cargar esta opción." }).mensaje);
+        setError(
+          describirError(e, {
+            titulo: "",
+            porDefecto: "No se pudo cargar esta opción.",
+          }).mensaje,
+        );
       });
     return () => control.abort();
   }, [token, intento]);
@@ -55,10 +66,17 @@ export default function PrivacidadTelefonos({ token }: { token: string }) {
   };
 
   return (
-    <View style={[styles.caja, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
+    <View
+      style={[
+        styles.caja,
+        { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+      ]}
+    >
       <View style={styles.fila}>
         <View style={styles.textos}>
-          <Text style={[styles.titulo, { color: colors.textPrimary }]}>{ETIQUETA}</Text>
+          <Text style={[styles.titulo, { color: colors.textPrimary }]}>
+            {ETIQUETA}
+          </Text>
           <Text style={[styles.ayuda, { color: colors.textSecondary }]}>
             {valor
               ? "Cada empleado ve el número y el botón de WhatsApp de los clientes de sus citas."
@@ -74,14 +92,17 @@ export default function PrivacidadTelefonos({ token }: { token: string }) {
             value={valor ?? false}
             disabled={valor === null || guardando}
             onValueChange={cambiar}
-            trackColor={{ true: colors.primary, false: colors.cardBorder }}
+            trackColor={{ true: colors.primary, false: colors.inputBorder }}
             thumbColor={COLORES.blanco}
+            {...({ activeThumbColor: COLORES.blanco } as any)}
           />
         )}
       </View>
       {error ? (
         <>
-          <Text style={[styles.ayuda, { color: colors.peligroTexto }]}>{error}</Text>
+          <Text style={[styles.ayuda, { color: colors.peligroTexto }]}>
+            {error}
+          </Text>
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar esta opción"

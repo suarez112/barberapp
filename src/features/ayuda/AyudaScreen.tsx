@@ -1,6 +1,3 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Linking, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import CampoClave from "@/components/ui/CampoClave";
@@ -12,6 +9,9 @@ import { describirError, registrarCausa } from "@/services/api/errores";
 import { ApiError } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { avisar, confirmar } from "@/utils/dialogos";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { eliminarCuenta } from "./api";
 import { useVolver } from "./volverAyuda";
 
@@ -31,13 +31,19 @@ export default function AyudaScreen() {
 
   const escribirAlDesarrollador = () =>
     Linking.openURL(`mailto:${correoContacto}`).catch(() =>
-      avisar("No se pudo abrir el correo", `Escribe a ${correoContacto} desde tu aplicación de correo.`, "error"),
+      avisar(
+        "No se pudo abrir el correo",
+        `Escribe a ${correoContacto} desde tu aplicación de correo.`,
+        "error",
+      ),
     );
 
   const empezarEliminacion = async () => {
     const seguir = await confirmar({
       titulo: "¿Eliminar tu cuenta?",
-      mensaje: "Se borrarán tu cuenta y tus datos personales. Esta acción no se puede deshacer.",
+      mensaje:
+        "Se borrarán tu cuenta y tus datos personales. Esta acción no se puede deshacer.",
+      textoAceptar: "CONTINUAR",
       destructivo: true,
     });
     if (seguir) setPidiendoClave(true);
@@ -81,7 +87,11 @@ export default function AyudaScreen() {
         }
       }
       await cerrarSesion();
-      avisar("Cuenta eliminada", "Tu cuenta y tus datos personales fueron eliminados.", "exito");
+      avisar(
+        "Cuenta eliminada",
+        "Tu cuenta y tus datos personales fueron eliminados.",
+        "exito",
+      );
       replace("/");
     } catch (e) {
       registrarCausa("Eliminar cuenta", e);
@@ -99,7 +109,9 @@ export default function AyudaScreen() {
   return (
     <Pantalla cabecera={{ onVolver: volver }}>
       <View style={styles.contenedor}>
-        <Text style={[styles.titulo, { color: colors.primaryText }]}>AYUDA</Text>
+        <Text style={[styles.titulo, { color: colors.primaryText }]}>
+          AYUDA
+        </Text>
         <TarjetaMenu
           icono="chatbubble-ellipses-outline"
           titulo="PQRS"
@@ -114,11 +126,25 @@ export default function AyudaScreen() {
         />
 
         {correoContacto ? (
-          <View style={[styles.contacto, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-            <Text accessibilityRole="header" style={[styles.tituloContacto, { color: colors.primaryText }]}>
+          <View
+            style={[
+              styles.contacto,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+          >
+            <Text
+              accessibilityRole="header"
+              style={[styles.tituloContacto, { color: colors.primaryText }]}
+            >
               CONTACTO
             </Text>
-            <Text selectable style={[styles.correo, { color: colors.textPrimary }]}>
+            <Text
+              selectable
+              style={[styles.correo, { color: colors.textPrimary }]}
+            >
               {correoContacto}
             </Text>
             <Boton
@@ -146,7 +172,11 @@ export default function AyudaScreen() {
                 textContentType="password"
               />
               <Boton
-                titulo={eliminando ? "ELIMINANDO..." : "ELIMINAR MI CUENTA PARA SIEMPRE"}
+                titulo={
+                  eliminando
+                    ? "ELIMINANDO..."
+                    : "ELIMINAR MI CUENTA PARA SIEMPRE"
+                }
                 ayuda="Pide una última confirmación y elimina tu cuenta y tus datos personales"
                 variante="peligro"
                 deshabilitado={eliminando}
@@ -190,7 +220,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   contacto: { borderWidth: 1, borderRadius: 12, padding: 16, marginTop: 8 },
-  tituloContacto: { fontSize: 12, fontWeight: "bold", letterSpacing: 1, marginBottom: 6 },
+  tituloContacto: {
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
   correo: { fontSize: 15, marginBottom: 8 },
   eliminar: { marginTop: 24 },
   cancelar: { marginTop: 10 },

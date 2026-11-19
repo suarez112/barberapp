@@ -1,7 +1,7 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import PanelAdaptable, {
+  useModoPanel,
+} from "@/components/layout/PanelAdaptable";
 import Pantalla from "@/components/layout/Pantalla";
-import PanelAdaptable, { useModoPanel } from "@/components/layout/PanelAdaptable";
 import Boton from "@/components/ui/Boton";
 import PantallaAviso from "@/components/ui/PantallaAviso";
 import TextoInfo from "@/components/ui/TextoInfo";
@@ -9,27 +9,29 @@ import { APP_NOMBRE } from "@/config/app";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
 import { avisar } from "@/utils/dialogos";
-import { crearDia, diaDeHoy, fechaConDia } from "@/utils/fechas";
+import { crearDia, diaDeHoy } from "@/utils/fechas";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useAgenda } from "../agenda/AgendaProvider";
 import AgendaTab from "../agenda/AgendaTab";
 import { listarAgenda } from "../agenda/api";
 import BotonNuevaCita from "../agenda/components/BotonNuevaCita";
 import NuevaCitaHoja from "../agenda/components/NuevaCitaHoja";
-import { useAgenda } from "../agenda/AgendaProvider";
 import BloqueoSemanal from "../bloqueos/BloqueoSemanal";
 import CarteraPanel from "../cartera/CarteraPanel";
 import ClientesTab from "../clientes/ClientesTab";
 import { Suscripcion } from "../cuenta/api";
+import { DestinoGuia } from "../guia/PrimerosPasos";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useNotificaciones } from "../notificaciones/NotificacionesProvider";
-import { Personal } from "../sesion/usePersonal";
 import { useAvisarError } from "../sesion/useAvisarError";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
-import { RefrescoPanelProvider } from "./RefrescoPanel";
-import NegocioTab from "./NegocioTab";
-import { DestinoGuia } from "../guia/PrimerosPasos";
+import { Personal } from "../sesion/usePersonal";
 import PanelTabBar, { Pestana, PestanaPanel } from "./components/PanelTabBar";
 import PerfilBadge from "./components/PerfilBadge";
 import SelectorSupervision from "./components/SelectorSupervision";
+import NegocioTab from "./NegocioTab";
+import { RefrescoPanelProvider } from "./RefrescoPanel";
 import { useCargarPanel } from "./useCargarPanel";
 import { useSalirDelPanel } from "./useSalirDelPanel";
 
@@ -37,7 +39,12 @@ type Props = {
   personal: Personal;
   // Contenido fijo arriba (ej. aviso de días de prueba). Si es una función recibe la pestaña
   // abierta y `irA`, que lleva a una pantalla del panel (ej. los pasos de la guía inicial)
-  encabezado?: ReactNode | ((pestana: PestanaPanel, irA: (destino: DestinoGuia) => void) => ReactNode);
+  encabezado?:
+    | ReactNode
+    | ((
+        pestana: PestanaPanel,
+        irA: (destino: DestinoGuia) => void,
+      ) => ReactNode);
   // Pestaña "Mi negocio" (solo administradores)
   miNegocio?: ReactNode;
   // Administradores: el backend respondió 402 (la suscripción venció con la app abierta)
@@ -47,12 +54,36 @@ type Props = {
   onEquipoCambiado?: () => void;
 };
 
-const PESTANA_AGENDA: Pestana = { id: "AGENDAMIENTOS", icono: "list", label: "Agenda" };
-const PESTANA_BLOQUEOS: Pestana = { id: "BLOQUEOS", icono: "calendar-outline", label: "Bloqueos" };
-const PESTANA_CLIENTES: Pestana = { id: "CLIENTES", icono: "people-outline", label: "Clientes" };
-const PESTANA_CARTERA: Pestana = { id: "CARTERA", icono: "wallet-outline", label: "Cartera" };
-const PESTANA_NEGOCIO: Pestana = { id: "NEGOCIO", icono: "storefront-outline", label: "Equipo" };
-const PESTANA_MI_NEGOCIO: Pestana = { id: "MI_NEGOCIO", icono: "business-outline", label: "Mi negocio" };
+const PESTANA_AGENDA: Pestana = {
+  id: "AGENDAMIENTOS",
+  icono: "list",
+  label: "Agenda",
+};
+const PESTANA_BLOQUEOS: Pestana = {
+  id: "BLOQUEOS",
+  icono: "calendar-outline",
+  label: "Bloqueos",
+};
+const PESTANA_CLIENTES: Pestana = {
+  id: "CLIENTES",
+  icono: "people-outline",
+  label: "Clientes",
+};
+const PESTANA_CARTERA: Pestana = {
+  id: "CARTERA",
+  icono: "wallet-outline",
+  label: "Cartera",
+};
+const PESTANA_NEGOCIO: Pestana = {
+  id: "NEGOCIO",
+  icono: "storefront-outline",
+  label: "Equipo",
+};
+const PESTANA_MI_NEGOCIO: Pestana = {
+  id: "MI_NEGOCIO",
+  icono: "business-outline",
+  label: "Mi negocio",
+};
 
 // Panel del negocio: agenda, bloqueos, clientes, cartera y administración.
 // Lo usan el personal (/panel) y la cuenta del administrador (/admin).
@@ -69,10 +100,15 @@ export default function PanelNegocio({
   const { empresa, barberos } = useNegocio();
   const cerrarSesion = useCerrarSesion();
   const salir = useSalirDelPanel();
-  const { cargando, error, inactivo, recargar } = useCargarPanel(personal.token);
+  const { cargando, error, inactivo, recargar } = useCargarPanel(
+    personal.token,
+  );
   const [pestana, setPestana] = useState<PestanaPanel>("AGENDAMIENTOS");
   // Sección de Equipo que se abre (cambia la llave para abrirla aunque ya estuviera en esa pestaña)
-  const [seccionEquipo, setSeccionEquipo] = useState<{ seccion: "EQUIPO" | "SERVICIOS"; n: number }>({
+  const [seccionEquipo, setSeccionEquipo] = useState<{
+    seccion: "EQUIPO" | "SERVICIOS";
+    n: number;
+  }>({
     seccion: "EQUIPO",
     n: 0,
   });
@@ -88,9 +124,12 @@ export default function PanelNegocio({
   const avisarError = useAvisarError();
   // La pestaña abierta deja aquí su función de actualizar (deslizar hacia abajo)
   const refrescoPestanaRef = useRef<(() => Promise<unknown>) | null>(null);
-  const registrarRefresco = useCallback((funcion: (() => Promise<unknown>) | null) => {
-    refrescoPestanaRef.current = funcion;
-  }, []);
+  const registrarRefresco = useCallback(
+    (funcion: (() => Promise<unknown>) | null) => {
+      refrescoPestanaRef.current = funcion;
+    },
+    [],
+  );
   const deslizarParaActualizar = async () => {
     try {
       await refrescoPestanaRef.current?.();
@@ -143,7 +182,11 @@ export default function PanelNegocio({
   // Solo aparecen quienes reciben citas (la administradora, si activó "Yo también atiendo clientes")
   const atienden = barberos.filter((b) => b.atiendeClientes !== false);
   const profesional = esAdmin
-    ? (barberos.find((b) => b.id === supervisadoId) ?? yo ?? atienden[0] ?? barberos[0] ?? null)
+    ? (barberos.find((b) => b.id === supervisadoId) ??
+      yo ??
+      atienden[0] ??
+      barberos[0] ??
+      null)
     : yo;
 
   // Todos los administradores (cuenta o integrante) ven las mismas pestañas;
@@ -158,7 +201,9 @@ export default function PanelNegocio({
         ...(miNegocio ? [PESTANA_MI_NEGOCIO] : []),
       ]
     : [PESTANA_AGENDA, PESTANA_CARTERA];
-  const activa: PestanaPanel = pestanas.some((p) => p.id === pestana) ? pestana : "AGENDAMIENTOS";
+  const activa: PestanaPanel = pestanas.some((p) => p.id === pestana)
+    ? pestana
+    : "AGENDAMIENTOS";
 
   const irA = (destino: DestinoGuia) => {
     if (destino === "SERVICIOS") {
@@ -170,7 +215,9 @@ export default function PanelNegocio({
   };
 
   const sinProfesionales = (
-    <TextoInfo>Aún no hay profesionales en el equipo. Agrégalos en la pestaña Equipo.</TextoInfo>
+    <TextoInfo>
+      Aún no hay profesionales en el equipo. Agrégalos en la pestaña Equipo.
+    </TextoInfo>
   );
 
   const contenido = () => {
@@ -179,7 +226,9 @@ export default function PanelNegocio({
         <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
       ) : (
         <View>
-          <TextoInfo>{error ?? "No se pudieron cargar los datos del negocio."}</TextoInfo>
+          <TextoInfo>
+            {error ?? "No se pudieron cargar los datos del negocio."}
+          </TextoInfo>
           <Boton
             titulo="REINTENTAR"
             ayuda="Vuelve a cargar el panel"
@@ -242,7 +291,11 @@ export default function PanelNegocio({
   if (inactivo && !onSuscripcionVencida) {
     return (
       <Pantalla cabecera={{ onSalir: salir }}>
-        <PantallaAviso icono="storefront-outline" titulo="Negocio inactivo" mensaje={inactivo}>
+        <PantallaAviso
+          icono="storefront-outline"
+          titulo="Negocio inactivo"
+          mensaje={inactivo}
+        >
           <Boton
             titulo="CERRAR SESIÓN"
             ayuda="Sale de tu cuenta en este celular"
@@ -268,32 +321,44 @@ export default function PanelNegocio({
   };
 
   const conSupervision =
-    esAdmin && atienden.length > 0 && (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
+    esAdmin &&
+    atienden.length > 0 &&
+    (activa === "AGENDAMIENTOS" || activa === "BLOQUEOS");
 
   const fijo =
     conSupervision && profesional ? (
-      <View style={[styles.fijo, { backgroundColor: colors.bg, borderBottomColor: colors.cardBorder }]}>
+      <View
+        style={[
+          styles.fijo,
+          { backgroundColor: colors.bg, borderBottomColor: colors.cardBorder },
+        ]}
+      >
         <SelectorSupervision
           compacto
           barberos={atienden}
           seleccionadoId={profesional.id}
           onSeleccionar={(b) => setSupervisadoId(b.id)}
         />
-        {activa === "AGENDAMIENTOS" ? (
-          <Text style={[styles.diaFijo, { color: colors.textSecondary }]}>
-            {fechaConDia(diaAgenda.fechaFull)}
-          </Text>
-        ) : null}
       </View>
     ) : undefined;
 
-  const flotante = puedeAgendar ? <BotonNuevaCita onPress={() => setNuevaCitaAbierta(true)} /> : undefined;
+  const flotante = puedeAgendar ? (
+    <BotonNuevaCita onPress={() => setNuevaCitaAbierta(true)} />
+  ) : undefined;
 
   const cuerpo = (
     <>
       <RefrescoPanelProvider registrar={registrarRefresco}>
-        <View>
-          {empresa && modo !== "ancho" ? (
+        <View
+          style={
+            puedeAgendar && modo === "movil"
+              ? styles.cuerpoConFlotante
+              : undefined
+          }
+        >
+          {empresa &&
+          modo !== "ancho" &&
+          (modo !== "movil" || activa === "MI_NEGOCIO") ? (
             <PerfilBadge
               nombre={yo?.nombre ?? personal.nombre}
               esAdmin={esAdmin}
@@ -302,7 +367,9 @@ export default function PanelNegocio({
               empresa={empresa}
             />
           ) : null}
-          {typeof encabezado === "function" ? encabezado(activa, irA) : encabezado}
+          {typeof encabezado === "function"
+            ? encabezado(activa, irA)
+            : encabezado}
           {contenido()}
         </View>
       </RefrescoPanelProvider>
@@ -322,11 +389,19 @@ export default function PanelNegocio({
 
   // Web con ancho suficiente: menú lateral y el contenido al lado
   if (modo !== "movil") {
-    const nombreRol = personal.esCuentaAdmin ? "Administración" : esAdmin ? "Administrador" : "Empleado";
+    const nombreRol = personal.esCuentaAdmin
+      ? "Administración"
+      : esAdmin
+        ? "Administrador"
+        : "Empleado";
     return (
       <PanelAdaptable
         modo={modo}
-        secciones={pestanas.map((p) => ({ id: p.id, texto: p.label, icono: p.icono }))}
+        secciones={pestanas.map((p) => ({
+          id: p.id,
+          texto: p.label,
+          icono: p.icono,
+        }))}
         activa={activa}
         onCambiar={setPestana}
         titulo={empresa?.nombre ?? APP_NOMBRE}
@@ -344,7 +419,13 @@ export default function PanelNegocio({
   return (
     <Pantalla
       cabecera={{ onSalir: salir }}
-      pie={<PanelTabBar pestanas={pestanas} activa={activa} onCambiar={setPestana} />}
+      pie={
+        <PanelTabBar
+          pestanas={pestanas}
+          activa={activa}
+          onCambiar={setPestana}
+        />
+      }
       fijo={fijo}
       alRefrescar={empresa ? deslizarParaActualizar : undefined}
       flotante={flotante}
@@ -356,7 +437,11 @@ export default function PanelNegocio({
 
 const styles = StyleSheet.create({
   cargando: { marginTop: 30 },
-  fijo: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  diaFijo: { fontSize: 12, fontWeight: "600", marginTop: 6 },
+  fijo: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  cuerpoConFlotante: { paddingBottom: 76 },
   botonAviso: { marginTop: 24, alignSelf: "stretch" },
 });

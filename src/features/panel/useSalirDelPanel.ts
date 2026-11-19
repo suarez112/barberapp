@@ -1,7 +1,7 @@
+import { confirmar } from "@/utils/dialogos";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { BackHandler } from "react-native";
-import { confirmar } from "@/utils/dialogos";
 import { useCerrarSesion } from "../sesion/useCerrarSesion";
 
 // "Cerrar sesión" con confirmación
@@ -12,6 +12,7 @@ export function useConfirmarCerrarSesion() {
     const ok = await confirmar({
       titulo: "Cerrar sesión",
       mensaje: "¿Deseas salir? Tendrás que volver a iniciar sesión.",
+      textoAceptar: "CERRAR SESIÓN",
       destructivo: true,
     });
     if (ok) cerrarSesion();

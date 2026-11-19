@@ -1,21 +1,21 @@
-import { Ionicons } from "@expo/vector-icons";
-import FotoImagen from "@/components/ui/FotoImagen";
-import { Redirect, useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoTexto from "@/components/ui/CampoTexto";
+import FotoImagen from "@/components/ui/FotoImagen";
 import Insignia from "@/components/ui/Insignia";
 import TextoInfo from "@/components/ui/TextoInfo";
-import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
+import Tocable from "@/components/ui/Tocable";
 import { useSenalDeSalida } from "@/hooks/useSenalDeSalida";
 import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { COLORES } from "@/theme/paleta";
 import { avisar, confirmar } from "@/utils/dialogos";
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useNegocio } from "../negocio/NegocioProvider";
 import { useSalirDelPanel } from "../panel/useSalirDelPanel";
 import { useAvisarError } from "../sesion/useAvisarError";
@@ -91,18 +91,30 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
   const agregar = async () => {
     const limpio = codigo.trim().toUpperCase();
     if (!limpio) {
-      setErrorCodigo("Escribe el código que te dio el negocio, por ejemplo CENTRAL10.");
+      setErrorCodigo(
+        "Escribe el código que te dio el negocio, por ejemplo CENTRAL10.",
+      );
       return;
     }
     if (guardando) return;
     setGuardando(true);
     try {
       const { negocio } = await guardarNegocio(token, limpio);
-      setNegocios((lista) => [negocio, ...(lista ?? []).filter((n) => n.id !== negocio.id)]);
+      setNegocios((lista) => [
+        negocio,
+        ...(lista ?? []).filter((n) => n.id !== negocio.id),
+      ]);
       setCodigo("");
-      avisar("Negocio guardado", `${negocio.nombre} quedó en tu lista.`, "exito");
+      avisar(
+        "Negocio guardado",
+        `${negocio.nombre} quedó en tu lista.`,
+        "exito",
+      );
     } catch (e) {
-      avisarError(e, { titulo: "No se pudo guardar", porDefecto: "Establecimiento no encontrado." });
+      avisarError(e, {
+        titulo: "No se pudo guardar",
+        porDefecto: "Establecimiento no encontrado.",
+      });
     } finally {
       setGuardando(false);
     }
@@ -112,6 +124,7 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
     const ok = await confirmar({
       titulo: "Quitar negocio",
       mensaje: `¿Quitar ${negocio.nombre} de tu lista? Puedes volver a agregarlo con su código.`,
+      textoAceptar: "QUITAR NEGOCIO",
       destructivo: true,
     });
     if (!ok) return;
@@ -179,12 +192,15 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
               />
             </View>
           ) : (
-            <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
+            <ActivityIndicator
+              color={colors.primaryText}
+              style={styles.cargando}
+            />
           )
         ) : negocios.length === 0 ? (
           <Text style={[styles.vacio, { color: colors.textSecondary }]}>
-            Aún no tienes negocios guardados. Escribe arriba el código que te dio tu
-            barbería para entrar a reservar siempre desde aquí.
+            Aún no tienes negocios guardados. Escribe arriba el código que te
+            dio tu barbería para entrar a reservar siempre desde aquí.
           </Text>
         ) : (
           negocios.map((n) => (
@@ -192,7 +208,10 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
               key={n.id}
               style={[
                 styles.tarjeta,
-                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+                {
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.cardBorder,
+                },
               ]}
             >
               <Tocable
@@ -205,18 +224,36 @@ function MisNegocios({ token, nombre }: { token: string; nombre: string }) {
                 {n.fotoUrl ? (
                   <FotoImagen uri={n.fotoUrl} enLista style={styles.foto} />
                 ) : (
-                  <View style={[styles.foto, styles.sinFoto, { borderColor: colors.cardBorder }]}>
-                    <Ionicons name="storefront-outline" size={24} color={colors.primaryText} />
+                  <View
+                    style={[
+                      styles.foto,
+                      styles.sinFoto,
+                      { borderColor: colors.cardBorder },
+                    ]}
+                  >
+                    <Ionicons
+                      name="storefront-outline"
+                      size={24}
+                      color={colors.primaryText}
+                    />
                   </View>
                 )}
                 <View style={styles.textos}>
-                  <Text style={[styles.nombre, { color: colors.textPrimary }]}>{n.nombre}</Text>
-                  <Text style={[styles.detalle, { color: colors.textSecondary }]}>
-                    {[n.categoria, n.ciudad].filter(Boolean).join(" · ") || n.codigoAcceso}
+                  <Text style={[styles.nombre, { color: colors.textPrimary }]}>
+                    {n.nombre}
+                  </Text>
+                  <Text
+                    style={[styles.detalle, { color: colors.textSecondary }]}
+                  >
+                    {[n.categoria, n.ciudad].filter(Boolean).join(" · ") ||
+                      n.codigoAcceso}
                   </Text>
                   {n.recibiendoReservas ? null : (
                     <View style={styles.insignia}>
-                      <Insignia texto="NO RECIBE RESERVAS POR AHORA" color={COLORES.rojo} />
+                      <Insignia
+                        texto="NO RECIBE RESERVAS POR AHORA"
+                        color={COLORES.rojo}
+                      />
                     </View>
                   )}
                 </View>

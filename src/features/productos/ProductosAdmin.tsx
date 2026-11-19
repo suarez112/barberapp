@@ -1,25 +1,25 @@
 import Cuadricula from "@/components/layout/Cuadricula";
-import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Acordeon from "@/components/ui/Acordeon";
 import BotonesFormulario from "@/components/ui/BotonesFormulario";
 import BotonIcono from "@/components/ui/BotonIcono";
 import CampoPrecio from "@/components/ui/CampoPrecio";
 import CampoTexto from "@/components/ui/CampoTexto";
 import { estilosTexto } from "@/components/ui/estilosTexto";
+import FotoImagen from "@/components/ui/FotoImagen";
 import TarjetaFila from "@/components/ui/TarjetaFila";
 import TextoInfo from "@/components/ui/TextoInfo";
 import TituloSeccion from "@/components/ui/TituloSeccion";
 import Tocable from "@/components/ui/Tocable";
+import ZonaFoto from "@/components/ui/ZonaFoto";
 import { useFormularioEdicion } from "@/hooks/useFormularioEdicion";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Producto } from "@/types";
 import { avisar, avisarCamposConError, confirmar } from "@/utils/dialogos";
 import { formatearPesos, leerPrecio } from "@/utils/formato";
-import FotoImagen from "@/components/ui/FotoImagen";
-import ZonaFoto from "@/components/ui/ZonaFoto";
 import { elegirFoto, FotoElegida } from "@/utils/imagenes";
+import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useAvisarError } from "../sesion/useAvisarError";
 import {
   actualizarProducto,
@@ -64,14 +64,25 @@ export default function ProductosAdmin({ token }: { token: string }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const { abierto, alternar, enEdicion, campos, cambiar, errores, setErrores, editar, reiniciar } =
-    useFormularioEdicion(VACIO, aCampos);
+  const {
+    abierto,
+    alternar,
+    enEdicion,
+    campos,
+    cambiar,
+    errores,
+    setErrores,
+    editar,
+    reiniciar,
+  } = useFormularioEdicion(VACIO, aCampos);
 
   const cargar = useCallback(
     () =>
       listarProductos(token)
         .then(setProductos)
-        .catch((e) => avisarError(e, { titulo: "No se pudieron cargar los productos" }))
+        .catch((e) =>
+          avisarError(e, { titulo: "No se pudieron cargar los productos" }),
+        )
         .finally(() => setCargando(false)),
     // avisarError cambia en cada render; basta el token
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,8 +109,15 @@ export default function ProductosAdmin({ token }: { token: string }) {
   const guardar = async () => {
     const precio = leerPrecio(campos.precio);
     const nuevos = {
-      ...(!campos.nombre.trim() ? { nombre: "Escribe el nombre del producto, por ejemplo Cera para cabello." } : {}),
-      ...(isNaN(precio) ? { precio: "Escribe el precio en pesos, por ejemplo 25.000." } : {}),
+      ...(!campos.nombre.trim()
+        ? {
+            nombre:
+              "Escribe el nombre del producto, por ejemplo Cera para cabello.",
+          }
+        : {}),
+      ...(isNaN(precio)
+        ? { precio: "Escribe el precio en pesos, por ejemplo 25.000." }
+        : {}),
     };
     setErrores(nuevos);
     if (Object.keys(nuevos).length > 0) {
@@ -143,6 +161,7 @@ export default function ProductosAdmin({ token }: { token: string }) {
     const ok = await confirmar({
       titulo: "Confirmar",
       mensaje: `¿Eliminar producto "${p.nombre}"?`,
+      textoAceptar: "ELIMINAR PRODUCTO",
       destructivo: true,
     });
     if (!ok) return;
@@ -155,7 +174,8 @@ export default function ProductosAdmin({ token }: { token: string }) {
     }
   };
 
-  const fotoMostrada = campos.fotoNueva?.uri ?? (campos.quitarFoto ? null : campos.fotoUrl);
+  const fotoMostrada =
+    campos.fotoNueva?.uri ?? (campos.quitarFoto ? null : campos.fotoUrl);
 
   return (
     <View>
@@ -172,7 +192,9 @@ export default function ProductosAdmin({ token }: { token: string }) {
           onPress={elegir}
           style={styles.foto}
         >
-          {fotoMostrada ? <FotoImagen uri={fotoMostrada} style={styles.llenar} /> : undefined}
+          {fotoMostrada ? (
+            <FotoImagen uri={fotoMostrada} style={styles.llenar} />
+          ) : undefined}
         </ZonaFoto>
         {fotoMostrada ? (
           <Tocable
@@ -182,7 +204,9 @@ export default function ProductosAdmin({ token }: { token: string }) {
             onPress={quitarFoto}
             style={styles.botonQuitar}
           >
-            <Text style={[styles.quitarFoto, { color: colors.peligroTexto }]}>Quitar foto</Text>
+            <Text style={[styles.quitarFoto, { color: colors.peligroTexto }]}>
+              Quitar foto
+            </Text>
           </Tocable>
         ) : null}
         <CampoTexto
@@ -218,14 +242,24 @@ export default function ProductosAdmin({ token }: { token: string }) {
         {guardando && campos.fotoNueva ? (
           <View style={styles.subiendo} accessibilityLiveRegion="polite">
             <ActivityIndicator color={colors.primaryText} />
-            <Text style={{ color: colors.textSecondary }}>Subiendo la foto…</Text>
+            <Text style={{ color: colors.textSecondary }}>
+              Subiendo la foto…
+            </Text>
           </View>
         ) : null}
         <BotonesFormulario
           tituloGuardar={
-            guardando ? "GUARDANDO…" : enEdicion ? "GUARDAR CAMBIOS" : "AGREGAR PRODUCTO"
+            guardando
+              ? "GUARDANDO…"
+              : enEdicion
+                ? "GUARDAR CAMBIOS"
+                : "AGREGAR PRODUCTO"
           }
-          ayudaGuardar={enEdicion ? "Guarda los cambios del producto" : "Agrega el producto al catálogo"}
+          ayudaGuardar={
+            enEdicion
+              ? "Guarda los cambios del producto"
+              : "Agrega el producto al catálogo"
+          }
           onGuardar={guardar}
           onCancelar={reiniciar}
         />
@@ -239,42 +273,55 @@ export default function ProductosAdmin({ token }: { token: string }) {
         <TextoInfo>Aún no has agregado productos.</TextoInfo>
       ) : null}
       <Cuadricula>
-      {productos.map((p) => (
-        <TarjetaFila key={p.id}>
-          {p.fotoUrl ? (
-            <FotoImagen uri={p.fotoUrl} enLista style={styles.miniatura} />
-          ) : (
-            <View style={[styles.miniatura, { backgroundColor: colors.inputBg }]}>
-              <Ionicons name="cube-outline" size={22} color={colors.textSecondary} />
+        {productos.map((p) => (
+          <TarjetaFila key={p.id}>
+            {p.fotoUrl ? (
+              <FotoImagen uri={p.fotoUrl} enLista style={styles.miniatura} />
+            ) : (
+              <View
+                style={[styles.miniatura, { backgroundColor: colors.inputBg }]}
+              >
+                <Ionicons
+                  name="cube-outline"
+                  size={22}
+                  color={colors.textSecondary}
+                />
+              </View>
+            )}
+            <View style={styles.flex}>
+              <Text
+                style={[estilosTexto.titulo, { color: colors.textPrimary }]}
+              >
+                {p.nombre}
+              </Text>
+              <Text
+                style={[
+                  estilosTexto.subtitulo,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                ${formatearPesos(p.precio)}
+                {p.descripcion ? ` · ${p.descripcion}` : ""}
+              </Text>
             </View>
-          )}
-          <View style={styles.flex}>
-            <Text style={[estilosTexto.titulo, { color: colors.textPrimary }]}>
-              {p.nombre}
-            </Text>
-            <Text style={[estilosTexto.subtitulo, { color: colors.textSecondary }]}>
-              ${formatearPesos(p.precio)}
-              {p.descripcion ? ` · ${p.descripcion}` : ""}
-            </Text>
-          </View>
-          <View style={styles.acciones}>
-            <BotonIcono
-              icono="create-outline"
-              color={colors.primaryText}
-              etiqueta={`Editar ${p.nombre}`}
-              ayuda="Abre el producto en el formulario de arriba"
-              onPress={() => editar(p)}
-            />
-            <BotonIcono
-              icono="trash-outline"
-              color={colors.peligroTexto}
-              etiqueta={`Eliminar ${p.nombre}`}
-              ayuda="Pide confirmación antes de eliminarlo"
-              onPress={() => eliminar(p)}
-            />
-          </View>
-        </TarjetaFila>
-      ))}
+            <View style={styles.acciones}>
+              <BotonIcono
+                icono="create-outline"
+                color={colors.primaryText}
+                etiqueta={`Editar ${p.nombre}`}
+                ayuda="Abre el producto en el formulario de arriba"
+                onPress={() => editar(p)}
+              />
+              <BotonIcono
+                icono="trash-outline"
+                color={colors.peligroTexto}
+                etiqueta={`Eliminar ${p.nombre}`}
+                ayuda="Pide confirmación antes de eliminarlo"
+                onPress={() => eliminar(p)}
+              />
+            </View>
+          </TarjetaFila>
+        ))}
       </Cuadricula>
     </View>
   );
@@ -282,13 +329,23 @@ export default function ProductosAdmin({ token }: { token: string }) {
 
 const styles = StyleSheet.create({
   acordeon: { marginTop: 15 },
-  subiendo: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  subiendo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
   botonQuitar: { minHeight: 44, justifyContent: "center" },
   tituloLista: { marginTop: 20 },
   // Alto fijo: la zona mide lo mismo vacía o con foto
   foto: { height: 160 },
   llenar: { width: "100%", height: "100%" },
-  quitarFoto: { fontSize: 12, fontWeight: "bold", marginBottom: 10, textAlign: "right" },
+  quitarFoto: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "right",
+  },
   miniatura: {
     width: 48,
     height: 48,
