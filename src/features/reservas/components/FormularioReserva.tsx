@@ -10,11 +10,12 @@ import CasillaAutorizacion from "@/features/legal/CasillaAutorizacion";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { horarioDelDia } from "@/utils/disponibilidad";
-import { crearDia, mesCorto } from "@/utils/fechas";
+import { crearDia, fechaConDia, mesCorto } from "@/utils/fechas";
 import { telefonoMostrado } from "@/utils/telefonos";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { EstadoReserva } from "../hooks/useReserva";
+import ResumenReserva from "./ResumenReserva";
 import SelectorHoras from "./SelectorHoras";
 import SelectorProfesional from "./SelectorProfesional";
 import SelectorServicio from "./SelectorServicio";
@@ -174,6 +175,15 @@ export default function FormularioReserva({ reserva }: Props) {
         />
       ) : null}
 
+      {hora && servicio && barbero ? (
+        <ResumenReserva
+          servicio={servicio.nombre}
+          precio={servicio.precio}
+          profesional={barbero.nombre}
+          fecha={fechaConDia(dia.fechaFull)}
+          hora={hora}
+        />
+      ) : null}
       <Boton
         titulo="CONFIRMAR RESERVA"
         ayuda="Envía la reserva con el profesional, servicio, día y hora elegidos"
