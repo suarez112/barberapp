@@ -110,6 +110,25 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
     return () => controlador.abort();
   }, [token, elegido]);
 
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const restablecerBoton = () => setEnviando(false);
+    const alCambiarVisibilidad = () => {
+      if (document.visibilityState === "visible") {
+        setEnviando(false);
+      }
+    };
+
+    window.addEventListener("pageshow", restablecerBoton);
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+
+    return () => {
+      window.removeEventListener("pageshow", restablecerBoton);
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+    };
+  }, []);
+
   if (Platform.OS !== "web") return <Redirect href="/" />;
 
   const minimo = Math.max(1, suscripcion?.profesionalesCobrados ?? 1);
@@ -154,25 +173,6 @@ export default function PagoPasarela({ modoPrueba }: { modoPrueba: boolean }) {
       setEnviando(false);
     }
   };
-
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-
-    const restablecerBoton = () => setEnviando(false);
-    const alCambiarVisibilidad = () => {
-      if (document.visibilityState === "visible") {
-        setEnviando(false);
-      }
-    };
-
-    window.addEventListener("pageshow", restablecerBoton);
-    document.addEventListener("visibilitychange", alCambiarVisibilidad);
-
-    return () => {
-      window.removeEventListener("pageshow", restablecerBoton);
-      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
-    };
-  }, []);
 
   const contenido = () => {
     if (!lista) {
