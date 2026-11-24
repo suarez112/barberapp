@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text } from "react-native";
-import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { textoSobre } from "../../theme/paleta";
+import Tocable from "./Tocable";
 
 export type OpcionChip<T extends string> = {
   id: T;
@@ -19,7 +19,11 @@ type Props<T extends string> = {
 };
 
 // Filtro de opciones excluyentes como pastillas que se desplazan en horizontal
-export default function Chips<T extends string>({ opciones, valor, onCambiar }: Props<T>) {
+export default function Chips<T extends string>({
+  opciones,
+  valor,
+  onCambiar,
+}: Props<T>) {
   const { colors } = useAppTheme();
   return (
     <ScrollView
@@ -35,6 +39,7 @@ export default function Chips<T extends string>({ opciones, valor, onCambiar }: 
             key={o.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
+            aria-selected={activo}
             accessibilityLabel={o.label}
             accessibilityHint={`Filtra la lista: ${o.label.toLowerCase()}`}
             onPress={() => onCambiar(o.id)}
@@ -47,7 +52,7 @@ export default function Chips<T extends string>({ opciones, valor, onCambiar }: 
                   }
                 : {
                     backgroundColor: colors.cardBg,
-                    borderColor: o.bordeInactiva ?? colors.cardBorder,
+                    borderColor: o.bordeInactiva ?? colors.inputBorder,
                   },
             ]}
           >

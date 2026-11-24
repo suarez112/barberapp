@@ -226,12 +226,10 @@ export const crearPaleta = (
   const esOscuro = tema === "OSCURO";
   const primary = empresa?.colorPrimario ?? COLORES.primarioPorDefecto;
   const onPrimary = textoSobre(primary);
-  const fondo = esOscuro
-    ? (empresa?.colorSecundario ?? COLORES.secundarioPorDefecto)
-    : "#F8FAFC";
+  const fondo = esOscuro ? COLORES.secundarioPorDefecto : "#F8FAFC";
   return {
     bg: fondo,
-    headerBg: esOscuro ? "#0B1120" : "#FFFFFF",
+    headerBg: esOscuro ? "#0F172A" : "#FFFFFF",
     cardBg: esOscuro ? "#1E293B" : "#FFFFFF",
     cardBorder: esOscuro ? "#334155" : "#E2E8F0",
     textPrimary: esOscuro ? "#F8FAFC" : "#0F172A",
@@ -244,7 +242,7 @@ export const crearPaleta = (
     avisoTexto: esOscuro ? "#FB923C" : "#B45309",
     infoTexto: esOscuro ? "#60A5FA" : "#1D4ED8",
     apagadoTexto: esOscuro ? "#94A3B8" : "#64748B",
-    inputBorder: esOscuro ? "#475569" : "#94A3B8",
+    inputBorder: esOscuro ? "#94A3B8" : "#64748B",
     inputBorderFoco: esOscuro ? colorLegible(primary, "#1E293B") : "#0F172A",
     error: esOscuro ? "#F87171" : "#B91C1C",
     cardSelectedBg: esOscuro
@@ -258,7 +256,7 @@ export const crearPaleta = (
     secundarioBorde: esOscuro ? "#475569" : "#CBD5E1",
     secundarioTexto: esOscuro ? "#F8FAFC" : "#0F172A",
     inputBg: esOscuro ? "#162033" : "#FFFFFF",
-    bottomBarBg: esOscuro ? "#0B1120" : "#FFFFFF",
+    bottomBarBg: esOscuro ? "#0F172A" : "#FFFFFF",
     activoBg: esOscuro ? "rgba(234, 179, 8, 0.16)" : "#FEF3C7",
     activoTexto: esOscuro ? "#F8FAFC" : "#0F172A",
     zonaFotoBg: esOscuro ? "rgba(234, 179, 8, 0.10)" : "#FFFBEB",

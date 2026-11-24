@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import TextoInfo from "@/components/ui/TextoInfo";
 import { describirError } from "@/services/api/errores";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { fechaCorta } from "@/utils/fechas";
 import { formatearPesos } from "@/utils/formato";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { CitaHistorial, obtenerHistorial } from "../api";
 
 const ETIQUETA_ESTADO = {
@@ -44,8 +45,12 @@ export default function HistorialCitas({
   }, [token, clienteId]);
 
   if (error) return <TextoInfo>{error}</TextoInfo>;
-  if (!citas) return <ActivityIndicator color={colors.primaryText} style={styles.margen} />;
-  if (citas.length === 0) return <TextoInfo>Este cliente aún no tiene citas.</TextoInfo>;
+  if (!citas)
+    return (
+      <ActivityIndicator color={colors.primaryText} style={styles.margen} />
+    );
+  if (citas.length === 0)
+    return <TextoInfo>Este cliente aún no tiene citas.</TextoInfo>;
 
   return (
     <View style={[styles.caja, { borderColor: colors.cardBorder }]}>
@@ -53,7 +58,7 @@ export default function HistorialCitas({
         <View key={c.id} style={styles.fila}>
           <View style={styles.flex}>
             <Text style={[styles.titulo, { color: colors.textPrimary }]}>
-              {c.fecha} · {c.hora}
+              {fechaCorta(c.fecha)} · {c.hora}
             </Text>
             <Text style={[styles.detalle, { color: colors.textSecondary }]}>
               {c.servicio} con {c.barberoNombre} · ${formatearPesos(c.precio)}

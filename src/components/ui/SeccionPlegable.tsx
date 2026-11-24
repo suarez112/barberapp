@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, ReactNode, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Tocable from "./Tocable";
 import { useAppTheme } from "../../theme/ThemeProvider";
+import Tocable from "./Tocable";
 
 type Props = {
   titulo: string;
@@ -15,7 +15,13 @@ type Props = {
 };
 
 // Sección con título e ícono que se pliega. El contenido conserva sus propias tarjetas.
-export default function SeccionPlegable({ titulo, icono, resumen, abiertaAlInicio = false, children }: Props) {
+export default function SeccionPlegable({
+  titulo,
+  icono,
+  resumen,
+  abiertaAlInicio = false,
+  children,
+}: Props) {
   const { colors } = useAppTheme();
   const [abierta, setAbierta] = useState(abiertaAlInicio);
   return (
@@ -23,17 +29,33 @@ export default function SeccionPlegable({ titulo, icono, resumen, abiertaAlInici
       <Tocable
         accessibilityRole="button"
         accessibilityState={{ expanded: abierta }}
+        aria-expanded={abierta}
         accessibilityLabel={resumen ? `${titulo}. ${resumen}` : titulo}
-        accessibilityHint={abierta ? "Oculta esta sección" : "Muestra esta sección"}
-        style={[styles.cabecera, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}
+        accessibilityHint={
+          abierta ? "Oculta esta sección" : "Muestra esta sección"
+        }
+        style={[
+          styles.cabecera,
+          { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+        ]}
         onPress={() => setAbierta((a) => !a)}
       >
-        <Ionicons name={icono} size={22} color={colors.primaryText} />
+        <Ionicons name={icono} size={22} color={colors.textSecondary} />
         <View style={styles.textos}>
-          <Text style={[styles.titulo, { color: colors.textPrimary }]}>{titulo}</Text>
-          {resumen ? <Text style={[styles.resumen, { color: colors.textSecondary }]}>{resumen}</Text> : null}
+          <Text style={[styles.titulo, { color: colors.textPrimary }]}>
+            {titulo}
+          </Text>
+          {resumen ? (
+            <Text style={[styles.resumen, { color: colors.textSecondary }]}>
+              {resumen}
+            </Text>
+          ) : null}
         </View>
-        <Ionicons name={abierta ? "chevron-up" : "chevron-down"} size={20} color={colors.primaryText} />
+        <Ionicons
+          name={abierta ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={colors.textSecondary}
+        />
       </Tocable>
       {abierta ? <View style={styles.cuerpo}>{children}</View> : null}
     </View>

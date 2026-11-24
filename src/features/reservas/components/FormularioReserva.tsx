@@ -83,7 +83,9 @@ export default function FormularioReserva({ reserva }: Props) {
       </Text>
 
       <TituloSeccion>
-        HORA DISPONIBLE ({horariosDisponibles.length} DISPONIBLES)
+        {barbero && servicio && horariosDisponibles.length > 0
+          ? `HORAS DISPONIBLES (${horariosDisponibles.length})`
+          : "HORAS DISPONIBLES"}
       </TituloSeccion>
       {!barbero || !servicio ? (
         <TextoInfo>

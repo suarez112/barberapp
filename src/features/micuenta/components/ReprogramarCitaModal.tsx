@@ -1,6 +1,3 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import SelectorDias from "@/components/ui/SelectorDias";
@@ -14,7 +11,23 @@ import { esCancelada } from "@/services/api/http";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { Dia } from "@/types";
 import { avisar } from "@/utils/dialogos";
-import { crearDia, DIAS_MAXIMOS_RESERVA, fechaLarga, hoyColombiaISO, sumarDias } from "@/utils/fechas";
+import {
+  crearDia,
+  DIAS_MAXIMOS_RESERVA,
+  fechaLarga,
+  hoyColombiaISO,
+  sumarDias,
+} from "@/utils/fechas";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import SelectorHoras from "../../reservas/components/SelectorHoras";
 import { CitaCliente, reprogramarMiCita } from "../api";
 
@@ -30,7 +43,12 @@ type Horas = { clave: string; horas: HoraDisponible[]; error: string | null };
 
 // El cliente elige otro día y hora para su cita. El servicio y el profesional no cambian.
 // La cita no trae el id del servicio: se busca por nombre en el negocio.
-export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogramada }: Props) {
+export default function ReprogramarCitaModal({
+  cita,
+  token,
+  onCerrar,
+  onReprogramada,
+}: Props) {
   const { colors } = useAppTheme();
   const avisarError = useAvisarError();
   const [servicioId, setServicioId] = useState<string | null>(null);
@@ -50,7 +68,9 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
       .then(({ servicios }) => {
         if (!control.vigente) return;
         const parecidos = servicios.filter((s) => s.nombre === cita.servicio);
-        const servicio = parecidos.find((s) => s.duracionMin === cita.duracionMin) ?? parecidos[0];
+        const servicio =
+          parecidos.find((s) => s.duracionMin === cita.duracionMin) ??
+          parecidos[0];
         if (servicio) setServicioId(servicio.id);
         else
           setErrorServicio(
@@ -61,7 +81,10 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
         if (!control.vigente) return;
         registrarCausa("Servicio de la cita", error);
         setErrorServicio(
-          describirError(error, { titulo: "", porDefecto: "No se pudo cargar el negocio." }).mensaje,
+          describirError(error, {
+            titulo: "",
+            porDefecto: "No se pudo cargar el negocio.",
+          }).mensaje,
         );
       });
     return () => {
@@ -75,7 +98,12 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
     if (!servicioId) return;
     const control = new AbortController();
     consultarDisponibilidad(
-      { empresaId: cita.empresaId, barberoId: cita.barberoId, servicioId, fecha },
+      {
+        empresaId: cita.empresaId,
+        barberoId: cita.barberoId,
+        servicioId,
+        fecha,
+      },
       control.signal,
     )
       .then((r) => setResultado({ clave, horas: r.horas, error: null }))
@@ -96,7 +124,8 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
 
   const cargandoHoras = !!servicioId && resultado?.clave !== clave;
   const horas = servicioId && !cargandoHoras ? (resultado?.horas ?? []) : [];
-  const errorHoras = servicioId && !cargandoHoras ? (resultado?.error ?? null) : null;
+  const errorHoras =
+    servicioId && !cargandoHoras ? (resultado?.error ?? null) : null;
 
   const elegirDia = (d: Dia) => {
     setDia(d);
@@ -131,7 +160,9 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
     <Modal visible animationType="slide" onRequestClose={onCerrar}>
       <SafeAreaView style={[styles.pantalla, { backgroundColor: colors.bg }]}>
         <View style={styles.cabecera}>
-          <Text style={[styles.titulo, { color: colors.primaryText }]}>REPROGRAMAR CITA</Text>
+          <Text style={[styles.titulo, { color: colors.primaryText }]}>
+            REPROGRAMAR CITA
+          </Text>
           <BotonIcono
             icono="close"
             tamano={26}
@@ -141,9 +172,22 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
             onPress={onCerrar}
           />
         </View>
-        <ScrollView contentContainerStyle={styles.contenido} keyboardShouldPersistTaps="handled">
-          <View style={[styles.actual, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder }]}>
-            <Text style={[styles.negocio, { color: colors.textPrimary }]}>{cita.negocio}</Text>
+        <ScrollView
+          contentContainerStyle={styles.contenido}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View
+            style={[
+              styles.actual,
+              {
+                backgroundColor: colors.cardBg,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.negocio, { color: colors.textPrimary }]}>
+              {cita.negocio}
+            </Text>
             <Text style={[styles.detalle, { color: colors.textSecondary }]}>
               {cita.servicio} con {cita.barberoNombre} · {cita.duracionMin} min
             </Text>
@@ -155,7 +199,10 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
           {errorServicio ? (
             <TextoInfo>{errorServicio}</TextoInfo>
           ) : !servicioId ? (
-            <ActivityIndicator color={colors.primaryText} style={styles.cargando} />
+            <ActivityIndicator
+              color={colors.primaryText}
+              style={styles.cargando}
+            />
           ) : (
             <>
               <TituloSeccion>NUEVO DÍA</TituloSeccion>
@@ -165,7 +212,11 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
                 seleccionado={dia}
                 onSeleccionar={elegirDia}
               />
-              <TituloSeccion>NUEVA HORA ({horas.length} DISPONIBLES)</TituloSeccion>
+              <TituloSeccion>
+                {!cargandoHoras && horas.length > 0
+                  ? `NUEVA HORA (${horas.length} DISPONIBLES)`
+                  : "NUEVA HORA"}
+              </TituloSeccion>
               {errorHoras ? (
                 <View>
                   <TextoInfo>{errorHoras}</TextoInfo>
@@ -179,7 +230,12 @@ export default function ReprogramarCitaModal({ cita, token, onCerrar, onReprogra
               ) : cargandoHoras ? (
                 <ActivityIndicator color={colors.primaryText} />
               ) : (
-                <SelectorHoras horarios={horas} horaSel={hora} onSeleccionar={setHora} colors={colors} />
+                <SelectorHoras
+                  horarios={horas}
+                  horaSel={hora}
+                  onSeleccionar={setHora}
+                  colors={colors}
+                />
               )}
               <Boton
                 titulo={enviando ? "REPROGRAMANDO…" : "CONFIRMAR NUEVA HORA"}
@@ -213,7 +269,13 @@ const styles = StyleSheet.create({
   },
   titulo: { fontSize: 18, fontWeight: "bold", letterSpacing: 1 },
   contenido: { paddingHorizontal: 16, paddingBottom: 30 },
-  actual: { borderWidth: 1, borderRadius: 10, padding: 14, gap: 4, marginTop: 6 },
+  actual: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    gap: 4,
+    marginTop: 6,
+  },
   negocio: { fontSize: 15, fontWeight: "bold" },
   detalle: { fontSize: 12 },
   cargando: { marginTop: 30 },
