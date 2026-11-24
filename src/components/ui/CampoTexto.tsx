@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ComponentRef, ReactNode, Ref, useState } from "react";
 import {
   Platform,
   StyleProp,
@@ -11,6 +11,9 @@ import {
   ViewStyle,
 } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
+
+// Referencia al TextInput de un campo (ej. para enfocarlo con .focus())
+export type RefCampo = Ref<ComponentRef<typeof TextInput>>;
 
 export type PropsCampo = Omit<TextInputProps, "style"> & {
   // Etiqueta visible arriba del campo (el placeholder es solo un ejemplo)
@@ -30,6 +33,8 @@ export type PropsCampo = Omit<TextInputProps, "style"> & {
   derecha?: ReactNode;
   // Texto centrado (ej. un código): el cursor también queda en el centro
   centrado?: boolean;
+  // Referencia al TextInput interno (ej. para enfocarlo al abrir un paso)
+  inputRef?: RefCampo;
 };
 
 const inferirInputMode = (
@@ -63,6 +68,7 @@ export default function CampoTexto({
   centrado = false,
   editable = true,
   multiline,
+  inputRef,
   ...props
 }: PropsCampo) {
   const { colors } = useAppTheme();
@@ -99,6 +105,7 @@ export default function CampoTexto({
       >
         {izquierda}
         <TextInput
+          ref={inputRef}
           accessibilityLabel={
             obligatorio ? `${etiqueta}, obligatorio` : etiqueta
           }

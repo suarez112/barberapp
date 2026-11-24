@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ComponentRef, ReactNode, Ref, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -23,10 +23,12 @@ type Props = {
   alRefrescar?: () => Promise<unknown>;
   // Botón que flota sobre el contenido, abajo a la derecha (ej. "Nueva cita")
   flotante?: ReactNode;
+  // Referencia al área con scroll (ej. para volver arriba al cambiar de paso)
+  refScroll?: Ref<ComponentRef<typeof ScrollView>>;
 };
 
 // Estructura común de todas las pantallas: cabecera, contenido con scroll y pie
-export default function Pantalla({ children, cabecera, pie, fijo, flotante, alRefrescar }: Props) {
+export default function Pantalla({ children, cabecera, pie, fijo, flotante, alRefrescar, refScroll }: Props) {
   const { colors, esOscuro } = useAppTheme();
   const [refrescando, setRefrescando] = useState(false);
   const refrescar = async () => {
@@ -50,6 +52,7 @@ export default function Pantalla({ children, cabecera, pie, fijo, flotante, alRe
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
+          ref={refScroll}
           style={styles.scroll}
           automaticallyAdjustKeyboardInsets
           // Un botón o una opción se toca a la primera aunque el teclado esté abierto

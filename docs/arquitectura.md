@@ -28,7 +28,8 @@ src/
                    negocio, notificaciones, panel, productos, reservas, servicios, sesion, superadmin)
   features/cuenta/formulario/  formulario de negocio compartido por registro y "Mi negocio": CamposEmpresa (código con
                    disponibilidad en vivo, departamento/municipio de GET /api/v1/ubicaciones, horario en 7 filas con
-                   Abierto/Cerrado y desplegables, "Copiar el horario del lunes a todos los días" = `copiarLunes`), validarEmpresa
+                   Abierto/Cerrado y desplegables, "Copiar el horario del lunes a todos los días" = `copiarLunes`; prop `secciones` "negocio" | "operacion" | "todas" (por
+                   defecto todo junto; la parte oculta sigue montada con display: "none"), validarEmpresa
   components/      UI compartida: ui/ (botones, campos, selectores), layout/ (Pantalla, AppHeader: barra fija de 56 px con
                    nombre del negocio e ícono de menú que abre MenuCabecera: "Tema" y, con `onSalir`, "Cerrar sesión")
   providers/       AppProviders.tsx: orden de contextos (Negocio > Theme > Sesion > Cuenta > RestaurarSesion > Agenda)
@@ -43,7 +44,7 @@ src/
 | --- | --- | --- |
 | `_layout.tsx` | Stack raíz sin cabecera, envuelto en AppProviders | Navegación: un solo Stack |
 | `index.tsx` | Selección de rol: "Soy empresa", "Soy cliente", enlace a login con la línea gris "Negocios, equipos de trabajo y clientes registrados" | Redirige `/?codigo=X` a `/cliente?codigo=X`. Con sesión guardada va a `/panel`, `/admin` o `/mis-negocios` |
-| `registro.tsx` | `features/cuenta/RegistroEmpresaScreen` | Registro de empresa |
+| `registro.tsx` | `features/cuenta/RegistroEmpresaScreen` | Registro de empresa en 3 pasos ("Tu negocio", "Ubicación y horario", "Tu cuenta"); valida cada paso y revisa el código al pasar del 1; panel lateral desde 900 px de ancho |
 | `login.tsx` | Login único: "Correo o usuario" + contraseña (`POST /api/v1/login`) | Enlace "¿Olvidaste tu contraseña?" |
 | `recuperar-clave.tsx` | `features/sesion/RecuperarClaveScreen` | Paso 1: correo -> `POST /cuentas/solicitar-recuperacion` (mismo mensaje exista o no la cuenta). Paso 2: código de 6 dígitos + nueva contraseña -> `POST /cuentas/restablecer-contrasena`, luego `/login`. El personal sin correo pide ayuda a su administrador |
 | `cliente.tsx` | `features/reservas/ClienteScreen` | Reserva del cliente y perfil público. Sin negocio: "Continuar como invitado" (código) o "Crear cuenta / Iniciar sesión"; un cliente con sesión va a `/mis-negocios`. `/cliente?codigo=X` (enlace web, QR, "Mis negocios") abre el negocio directo |
