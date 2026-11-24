@@ -32,6 +32,24 @@ export type PropsCampo = Omit<TextInputProps, "style"> & {
   centrado?: boolean;
 };
 
+const inferirInputMode = (
+  keyboardType?: TextInputProps["keyboardType"],
+): TextInputProps["inputMode"] => {
+  switch (keyboardType) {
+    case "email-address":
+      return "email";
+    case "phone-pad":
+      return "tel";
+    case "numeric":
+    case "number-pad":
+      return "numeric";
+    case "decimal-pad":
+      return "decimal";
+    default:
+      return undefined;
+  }
+};
+
 // Campo de texto accesible: etiqueta arriba, recuadro de 50 px y el error debajo
 export default function CampoTexto({
   etiqueta,
@@ -52,7 +70,9 @@ export default function CampoTexto({
   // Android pone el cursor al inicio del placeholder aunque esté centrado:
   // mientras se escribe en un campo centrado vacío, el ejemplo se oculta
   const ocultarEjemplo = centrado && enfocado && !props.value;
-  const hint = [error ? `Error: ${error}` : null, ayuda].filter(Boolean).join(". ");
+  const hint = [error ? `Error: ${error}` : null, ayuda]
+    .filter(Boolean)
+    .join(". ");
 
   return (
     <View style={[styles.contenedor, style]}>
@@ -79,9 +99,13 @@ export default function CampoTexto({
       >
         {izquierda}
         <TextInput
-          accessibilityLabel={obligatorio ? `${etiqueta}, obligatorio` : etiqueta}
+          accessibilityLabel={
+            obligatorio ? `${etiqueta}, obligatorio` : etiqueta
+          }
           accessibilityHint={hint || undefined}
           accessibilityState={{ disabled: !editable }}
+          aria-invalid={Boolean(error)}
+          inputMode={props.inputMode ?? inferirInputMode(props.keyboardType)}
           placeholderTextColor={colors.textSecondary}
           editable={editable}
           multiline={multiline}
@@ -107,7 +131,10 @@ export default function CampoTexto({
         {derecha}
       </View>
       {error ? (
-        <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.error }]}>
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[styles.error, { color: colors.error }]}
+        >
           {error}
         </Text>
       ) : null}
@@ -140,7 +167,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     paddingHorizontal: 14,
     paddingVertical: 0,
-    fontSize: 15,
+    fontSize: Platform.OS === "web" ? 16 : 15,
   },
   multilinea: { minHeight: 90, paddingVertical: 12, textAlignVertical: "top" },
   centrado: { textAlign: "center" },
@@ -151,4 +178,6 @@ const styles = StyleSheet.create({
 // la caja, cortado junto al ojo o la bandera). Chrome ignora outline-width: 0 si el estilo es
 // "auto", por eso también va outlineStyle: "none" (no está en los tipos de React Native).
 const sinContornoWeb =
-  Platform.OS === "web" ? ({ outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle) : null;
+  Platform.OS === "web"
+    ? ({ outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle)
+    : null;

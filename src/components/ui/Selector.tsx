@@ -1,6 +1,13 @@
-import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
-import Tocable from "./Tocable";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
+import Tocable from "./Tocable";
 
 export type OpcionSelector<T extends string> = { id: T; label: string };
 
@@ -22,7 +29,10 @@ export default function Selector<T extends string>({
 }: Props<T>) {
   const { colors } = useAppTheme();
   return (
-    <View style={[styles.barra, { borderColor: colors.cardBorder }, style]}>
+    <View
+      accessibilityRole="tablist"
+      style={[styles.barra, { borderColor: colors.cardBorder }, style]}
+    >
       {opciones.map((o) => {
         const activo = valor === o.id;
         return (
@@ -30,6 +40,7 @@ export default function Selector<T extends string>({
             key={o.id}
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
+            aria-selected={activo}
             accessibilityLabel={o.label}
             accessibilityHint={`Muestra ${o.label.toLowerCase()}`}
             onPress={() => onCambiar(o.id)}
@@ -42,9 +53,7 @@ export default function Selector<T extends string>({
               style={[
                 styles.texto,
                 {
-                  color: activo
-                    ? colors.onPrimary
-                    : colors.textSecondary,
+                  color: activo ? colors.onPrimary : colors.textSecondary,
                 },
                 textStyle,
               ]}
@@ -67,6 +76,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
-  opcion: { flex: 1, minHeight: 44, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
+  opcion: {
+    flex: 1,
+    minHeight: 44,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   texto: { fontWeight: "bold", fontSize: 12 },
 });
