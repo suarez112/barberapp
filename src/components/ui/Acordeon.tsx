@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps, ReactNode } from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { useAppTheme } from "../../theme/ThemeProvider";
 import IconoEnLinea from "./IconoEnLinea";
 import Tocable from "./Tocable";
-import { useAppTheme } from "../../theme/ThemeProvider";
 
 type Props = {
   titulo: string;
@@ -25,21 +25,27 @@ export default function Acordeon({
   style,
 }: Props) {
   const { colors } = useAppTheme();
-  const bordes = { backgroundColor: colors.cardBg, borderColor: colors.cardBorder };
+  const bordes = {
+    backgroundColor: colors.cardBg,
+    borderColor: colors.cardBorder,
+  };
   return (
     <>
       <Tocable
         accessibilityRole="button"
         accessibilityState={{ expanded: abierto }}
+        aria-expanded={abierto}
         accessibilityLabel={titulo}
-        accessibilityHint={abierto ? "Oculta el formulario" : "Muestra el formulario"}
+        accessibilityHint={
+          abierto ? "Oculta el formulario" : "Muestra el formulario"
+        }
         style={[styles.cabecera, bordes, style]}
         onPress={onAlternar}
       >
-        <Text style={[styles.titulo, { color: colors.primaryText }]}>
+        <Text style={[styles.titulo, { color: colors.textPrimary }]}>
           {icono ? (
             <>
-              <IconoEnLinea nombre={icono} color={colors.primaryText} />{" "}
+              <IconoEnLinea nombre={icono} color={colors.textPrimary} />{" "}
             </>
           ) : null}
           {titulo}
@@ -47,7 +53,7 @@ export default function Acordeon({
         <Ionicons
           name={abierto ? "chevron-up" : "chevron-down"}
           size={20}
-          color={colors.primaryText}
+          color={colors.textSecondary}
         />
       </Tocable>
       {abierto ? <View style={[styles.cuerpo, bordes]}>{children}</View> : null}
