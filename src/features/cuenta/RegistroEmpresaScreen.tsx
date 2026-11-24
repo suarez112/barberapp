@@ -108,6 +108,11 @@ export default function RegistroEmpresaScreen() {
   const refNombre = useRef<ComponentRef<typeof TextInput>>(null);
   const refCorreo = useRef<ComponentRef<typeof TextInput>>(null);
   const conPanel = useWindowDimensions().width >= ANCHO_CON_PANEL;
+  // Último código escrito: para saber si cambió mientras se consultaba si está libre
+  const refCodigo = useRef(valores.codigoAcceso);
+  useEffect(() => {
+    refCodigo.current = valores.codigoAcceso;
+  }, [valores.codigoAcceso]);
 
   // Al cambiar de paso: vuelve arriba, anuncia el paso y enfoca su primer campo de texto.
   // Al abrir la pantalla no se enfoca nada (no se abre el teclado de golpe).
@@ -157,9 +162,14 @@ export default function RegistroEmpresaScreen() {
         avisarCamposConError();
         return;
       }
+      // Si el código cambia mientras se consulta, la respuesta ya no aplica: se ignora y no se
+      // avanza (la persona vuelve a tocar Continuar con el código nuevo)
+      const codigo = valores.codigoAcceso;
+      const cambioElCodigo = () => refCodigo.current !== codigo;
       setVerificandoCodigo(true);
       try {
-        const { disponible } = await consultarCodigoDisponible(valores.codigoAcceso);
+        const { disponible } = await consultarCodigoDisponible(codigo);
+        if (cambioElCodigo()) return;
         if (!disponible) {
           setErrores((e) => ({ ...e, codigoAcceso: MENSAJE_CODIGO_EN_USO }));
           avisar("Código en uso", "Ese código ya lo usa otro negocio. Elige otro.", "error");
@@ -172,6 +182,7 @@ export default function RegistroEmpresaScreen() {
       } finally {
         setVerificandoCodigo(false);
       }
+      if (cambioElCodigo()) return;
       setPaso(2);
     } else if (paso === 2) {
       const camposOk = revisarCampos(CAMPOS_PASO_2);
