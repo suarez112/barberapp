@@ -1,16 +1,18 @@
-import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pantalla from "@/components/layout/Pantalla";
-import PantallaMarca, { EnlaceInferior } from "@/components/layout/PantallaMarca";
+import PantallaMarca, {
+  EnlaceInferior,
+} from "@/components/layout/PantallaMarca";
 import PantallaAviso from "@/components/ui/PantallaAviso";
 import Selector from "@/components/ui/Selector";
 import { useCuenta } from "@/features/cuenta/CuentaProvider";
 import { useNegocio } from "@/features/negocio/NegocioProvider";
 import { useAbrirNegocio } from "@/features/negocio/useAbrirNegocio";
-import { useDisenoMovil } from "@/hooks/useDisenoMovil";
 import CatalogoProductos from "@/features/productos/CatalogoProductos";
+import { useDisenoMovil } from "@/hooks/useDisenoMovil";
 import { useAppTheme } from "@/theme/ThemeProvider";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 import ConfirmacionCita from "./components/ConfirmacionCita";
 import FormularioReserva from "./components/FormularioReserva";
 import InfoNegocio from "./components/InfoNegocio";
@@ -31,7 +33,10 @@ export default function ClienteScreen() {
   // Enlace o QR del negocio: ej. /cliente?codigo=INFINITY entra directo.
   // "Mis negocios" también abre así el negocio elegido.
   // "invitado=1" abre directo la pantalla del código (viene de "Prefiero continuar como invitado")
-  const { codigo, invitado: pideInvitado } = useLocalSearchParams<{ codigo?: string; invitado?: string }>();
+  const { codigo, invitado: pideInvitado } = useLocalSearchParams<{
+    codigo?: string;
+    invitado?: string;
+  }>();
   const codigoEnlace = (typeof codigo === "string" ? codigo : "")
     .trim()
     .toUpperCase();
@@ -40,6 +45,12 @@ export default function ClienteScreen() {
   const { back, canGoBack, replace, push } = useRouter();
   const movil = useDisenoMovil();
   const { empresa, salirDelNegocio } = useNegocio();
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    document.title = empresa?.nombre
+      ? `Reservar en ${empresa.nombre} – Agendality`
+      : "Reservar cita – Agendality";
+  }, [empresa?.nombre]);
   const { usuario } = useCuenta();
   const conCuenta = usuario?.rol === "cliente";
   const abrirNegocio = useAbrirNegocio();
@@ -63,7 +74,8 @@ export default function ClienteScreen() {
   };
 
   // Con cuenta, el inicio del cliente es "Mis negocios"
-  if (conCuenta && !modoEnlace && !empresa) return <Redirect href="/mis-negocios" />;
+  if (conCuenta && !modoEnlace && !empresa)
+    return <Redirect href="/mis-negocios" />;
 
   const contenido = () => {
     // key: al cambiar de negocio, el formulario empieza de cero.
@@ -72,7 +84,9 @@ export default function ClienteScreen() {
       return (
         <VistaNegocio
           key={empresa.id}
-          onCambiarCodigo={modoEnlace || conCuenta ? undefined : salirDelNegocio}
+          onCambiarCodigo={
+            modoEnlace || conCuenta ? undefined : salirDelNegocio
+          }
         />
       );
     }
@@ -128,7 +142,9 @@ export default function ClienteScreen() {
 
   return (
     // El enlace web o el QR no tiene adónde volver; con cuenta se vuelve a "Mis negocios"
-    <Pantalla cabecera={{ onVolver: modoEnlace && !conCuenta ? undefined : volver }}>
+    <Pantalla
+      cabecera={{ onVolver: modoEnlace && !conCuenta ? undefined : volver }}
+    >
       {contenido()}
     </Pantalla>
   );
@@ -148,20 +164,25 @@ function VistaNegocio({ onCambiarCodigo }: { onCambiarCodigo?: () => void }) {
   if (empresa.recibiendoReservas === false) {
     return (
       <View>
-        <InfoNegocio codigo={empresa.codigoAcceso} onCambiarNegocio={onCambiarCodigo} />
+        <InfoNegocio
+          codigo={empresa.codigoAcceso}
+          onCambiarNegocio={onCambiarCodigo}
+        />
         <PantallaAviso
           icono="calendar-clear-outline"
           titulo="Este negocio no está recibiendo reservas por ahora"
           mensaje="Intenta más tarde o comunícate directamente con el negocio."
-        >
-        </PantallaAviso>
+        ></PantallaAviso>
       </View>
     );
   }
 
   return (
     <View>
-      <InfoNegocio codigo={empresa.codigoAcceso} onCambiarNegocio={onCambiarCodigo} />
+      <InfoNegocio
+        codigo={empresa.codigoAcceso}
+        onCambiarNegocio={onCambiarCodigo}
+      />
       <Selector
         opciones={VISTAS}
         valor={vista}
