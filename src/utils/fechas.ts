@@ -56,18 +56,44 @@ export const diasTranscurridos = (fechaStr: string, referencia: Date) => {
 // Calendario real: los días se generan para cualquier mes, no para uno fijo
 const NOMBRES_DIA = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SÁB"];
 export const MESES_CORTOS = [
-  "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
-  "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
+  "ENE",
+  "FEB",
+  "MAR",
+  "ABR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AGO",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DIC",
 ];
 export const MESES_LARGOS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 // "2026-11-02" -> "2 de noviembre de 2026"
 export const fechaLarga = (fecha: string) => {
   const [y, m, d] = fecha.split("-").map(Number);
   return `${d} de ${MESES_LARGOS[m - 1].toLowerCase()} de ${y}`;
+};
+
+// "2026-10-10" -> "10 oct 2026"
+export const fechaCorta = (fecha: string) => {
+  const [y, m, d] = fecha.split("-").map(Number);
+  return `${d} ${MESES_CORTOS[m - 1].toLowerCase()} ${y}`;
 };
 
 const DIAS_SEMANA_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -79,7 +105,8 @@ const diaSemanaCorto = (fecha: string) => {
 };
 
 // "2026-10-19" -> "Lun 19 de octubre de 2026"
-export const fechaConDia = (fecha: string) => `${diaSemanaCorto(fecha)} ${fechaLarga(fecha)}`;
+export const fechaConDia = (fecha: string) =>
+  `${diaSemanaCorto(fecha)} ${fechaLarga(fecha)}`;
 
 // "Lun 19 de octubre de 2026", "Lun 19 – Dom 25 de octubre de 2026"
 // o "Lun 28 de septiembre – Dom 4 de octubre de 2026"
@@ -90,8 +117,10 @@ export function textoRango(desde: string, hasta: string) {
   const mes = (m: number) => MESES_LARGOS[m - 1].toLowerCase();
   const inicio = `${diaSemanaCorto(desde)} ${d1}`;
   const fin = `${diaSemanaCorto(hasta)} ${d2}`;
-  if (y1 === y2 && m1 === m2) return `${inicio} – ${fin} de ${mes(m2)} de ${y2}`;
-  if (y1 === y2) return `${inicio} de ${mes(m1)} – ${fin} de ${mes(m2)} de ${y2}`;
+  if (y1 === y2 && m1 === m2)
+    return `${inicio} – ${fin} de ${mes(m2)} de ${y2}`;
+  if (y1 === y2)
+    return `${inicio} de ${mes(m1)} – ${fin} de ${mes(m2)} de ${y2}`;
   return `${fechaConDia(desde)} – ${fechaConDia(hasta)}`;
 }
 
