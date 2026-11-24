@@ -293,7 +293,6 @@ const styles = StyleSheet.create({
   },
   fechaSubtitulo: {
     fontSize: 12,
-    textTransform: "capitalize",
   },
   botonVista: { width: 40, height: 40, borderRadius: 20, borderWidth: 1 },
   resumen: { flexDirection: "row", gap: 8 },
