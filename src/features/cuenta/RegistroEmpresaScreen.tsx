@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { ComponentProps, ComponentRef, useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { ComponentProps, ComponentRef, useCallback, useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
+  BackHandler,
   Platform,
   ScrollView,
   StyleSheet,
@@ -108,11 +109,11 @@ export default function RegistroEmpresaScreen() {
   const refNombre = useRef<ComponentRef<typeof TextInput>>(null);
   const refCorreo = useRef<ComponentRef<typeof TextInput>>(null);
   const conPanel = useWindowDimensions().width >= ANCHO_CON_PANEL;
-  // Último código escrito: para saber si cambió mientras se consultaba si está libre
-  const refCodigo = useRef(valores.codigoAcceso);
+  // Últimos valores escritos: para saber qué cambió mientras se consultaba si el código está libre
+  const refValores = useRef(valores);
   useEffect(() => {
-    refCodigo.current = valores.codigoAcceso;
-  }, [valores.codigoAcceso]);
+    refValores.current = valores;
+  }, [valores]);
 
   // Al cambiar de paso: vuelve arriba, anuncia el paso y enfoca su primer campo de texto.
   // Al abrir la pantalla no se enfoca nada (no se abre el teclado de golpe).
@@ -129,17 +130,34 @@ export default function RegistroEmpresaScreen() {
     if (paso === 3) refCorreo.current?.focus();
   }, [paso]);
 
-  const volver = () => {
+  const volver = useCallback(() => {
     if (canGoBack()) back();
     else replace("/");
-  };
+  }, [back, canGoBack, replace]);
 
   // Atrás (cabecera o botón): al paso anterior sin perder lo escrito; en el paso 1 sale
-  const atras = () => {
+  const atras = useCallback(() => {
     if (enviando || verificandoCodigo) return;
     if (paso > 1) setPaso((paso - 1) as Paso);
     else volver();
-  };
+  }, [enviando, verificandoCodigo, paso, volver]);
+
+  // Botón atrás de Android: en los pasos 2 y 3 hace lo mismo que `atras`; en el paso 1 deja la
+  // salida normal, salvo mientras se envía o se verifica el código (ahí no hace nada, como la
+  // cabecera). Con la empresa ya registrada no interviene.
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (registrada) return false;
+        if (paso > 1) {
+          atras();
+          return true;
+        }
+        return enviando || verificandoCodigo;
+      });
+      return () => sub.remove();
+    }, [registrada, paso, enviando, verificandoCodigo, atras]),
+  );
 
   const cambiarAcceso = (clave: keyof ValoresAcceso) => (texto: string) => {
     setAcceso((a) => ({ ...a, [clave]: texto }));
@@ -148,8 +166,8 @@ export default function RegistroEmpresaScreen() {
 
   // Muestra los errores de estos campos (mismas reglas y mensajes de validarEmpresa) sin
   // tocar los de otros pasos. True si no hay nada por corregir.
-  const revisarCampos = (campos: CampoEmpresa[]) => {
-    const resultado = validarEmpresa(valores);
+  const revisarCampos = (campos: CampoEmpresa[], datos: ValoresEmpresa = valores) => {
+    const resultado = validarEmpresa(datos);
     const delPaso = resultado.ok ? {} : soloCampos(resultado.errores, campos);
     setErrores((e) => ({ ...sinErrores(e, campos), ...delPaso }));
     return !hayErrores(delPaso);
@@ -165,7 +183,7 @@ export default function RegistroEmpresaScreen() {
       // Si el código cambia mientras se consulta, la respuesta ya no aplica: se ignora y no se
       // avanza (la persona vuelve a tocar Continuar con el código nuevo)
       const codigo = valores.codigoAcceso;
-      const cambioElCodigo = () => refCodigo.current !== codigo;
+      const cambioElCodigo = () => refValores.current.codigoAcceso !== codigo;
       setVerificandoCodigo(true);
       try {
         const { disponible } = await consultarCodigoDisponible(codigo);
@@ -183,6 +201,12 @@ export default function RegistroEmpresaScreen() {
         setVerificandoCodigo(false);
       }
       if (cambioElCodigo()) return;
+      // Los demás campos del paso pudieron cambiar durante la consulta: se revisan otra vez con
+      // lo último escrito
+      if (!revisarCampos(CAMPOS_PASO_1, refValores.current)) {
+        avisarCamposConError();
+        return;
+      }
       setPaso(2);
     } else if (paso === 2) {
       const camposOk = revisarCampos(CAMPOS_PASO_2);
