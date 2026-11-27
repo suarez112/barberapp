@@ -168,13 +168,10 @@ export type PqrsAdmin = {
   actualizadaEn: string;
 };
 
-export type AccionActividad =
-  | "inicio_sesion"
-  | "activar_plan"
-  | "extender_prueba"
-  | "suspender"
-  | "reactivar"
-  | "responder_pqrs";
+// El backend guarda el nombre de la acción como texto libre (también incluye acciones del sistema,
+// de pagos, de categorías y comandos "cmd_*"), así que no se limita a una lista fija.
+// Los nombres legibles están en formato.ts (nombreAccion).
+export type AccionActividad = string;
 
 // Arma "?a=1&b=2" sin los valores vacíos
 const consulta = (params: Record<string, string | number | undefined>) => {

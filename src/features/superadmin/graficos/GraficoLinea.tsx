@@ -3,6 +3,7 @@ import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearNumero } from "../formato";
 import { useColoresGrafico } from "./colores";
+import { anchoTexto, FUENTE_GRAFICO, TAM_ETIQUETA } from "./tipografia";
 
 export type PuntoLinea = { etiqueta: string; valor: number };
 
@@ -15,7 +16,7 @@ type Props = {
   color?: string;
 };
 
-const MARGEN = { izq: 44, der: 12, arriba: 12, abajo: 26 };
+const MARGEN = { der: 16, arriba: 12, abajo: 28 };
 const MARCAS_Y = 3;
 
 // Redondea hacia arriba a 1, 2 o 5 por una potencia de 10 (el tope del eje)
@@ -39,15 +40,17 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
   const alMedir = (e: LayoutChangeEvent) => setAncho(Math.floor(e.nativeEvent.layout.width));
 
   const tope = topeLindo(Math.max(0, ...puntos.map((p) => p.valor)));
-  const areaAncho = Math.max(0, ancho - MARGEN.izq - MARGEN.der);
+  const marcasY = Array.from({ length: MARCAS_Y + 1 }, (_, i) => (tope / MARCAS_Y) * i);
+  // El margen izquierdo sale de la etiqueta más larga, para que ningún número se corte
+  const izq = Math.max(...marcasY.map((v) => anchoTexto(formatearNumero(Math.round(v))))) + 14;
+  const areaAncho = Math.max(0, ancho - izq - MARGEN.der);
   const areaAlto = alto - MARGEN.arriba - MARGEN.abajo;
   const base = MARGEN.arriba + areaAlto;
-  const x = (i: number) => MARGEN.izq + (puntos.length > 1 ? (i / (puntos.length - 1)) * areaAncho : areaAncho / 2);
+  const x = (i: number) => izq + (puntos.length > 1 ? (i / (puntos.length - 1)) * areaAncho : areaAncho / 2);
   const y = (v: number) => base - (v / tope) * areaAlto;
 
   const trazo = puntos.map((p, i) => `${x(i)},${y(p.valor)}`).join(" ");
   const area = puntos.length ? `${x(0)},${base} ${trazo} ${x(puntos.length - 1)},${base}` : "";
-  const marcasY = Array.from({ length: MARCAS_Y + 1 }, (_, i) => (tope / MARCAS_Y) * i);
   // Etiquetas del eje X: primera, del medio y última
   const marcasX =
     puntos.length > 2 ? [0, Math.floor((puntos.length - 1) / 2), puntos.length - 1] : puntos.map((_, i) => i);
@@ -55,7 +58,7 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
   const alMover = (e: PointerEvent<SVGSVGElement>) => {
     if (!puntos.length || areaAncho <= 0) return;
     const cuadro = e.currentTarget.getBoundingClientRect();
-    const relativo = (e.clientX - cuadro.left - MARGEN.izq) / areaAncho;
+    const relativo = (e.clientX - cuadro.left - izq) / areaAncho;
     const indice = Math.round(relativo * (puntos.length - 1));
     setActivo(Math.min(puntos.length - 1, Math.max(0, indice)));
   };
@@ -76,8 +79,15 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
         >
           {marcasY.map((v) => (
             <g key={v}>
-              <line x1={MARGEN.izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} stroke={colors.cardBorder} strokeWidth={1} />
-              <text x={MARGEN.izq - 6} y={y(v) + 4} textAnchor="end" fontSize={12} fill={colors.textSecondary}>
+              <line x1={izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} stroke={colors.cardBorder} strokeWidth={1} />
+              <text
+                x={izq - 6}
+                y={y(v) + 4}
+                textAnchor="end"
+                fontSize={TAM_ETIQUETA}
+                fontFamily={FUENTE_GRAFICO}
+                fill={colors.textSecondary}
+              >
                 {formatearNumero(Math.round(v))}
               </text>
             </g>
@@ -86,9 +96,10 @@ export default function GraficoLinea({ puntos, descripcion, alto = 220, color }:
             <text
               key={`${puntos[i].etiqueta}-${i}`}
               x={x(i)}
-              y={alto - 6}
+              y={alto - 8}
               textAnchor={marcasX.length < 2 ? "middle" : k === 0 ? "start" : k === marcasX.length - 1 ? "end" : "middle"}
-              fontSize={12}
+              fontSize={TAM_ETIQUETA}
+              fontFamily={FUENTE_GRAFICO}
               fill={colors.textSecondary}
             >
               {puntos[i].etiqueta}

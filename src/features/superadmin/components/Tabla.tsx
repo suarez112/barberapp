@@ -33,7 +33,7 @@ export default function Tabla<T>({ columnas, filas, clave, etiquetaFila, onFila,
     ));
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator>
+    <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.contenedor}>
       <View style={[styles.tabla, { borderColor: colors.cardBorder, backgroundColor: colors.cardBg }]}>
         <View style={[styles.fila, styles.encabezado]}>
           {columnas.map((c) => (
@@ -72,6 +72,8 @@ export default function Tabla<T>({ columnas, filas, clave, etiquetaFila, onFila,
 }
 
 const styles = StyleSheet.create({
+  // En ventanas anchas la tabla ocupa todo el ancho; en angostas se desplaza dentro de su marco
+  contenedor: { flexGrow: 1 },
   tabla: { minWidth: 860, flexGrow: 1, borderWidth: 1, borderRadius: 12, overflow: "hidden" },
   fila: {
     flexDirection: "row",

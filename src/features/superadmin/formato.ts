@@ -42,6 +42,12 @@ export const formatearDiaMes = (dia: string) => {
 const esNumero = (n: number | null | undefined): n is number => typeof n === "number" && !Number.isNaN(n);
 export const formatearNumero = (n: number | null | undefined) => (esNumero(n) ? n.toLocaleString("es-CO") : "—");
 export const formatearPesos = (n: number | null | undefined) => (esNumero(n) ? `$${n.toLocaleString("es-CO")}` : "—");
+// Versión corta para ejes de gráficos angostos: $0, $500 mil, $1,2 M
+export const formatearPesosCorto = (n: number) => {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toLocaleString("es-CO", { maximumFractionDigits: 1 })} M`;
+  if (n >= 1_000) return `$${(n / 1_000).toLocaleString("es-CO", { maximumFractionDigits: 0 })} mil`;
+  return `$${n.toLocaleString("es-CO")}`;
+};
 
 export const ESTADOS_NEGOCIO: Record<EstadoNegocio, { texto: string; color: string }> = {
   prueba: { texto: "EN PRUEBA", color: COLORES.azul },
@@ -74,18 +80,47 @@ export const FILTROS_PQRS: { id: EstadoPqrs | "todas"; label: string }[] = [
   { id: "cerrada", label: "Cerradas" },
 ];
 
-export const ACCIONES: Record<AccionActividad, string> = {
+// Todas las acciones que el backend puede registrar en la actividad del superadmin
+// (superadmin.servicio, categorias.servicio, pagos.servicio y los comandos de desarrollador "cmd_*").
+export const ACCIONES: Record<string, string> = {
   inicio_sesion: "Inicio de sesión",
+  cerrar_sesion: "Cierre de sesión",
   activar_plan: "Activar plan",
   extender_prueba: "Extender prueba",
   suspender: "Suspender negocio",
   reactivar: "Reactivar negocio",
   responder_pqrs: "Responder PQRS",
+  pago_aprobado: "Pago aprobado",
+  crear_categoria: "Crear categoría",
+  editar_categoria: "Editar categoría",
 };
 
+// Acciones de los comandos de desarrollador (el backend las guarda como "cmd_<accion>")
+const ACCIONES_COMANDO: Record<string, string> = {
+  cmd_activar_plan: "Comando: activar plan",
+  cmd_pagar_cargos: "Comando: pagar cargos",
+  cmd_cifrar_contrasenas: "Comando: cifrar contraseñas",
+  cmd_recifrar_2fa: "Comando: recifrar claves 2FA",
+  cmd_crear_superadmin: "Comando: crear superadmin",
+  cmd_reiniciar_superadmin: "Comando: reiniciar superadmin",
+  cmd_restablecer_superadmin: "Comando: restablecer superadmin",
+  cmd_eliminar_superadmin: "Comando: eliminar superadmin",
+  cmd_optimizar_fotos: "Comando: optimizar fotos",
+  cmd_simular_vencimiento: "Comando: simular vencimiento",
+};
+
+// Nombre legible de una acción. Una desconocida (o vacía) nunca muestra "undefined".
+export const nombreAccion = (accion: AccionActividad | null | undefined) => {
+  if (!accion) return "Acción desconocida";
+  if (Object.hasOwn(ACCIONES, accion)) return ACCIONES[accion];
+  if (Object.hasOwn(ACCIONES_COMANDO, accion)) return ACCIONES_COMANDO[accion];
+  return accion.startsWith("cmd_") ? "Comando del sistema" : "Acción desconocida";
+};
+
+// Las acciones de comandos no se filtran desde el panel
 export const FILTROS_ACCION: { id: AccionActividad | "todas"; label: string }[] = [
   { id: "todas", label: "Todas" },
-  ...(Object.keys(ACCIONES) as AccionActividad[]).map((id) => ({ id, label: ACCIONES[id] })),
+  ...Object.keys(ACCIONES).map((id) => ({ id, label: ACCIONES[id] })),
 ];
 
 export const TIPOS_PQRS: Record<string, string> = {
@@ -102,7 +137,9 @@ export const resumirDetalle = (accion: AccionActividad, detalle: Record<string, 
     case "inicio_sesion":
       return detalle.ip ? `IP ${String(detalle.ip)}` : "";
     case "extender_prueba":
-      return `${String(detalle.dias)} día(s): hasta ${formatearFecha(String(detalle.finNuevo ?? ""))}`;
+      return detalle.dias == null
+        ? ""
+        : `${String(detalle.dias)} día(s): hasta ${formatearFecha(String(detalle.finNuevo ?? ""))}`;
     case "activar_plan": {
       const despues = detalle.despues as { planEquipo?: string; plan?: string } | undefined;
       return [despues?.plan, despues?.planEquipo].filter(Boolean).join(" · ");
