@@ -78,6 +78,10 @@ type Props = {
   refNombre?: RefCampo;
   // Enter en "Código del negocio" (ej. pasar al siguiente paso)
   alEnviarCodigo?: () => void;
+  // Referencia al campo "Código del negocio" (para enfocarlo)
+  refCodigo?: RefCampo;
+  // Solo el registro: al salir del nombre, si el código está vacío, se sugiere uno a partir del nombre
+  sugerirCodigo?: boolean;
 };
 
 export type SeccionesEmpresa = "negocio" | "operacion" | "todas";
@@ -92,6 +96,8 @@ export default function CamposEmpresa({
   secciones = "todas",
   refNombre,
   alEnviarCodigo,
+  refCodigo,
+  sugerirCodigo = false,
 }: Props) {
   const { colors } = useAppTheme();
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
@@ -117,6 +123,13 @@ export default function CamposEmpresa({
       {...props}
     />
   );
+
+  // Nunca pisa un código ya escrito; si el nombre no deja letras ni números, no hace nada
+  const sugerirCodigoDelNombre = () => {
+    if (valores.codigoAcceso) return;
+    const sugerido = limpiarCodigo(valores.nombre);
+    if (sugerido) onCambiar({ codigoAcceso: sugerido });
+  };
 
   const departamento = departamentos?.find((d) => d.nombre === valores.departamento);
   const colorCodigo =
@@ -193,6 +206,7 @@ export default function CamposEmpresa({
         autoCapitalize: "words",
         autoComplete: "organization",
         textContentType: "organizationName",
+        ...(sugerirCodigo ? { onBlur: sugerirCodigoDelNombre } : {}),
       })}
       {errorCategorias ? (
         <View>
@@ -244,6 +258,7 @@ export default function CamposEmpresa({
       </Text>
       <CampoTexto
         etiqueta="Código del negocio"
+        inputRef={refCodigo}
         obligatorio
         error={errores.codigoAcceso}
         ayuda="Letras y números, sin espacios, máximo 10. Debajo se indica si está disponible"
