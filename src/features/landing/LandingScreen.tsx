@@ -191,9 +191,10 @@ export default function LandingScreen() {
   const entrada = (retraso: number) => (reducirMovimiento ? undefined : FadeInDown.duration(700).delay(retraso));
   // "Saltar al contenido": lleva el foco del teclado al <main>
   const saltarAlContenido = () => {
-    const main = document.getElementById("contenido");
-    main?.focus({ preventScroll: true });
-    main?.scrollIntoView({ behavior: "auto", block: "start" });
+    // El <main> empieza con el hero: se sube el scroll al inicio y el foco queda en el <main>,
+    // de modo que el siguiente Tab cae en el botón del hero
+    scroll.current?.scrollTo({ y: 0, animated: false });
+    document.getElementById("contenido")?.focus({ preventScroll: true });
   };
 
   return (
