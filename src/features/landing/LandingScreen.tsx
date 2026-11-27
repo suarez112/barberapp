@@ -538,7 +538,7 @@ export default function LandingScreen() {
               }}
             >
               <View style={{ flexShrink: 1, flexBasis: movil ? "100%" : 420, flexGrow: 1 }}>
-                <T accessibilityRole="header" aria-level={2} style={{ fontSize: movil ? 28 : 36, lineHeight: movil ? 33 : 42, fontWeight: "800", letterSpacing: -0.6, marginBottom: 10 }}>
+                <T accessibilityRole="header" aria-level={2} style={{ color: C.tinta, fontSize: movil ? 28 : 36, lineHeight: movil ? 33 : 42, fontWeight: "800", letterSpacing: -0.6, marginBottom: 10 }}>
                   Dedica tu tiempo a lo que sabes hacer
                 </T>
                 <T style={{ fontSize: 17, color: C.tinta }}>
