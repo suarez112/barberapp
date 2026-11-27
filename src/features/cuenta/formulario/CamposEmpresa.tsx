@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import Boton from "@/components/ui/Boton";
 import CampoTelefono from "@/components/ui/CampoTelefono";
-import CampoTexto, { PropsCampo } from "@/components/ui/CampoTexto";
+import CampoTexto, { PropsCampo, RefCampo } from "@/components/ui/CampoTexto";
 import Desplegable from "@/components/ui/Desplegable";
 import Tocable from "@/components/ui/Tocable";
 import TituloSeccion from "@/components/ui/TituloSeccion";
@@ -71,7 +71,16 @@ type Props = {
   errores?: Errores<CampoEmpresa>;
   // WhatsApp de contacto (opcional): su estado lo lleva quien usa el formulario
   whatsapp: EstadoTelefono;
+  // Qué secciones se ven (el registro por pasos): "negocio" = datos y código del negocio;
+  // "operacion" = ubicación, contacto y horario. Por defecto ("todas") se ve todo junto.
+  secciones?: SeccionesEmpresa;
+  // Referencia al campo "Nombre del negocio" (para enfocarlo)
+  refNombre?: RefCampo;
+  // Enter en "Código del negocio" (ej. pasar al siguiente paso)
+  alEnviarCodigo?: () => void;
 };
+
+export type SeccionesEmpresa = "negocio" | "operacion" | "todas";
 
 // Campos de la empresa: los usan el registro y la edición de "Mi negocio"
 export default function CamposEmpresa({
@@ -80,6 +89,9 @@ export default function CamposEmpresa({
   codigoActual,
   errores = {},
   whatsapp,
+  secciones = "todas",
+  refNombre,
+  alEnviarCodigo,
 }: Props) {
   const { colors } = useAppTheme();
   const { departamentos, error: errorUbicaciones, reintentar } = useUbicaciones();
@@ -167,10 +179,14 @@ export default function CamposEmpresa({
     </View>
   );
 
+  // Las dos partes siempre quedan montadas (la oculta con display: "none"): así las listas,
+  // la revisión del código y la elección del horario no se reinician al ir y volver entre pasos
   return (
     <View>
+      <View style={secciones === "operacion" ? styles.oculta : null}>
       <TituloSeccion>DATOS DEL NEGOCIO</TituloSeccion>
       {campo("nombre", "Nombre del negocio", {
+        inputRef: refNombre,
         maxLength: 100,
         placeholder: "ej: Barbería Central",
         ayuda: "Así verán tu negocio los clientes",
@@ -238,6 +254,7 @@ export default function CamposEmpresa({
         maxLength={10}
         value={valores.codigoAcceso}
         onChangeText={(t) => onCambiar({ codigoAcceso: limpiarCodigo(t) })}
+        {...(alEnviarCodigo ? { onSubmitEditing: alEnviarCodigo, returnKeyType: "next" as const } : {})}
         estiloTexto={styles.codigo}
         style={styles.campoCodigo}
         centrado
@@ -263,7 +280,9 @@ export default function CamposEmpresa({
           {TEXTO_CODIGO[estadoCodigo]}
         </Text>
       </View>
+      </View>
 
+      <View style={secciones === "negocio" ? styles.oculta : null}>
       <TituloSeccion>UBICACIÓN</TituloSeccion>
       {errorUbicaciones ? (
         <View>
@@ -436,11 +455,13 @@ export default function CamposEmpresa({
         })}
         </>
       )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  oculta: { display: "none" },
   ayuda: { fontSize: 12, marginBottom: 8 },
   cargando: { marginVertical: 12 },
   codigo: { fontSize: 18, fontWeight: "bold", letterSpacing: 3 },
