@@ -7,7 +7,7 @@ import Encabezado from "./components/Encabezado";
 import EstadoCarga from "./components/EstadoCarga";
 import Paginacion from "./components/Paginacion";
 import Tabla, { Columna } from "./components/Tabla";
-import { ACCIONES, FILTROS_ACCION, formatearFecha, resumirDetalle } from "./formato";
+import { FILTROS_ACCION, formatearFecha, nombreAccion, resumirDetalle } from "./formato";
 import { useCargar } from "./useCargar";
 
 const POR_PAGINA = 25;
@@ -38,7 +38,7 @@ export default function ActividadSuperadmin() {
       titulo: "Acción",
       ancho: 2,
       render: (a) => (
-        <Text style={[styles.principal, { color: colors.textPrimary }]}>{ACCIONES[a.accion] ?? a.accion}</Text>
+        <Text style={[styles.principal, { color: colors.textPrimary }]}>{nombreAccion(a.accion)}</Text>
       ),
     },
     {

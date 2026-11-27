@@ -10,11 +10,11 @@ import AccionNegocioModal, { TipoAccion } from "./components/AccionNegocioModal"
 import EstadoCarga from "./components/EstadoCarga";
 import Ficha from "./components/Ficha";
 import {
-  ACCIONES,
   ESTADOS_NEGOCIO,
   formatearFecha,
   formatearNumero,
   formatearPesos,
+  nombreAccion,
   resumirDetalle,
 } from "./formato";
 import { useCargar } from "./useCargar";
@@ -165,7 +165,7 @@ export default function DetalleNegocio({ id, onVolver }: Props) {
                   n.actividadReciente.length === 0
                     ? [["Sin acciones", "—"]]
                     : n.actividadReciente.map((a) => [
-                        `${formatearFecha(a.fecha, true)} · ${ACCIONES[a.accion]}`,
+                        `${formatearFecha(a.fecha, true)} · ${nombreAccion(a.accion)}`,
                         [resumirDetalle(a.accion, a.detalle), a.motivo].filter(Boolean).join(" · ") || "—",
                       ])
                 }
