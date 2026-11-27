@@ -42,6 +42,12 @@ export const formatearDiaMes = (dia: string) => {
 const esNumero = (n: number | null | undefined): n is number => typeof n === "number" && !Number.isNaN(n);
 export const formatearNumero = (n: number | null | undefined) => (esNumero(n) ? n.toLocaleString("es-CO") : "—");
 export const formatearPesos = (n: number | null | undefined) => (esNumero(n) ? `$${n.toLocaleString("es-CO")}` : "—");
+// Versión corta para ejes de gráficos angostos: $0, $500 mil, $1,2 M
+export const formatearPesosCorto = (n: number) => {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toLocaleString("es-CO", { maximumFractionDigits: 1 })} M`;
+  if (n >= 1_000) return `$${(n / 1_000).toLocaleString("es-CO", { maximumFractionDigits: 0 })} mil`;
+  return `$${n.toLocaleString("es-CO")}`;
+};
 
 export const ESTADOS_NEGOCIO: Record<EstadoNegocio, { texto: string; color: string }> = {
   prueba: { texto: "EN PRUEBA", color: COLORES.azul },

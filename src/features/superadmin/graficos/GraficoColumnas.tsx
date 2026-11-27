@@ -1,8 +1,9 @@
 import { PointerEvent, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
-import { formatearPesos } from "../formato";
+import { formatearPesos, formatearPesosCorto } from "../formato";
 import { useColoresGrafico } from "./colores";
+import { anchoTexto, FUENTE_GRAFICO, TAM_ETIQUETA } from "./tipografia";
 
 export type ColumnaDato = { etiqueta: string; valor: number; destacada?: boolean };
 
@@ -13,7 +14,9 @@ type Props = {
   alto?: number;
 };
 
-const MARGEN = { izq: 76, der: 8, arriba: 12, abajo: 26 };
+const MARGEN = { der: 8, arriba: 12, abajo: 28 };
+// Por debajo de este ancho el eje de pesos se escribe abreviado ($500 mil, $1,2 M)
+const ANCHO_EJE_CORTO = 520;
 const MARCAS_Y = 3;
 
 // Redondea hacia arriba a 1, 2, 3, 5 o 10 por una potencia de 10 (el tope del eje)
@@ -36,26 +39,29 @@ export default function GraficoColumnas({ datos, descripcion, alto = 240 }: Prop
   const alMedir = (e: LayoutChangeEvent) => setAncho(Math.floor(e.nativeEvent.layout.width));
 
   const tope = topeLindo(Math.max(0, ...datos.map((d) => d.valor)));
-  const areaAncho = Math.max(0, ancho - MARGEN.izq - MARGEN.der);
+  const marcasY = Array.from({ length: MARCAS_Y + 1 }, (_, i) => (tope / MARCAS_Y) * i);
+  const textoEje = (v: number) => (ancho < ANCHO_EJE_CORTO ? formatearPesosCorto(v) : formatearPesos(Math.round(v)));
+  // El margen izquierdo sale de la etiqueta más larga, para que ningún número se corte
+  const izq = Math.max(...marcasY.map((v) => anchoTexto(textoEje(v)))) + 14;
+  const areaAncho = Math.max(0, ancho - izq - MARGEN.der);
   const areaAlto = alto - MARGEN.arriba - MARGEN.abajo;
   const base = MARGEN.arriba + areaAlto;
   const paso = datos.length ? areaAncho / datos.length : 0;
   const anchoColumna = Math.min(48, paso * 0.6);
   const y = (v: number) => base - (v / tope) * areaAlto;
-  const marcasY = Array.from({ length: MARCAS_Y + 1 }, (_, i) => (tope / MARCAS_Y) * i);
 
   const alMover = (e: PointerEvent<SVGSVGElement>) => {
     if (!datos.length || paso <= 0) return;
     const cuadro = e.currentTarget.getBoundingClientRect();
-    const indice = Math.floor((e.clientX - cuadro.left - MARGEN.izq) / paso);
+    const indice = Math.floor((e.clientX - cuadro.left - izq) / paso);
     setActivo(indice >= 0 && indice < datos.length ? indice : null);
   };
 
   const seleccion = activo !== null ? datos[activo] : null;
-  const centro = (i: number) => MARGEN.izq + paso * i + paso / 2;
+  const centro = (i: number) => izq + paso * i + paso / 2;
   const aLaIzquierda = activo !== null && centro(activo) > ancho / 2;
   // Con muchas columnas se escriben las etiquetas alternadas para que no se pisen
-  const cadaCuantas = paso < 44 ? 2 : 1;
+  const cadaCuantas = Math.max(1, Math.ceil(anchoTexto("sep 26") / Math.max(paso, 1) + 0.2));
 
   return (
     <View accessible accessibilityRole="image" accessibilityLabel={descripcion} onLayout={alMedir} style={{ height: alto }}>
@@ -69,9 +75,16 @@ export default function GraficoColumnas({ datos, descripcion, alto = 240 }: Prop
         >
           {marcasY.map((v) => (
             <g key={v}>
-              <line x1={MARGEN.izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} stroke={colors.cardBorder} strokeWidth={1} />
-              <text x={MARGEN.izq - 6} y={y(v) + 4} textAnchor="end" fontSize={12} fill={colors.textSecondary}>
-                {formatearPesos(Math.round(v))}
+              <line x1={izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} stroke={colors.cardBorder} strokeWidth={1} />
+              <text
+                x={izq - 6}
+                y={y(v) + 4}
+                textAnchor="end"
+                fontSize={TAM_ETIQUETA}
+                fontFamily={FUENTE_GRAFICO}
+                fill={colors.textSecondary}
+              >
+                {textoEje(v)}
               </text>
             </g>
           ))}
@@ -91,9 +104,10 @@ export default function GraficoColumnas({ datos, descripcion, alto = 240 }: Prop
               {i % cadaCuantas === 0 ? (
                 <text
                   x={centro(i)}
-                  y={alto - 6}
+                  y={alto - 8}
                   textAnchor="middle"
-                  fontSize={12}
+                  fontSize={TAM_ETIQUETA}
+                  fontFamily={FUENTE_GRAFICO}
                   fontWeight={d.destacada ? "bold" : "normal"}
                   fill={d.destacada ? colors.textPrimary : colors.textSecondary}
                 >

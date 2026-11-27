@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/theme/ThemeProvider";
 import { formatearNumero } from "../formato";
 import { useColoresGrafico } from "./colores";
+import { TAM_ETIQUETA } from "./tipografia";
 
 export type BarraDato = {
   etiqueta: string;
@@ -61,12 +62,13 @@ export default function GraficoBarras({ datos, vacio = "Aún no hay datos.", for
 const styles = StyleSheet.create({
   lista: { gap: 12 },
   fila: { flexDirection: "row", alignItems: "center", gap: 12 },
-  etiqueta: { width: 120 },
-  texto: { fontSize: 13 },
-  detalle: { fontSize: 12, marginTop: 1 },
+  // En pantallas angostas la etiqueta no pasa del 40 % para dejar sitio a la barra y al número
+  etiqueta: { maxWidth: "40%" },
+  texto: { fontSize: TAM_ETIQUETA },
+  detalle: { fontSize: TAM_ETIQUETA - 1, marginTop: 1 },
   pista: { flex: 1, height: 14, justifyContent: "center" },
   // Barra fina con el extremo de los datos redondeado
   barra: { height: 12, minWidth: 3, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
-  valor: { minWidth: 44, fontSize: 13, fontWeight: "600", textAlign: "right" },
+  valor: { minWidth: 44, fontSize: TAM_ETIQUETA, fontWeight: "600", textAlign: "right" },
   vacio: { fontSize: 13, paddingVertical: 24, textAlign: "center" },
 });
