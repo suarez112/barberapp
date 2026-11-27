@@ -33,6 +33,8 @@ const SECCIONES: { id: Seccion; texto: string; icono: Icono }[] = [
 
 // Ancho de la ventana por debajo del cual el menú lateral muestra solo íconos
 const ANCHO_MENU_COMPACTO = 900;
+// Por debajo de este ancho el contenido usa márgenes más pequeños
+const ANCHO_MOVIL = 600;
 
 type PropsBoton = {
   icono: Icono;
@@ -177,7 +179,7 @@ export default function PanelSuperadmin() {
 
       <ScrollView
         style={styles.contenido}
-        contentContainerStyle={styles.contenidoInterno}
+        contentContainerStyle={[styles.contenidoInterno, width < ANCHO_MOVIL && styles.contenidoMovil]}
       >
         <View style={styles.columna}>
           {/* Cada sección carga sus datos al abrirse */}
@@ -233,7 +235,9 @@ const styles = StyleSheet.create({
   },
   itemCompacto: { justifyContent: "center", paddingHorizontal: 0 },
   textoItem: { fontSize: 15, fontWeight: "600" },
-  contenido: { flex: 1 },
+  // minWidth 0: sin esto, una tabla ancha estira la columna más que la ventana y se corta en vez de desplazarse
+  contenido: { flex: 1, minWidth: 0 },
   contenidoInterno: { padding: 32 },
+  contenidoMovil: { padding: 16 },
   columna: { width: "100%", maxWidth: 1200, alignSelf: "center" },
 });
