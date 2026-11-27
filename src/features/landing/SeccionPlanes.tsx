@@ -3,7 +3,6 @@ import { ActivityIndicator, Pressable, View } from "react-native";
 import { IdPlanEquipo } from "@/features/cuenta/api";
 import { nivelPara, precioPara } from "@/features/planes/cobro";
 import { usePlanes } from "@/features/planes/usePlanes";
-import { COLORES_LANDING as C } from "@/theme/paleta";
 import {
   BotonLanding,
   CajaIcono,
@@ -13,9 +12,12 @@ import {
   NombreIcono,
   Seccion,
   T,
+  anilloFoco,
   columnasIguales,
   cuadricula,
   useAnchos,
+  useColoresLanding,
+  useFoco,
 } from "./componentes";
 
 // Los precios NO se escriben aquí: vienen del backend (GET /api/v1/planes), el mismo lugar
@@ -34,6 +36,7 @@ const NIVELES: { id: IdPlanEquipo; icono: NombreIcono; texto: string }[] = [
 
 export default function SeccionPlanes({ hrefRegistro }: { hrefRegistro: "/registro" }) {
   const { tablet, movil } = useAnchos();
+  const C = useColoresLanding();
   const { planes, error, reintentar } = usePlanes();
   const [profesionales, setProfesionales] = useState(3);
 
@@ -52,7 +55,7 @@ export default function SeccionPlanes({ hrefRegistro }: { hrefRegistro: "/regist
               <EnlaceTexto etiqueta="Reintentar" ayuda="Vuelve a cargar los precios" onPress={reintentar} style={{ fontWeight: "700" }} />
             </>
           ) : (
-            <ActivityIndicator color={C.oscuro} accessibilityLabel="Cargando los precios" />
+            <ActivityIndicator color={C.texto} accessibilityLabel="Cargando los precios" />
           )}
         </View>
       ) : (
@@ -82,7 +85,7 @@ export default function SeccionPlanes({ hrefRegistro }: { hrefRegistro: "/regist
                     flexDirection: "row",
                     gap: 16,
                     alignItems: "flex-start",
-                    backgroundColor: activo ? C.amarilloSuave : C.blanco,
+                    backgroundColor: activo ? C.amarilloSuave : C.tarjeta,
                     borderColor: activo ? C.amarilloOscuro : C.borde,
                     borderWidth: activo ? 2 : 1,
                     borderRadius: 18,
@@ -90,8 +93,8 @@ export default function SeccionPlanes({ hrefRegistro }: { hrefRegistro: "/regist
                     paddingVertical: movil ? 18 : 22,
                   }}
                 >
-                  <CajaIcono fondo={n.id === "equipo" ? C.amarillo : n.id === "pro" ? C.oscuro : C.amarilloClaro}>
-                    <Icono nombre={n.icono} color={n.id === "pro" ? C.amarillo : C.oscuro} tamano={22} />
+                  <CajaIcono fondo={n.id === "equipo" ? C.amarillo : n.id === "pro" ? C.oscuro2 : C.amarilloClaro}>
+                    <Icono nombre={n.icono} color={n.id === "pro" ? C.amarillo : n.id === "equipo" ? C.tinta : C.texto} tamano={22} />
                   </CajaIcono>
                   <View style={{ flex: 1 }}>
                     <T style={{ fontSize: 17, fontWeight: "700", marginBottom: 4 }}>
@@ -125,6 +128,7 @@ function TarjetaPrecio({
   hrefRegistro: "/registro";
   movil: boolean;
 }) {
+  const C = useColoresLanding();
   const total = precioPara(planes, profesionales);
   const maximo = planes.maximoProfesionales;
   const descuento = Math.round(planes.descuentoAnual * 100);
@@ -140,13 +144,13 @@ function TarjetaPrecio({
       }}
     >
       <T style={{ color: C.grisMuyClaro, fontSize: 15, flexShrink: 1 }}>{a}</T>
-      <T style={{ color: C.blanco, fontWeight: "700", fontSize: 15, textAlign: "right" }}>{b}</T>
+      <T style={{ color: C.sobreOscuro, fontWeight: "700", fontSize: 15, textAlign: "right" }}>{b}</T>
     </View>
   );
   return (
     <View style={{ backgroundColor: C.oscuro, borderRadius: 22, padding: movil ? 26 : 36 }}>
       <T style={{ color: C.grisClaro, fontSize: 14, fontWeight: "600" }}>Primer profesional</T>
-      <T style={{ color: C.blanco, fontSize: movil ? 40 : 52, fontWeight: "800", letterSpacing: -1 }}>
+      <T style={{ color: C.sobreOscuro, fontSize: movil ? 40 : 52, fontWeight: "800", letterSpacing: -1 }}>
         {pesos(planes.precioPrimerProfesional)}{" "}
         <T style={{ color: C.grisClaro, fontSize: 17, fontWeight: "500" }}>/ mes</T>
       </T>
@@ -169,7 +173,7 @@ function TarjetaPrecio({
           <T
             accessibilityLiveRegion="polite"
             accessibilityLabel={`${profesionales} ${profesionales === 1 ? "profesional" : "profesionales"}`}
-            style={{ color: C.blanco, fontSize: 22, fontWeight: "800", minWidth: 30, textAlign: "center" }}
+            style={{ color: C.sobreOscuro, fontSize: 22, fontWeight: "800", minWidth: 30, textAlign: "center" }}
           >
             {profesionales}
           </T>
@@ -192,6 +196,7 @@ function TarjetaPrecio({
         href={hrefRegistro}
         ayuda="Abre el registro de tu negocio"
         anchoCompleto
+        sobre="banda"
       />
     </View>
   );
@@ -210,6 +215,9 @@ function BotonContador({
   desactivado: boolean;
   onPress: () => void;
 }) {
+  const C = useColoresLanding();
+  const foco = useFoco();
+  const [encima, setEncima] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
@@ -218,19 +226,24 @@ function BotonContador({
       accessibilityState={{ disabled: desactivado }}
       disabled={desactivado}
       onPress={onPress}
+      onHoverIn={() => setEncima(true)}
+      onHoverOut={() => setEncima(false)}
+      onFocus={foco.alEnfocar}
+      onBlur={foco.alDesenfocar}
       style={{
+        ...anilloFoco(foco.visible, C.focoSobreOscuro),
         width: 44,
         height: 44,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: C.bordeBoton,
+        borderColor: encima && !desactivado ? C.amarillo : C.bordeBoton,
         backgroundColor: C.oscuro,
         alignItems: "center",
         justifyContent: "center",
         opacity: desactivado ? 0.4 : 1,
       }}
     >
-      <T style={{ color: C.blanco, fontSize: 20 }}>{simbolo}</T>
+      <T style={{ color: C.sobreOscuro, fontSize: 20 }}>{simbolo}</T>
     </Pressable>
   );
 }
