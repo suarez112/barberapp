@@ -107,6 +107,11 @@ export default function RegistroEmpresaScreen() {
   const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const refScroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const refNombre = useRef<ComponentRef<typeof TextInput>>(null);
+  const refCodigo = useRef<ComponentRef<typeof TextInput>>(null);
+  // Campo que se enfoca al volver al paso 1 (el código si al enviar resultó estar en uso)
+  const refFocoPaso1 = useRef<"nombre" | "codigo">("nombre");
+  // Evita una segunda consulta del código si se toca Continuar (o Enter) dos veces seguidas
+  const refConsultandoCodigo = useRef(false);
   const refCorreo = useRef<ComponentRef<typeof TextInput>>(null);
   const conPanel = useWindowDimensions().width >= ANCHO_CON_PANEL;
   // Últimos valores escritos: para saber qué cambió mientras se consultaba si el código está libre
@@ -126,7 +131,11 @@ export default function RegistroEmpresaScreen() {
     if (Platform.OS === "ios") {
       AccessibilityInfo.announceForAccessibility(`Paso ${paso} de 3: ${PASOS[paso - 1]}`);
     }
-    if (paso === 1) refNombre.current?.focus();
+    if (paso === 1) {
+      const destino = refFocoPaso1.current === "codigo" ? refCodigo : refNombre;
+      refFocoPaso1.current = "nombre";
+      destino.current?.focus();
+    }
     if (paso === 3) refCorreo.current?.focus();
   }, [paso]);
 
@@ -176,6 +185,7 @@ export default function RegistroEmpresaScreen() {
   const continuar = async () => {
     if (verificandoCodigo) return;
     if (paso === 1) {
+      if (refConsultandoCodigo.current) return;
       if (!revisarCampos(CAMPOS_PASO_1)) {
         avisarCamposConError();
         return;
@@ -184,6 +194,7 @@ export default function RegistroEmpresaScreen() {
       // avanza (la persona vuelve a tocar Continuar con el código nuevo)
       const codigo = valores.codigoAcceso;
       const cambioElCodigo = () => refValores.current.codigoAcceso !== codigo;
+      refConsultandoCodigo.current = true;
       setVerificandoCodigo(true);
       try {
         const { disponible } = await consultarCodigoDisponible(codigo);
@@ -198,6 +209,7 @@ export default function RegistroEmpresaScreen() {
         // seguir: el código se vuelve a comprobar en registrar(), justo antes de enviar
         registrarCausa("Registro de empresa: código", error);
       } finally {
+        refConsultandoCodigo.current = false;
         setVerificandoCodigo(false);
       }
       if (cambioElCodigo()) return;
@@ -242,7 +254,8 @@ export default function RegistroEmpresaScreen() {
       if (!disponible) {
         setErrores({ codigoAcceso: MENSAJE_CODIGO_EN_USO });
         avisar("Código en uso", "Ese código ya lo usa otro negocio. Elige otro.", "error");
-        // El campo del código está en el paso 1
+        // El campo del código está en el paso 1: el foco va a ese campo, no al nombre
+        refFocoPaso1.current = "codigo";
         setPaso(1);
         return;
       }
@@ -367,6 +380,8 @@ export default function RegistroEmpresaScreen() {
               whatsapp={whatsapp}
               secciones={paso === 2 ? "operacion" : "negocio"}
               refNombre={refNombre}
+              refCodigo={refCodigo}
+              sugerirCodigo
               alEnviarCodigo={continuar}
               onCambiar={(cambios) => {
                 setValores((v) => ({ ...v, ...cambios }));
