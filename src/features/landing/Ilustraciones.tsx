@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { View } from "react-native";
-import { COLORES_LANDING as C } from "@/theme/paleta";
-import { T, columnasIguales, cuadricula, Icono, useAnchos } from "./componentes";
+import { T, columnasIguales, cuadricula, Icono, useAnchos, useColoresLanding } from "./componentes";
 
 // Dibujos de ejemplo de la página principal. Son solo ilustrativos: sus números están
 // escritos aquí y no se piden al servidor.
@@ -9,6 +8,7 @@ import { T, columnasIguales, cuadricula, Icono, useAnchos } from "./componentes"
 const EJEMPLO = "Ejemplo ilustrativo";
 
 function Barras({ alturas, activa, alto }: { alturas: number[]; activa: number; alto: number }) {
+  const C = useColoresLanding();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: alto, marginTop: 4 }}>
       {alturas.map((h, i) => (
@@ -28,6 +28,7 @@ function Barras({ alturas, activa, alto }: { alturas: number[]; activa: number; 
 }
 
 function Avatar({ letra }: { letra: string }) {
+  const C = useColoresLanding();
   return (
     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.oscuro, alignItems: "center", justifyContent: "center" }}>
       <T style={{ color: C.amarillo, fontSize: 12, fontWeight: "800" }}>{letra}</T>
@@ -36,6 +37,7 @@ function Avatar({ letra }: { letra: string }) {
 }
 
 function Pastilla({ texto, tipo, grande }: { texto: string; tipo: "ok" | "pendiente"; grande?: boolean }) {
+  const C = useColoresLanding();
   return (
     <View
       style={{
@@ -45,20 +47,23 @@ function Pastilla({ texto, tipo, grande }: { texto: string; tipo: "ok" | "pendie
         borderRadius: 999,
       }}
     >
-      <T style={{ color: tipo === "ok" ? C.verdeOscuro : C.azul, fontSize: grande ? 12 : 10, fontWeight: "700" }}>{texto}</T>
+      <T style={{ color: tipo === "ok" ? C.verde : C.azul, fontSize: grande ? 12 : 10, fontWeight: "700" }}>{texto}</T>
     </View>
   );
 }
 
 function Tarjeta({ children, style }: { children: ReactNode; style?: object }) {
-  return <View style={[{ backgroundColor: C.blanco, borderRadius: 14, padding: 16 }, style]}>{children}</View>;
+  const C = useColoresLanding();
+  return <View style={[{ backgroundColor: C.panel, borderRadius: 14, padding: 16 }, style]}>{children}</View>;
 }
 
 function Etiq({ children }: { children: string }) {
+  const C = useColoresLanding();
   return <T style={{ fontSize: 12, color: C.gris, fontWeight: "600" }}>{children}</T>;
 }
 
 function Linea({ children, primera }: { children: ReactNode; primera?: boolean }) {
+  const C = useColoresLanding();
   const { movil } = useAnchos();
   return (
     <View
@@ -69,7 +74,7 @@ function Linea({ children, primera }: { children: ReactNode; primera?: boolean }
         paddingVertical: 9,
         gap: movil ? 8 : 0,
         borderTopWidth: primera ? 0 : 1,
-        borderTopColor: C.fondoGris,
+        borderTopColor: C.borde,
       }}
     >
       {children}
@@ -78,6 +83,7 @@ function Linea({ children, primera }: { children: ReactNode; primera?: boolean }
 }
 
 function Marco({ children }: { children: ReactNode }) {
+  const C = useColoresLanding();
   const { movil } = useAnchos();
   return (
     <View
@@ -94,10 +100,13 @@ function Marco({ children }: { children: ReactNode }) {
 // ---- Panel de la portada ----
 export function PanelEjemplo() {
   const { movil, tablet } = useAnchos();
+  const C = useColoresLanding();
+  const panel = { backgroundColor: C.tarjeta, borderColor: C.borde, borderWidth: 1, borderRadius: 12, padding: 12 } as const;
+  const tituloPanel = { fontSize: 12, color: C.textoSuave, marginBottom: 10, fontWeight: "700" } as const;
   const kpi = (titulo: string, valor: string, amarillo?: boolean) => (
     <View
       style={{
-        backgroundColor: amarillo ? C.amarilloClaro : C.blanco,
+        backgroundColor: amarillo ? C.amarilloClaro : C.tarjeta,
         borderColor: amarillo ? C.amarilloOscuro : C.borde,
         borderWidth: 1,
         borderRadius: 12,
@@ -116,7 +125,7 @@ export function PanelEjemplo() {
         gap: 10,
         paddingVertical: 8,
         borderTopWidth: primera ? 0 : 1,
-        borderTopColor: C.fondoGris,
+        borderTopColor: C.borde,
       }}
     >
       <T style={{ fontWeight: "700", fontSize: 12, width: 40 }}>{hora}</T>
@@ -184,7 +193,7 @@ export function PanelEjemplo() {
           }}
         >
           <Icono nombre="campana" color={C.amarillo} tamano={22} />
-          <T style={{ color: C.blanco, fontSize: 13 }}>
+          <T style={{ color: C.sobreOscuro, fontSize: 13 }}>
             Nueva reserva recibida <T style={{ color: C.amarillo, fontWeight: "700", fontSize: 13 }}>a las 10:42 p. m.</T>
           </T>
         </View>
@@ -193,11 +202,9 @@ export function PanelEjemplo() {
   );
 }
 
-const panel = { backgroundColor: C.blanco, borderColor: C.borde, borderWidth: 1, borderRadius: 12, padding: 12 } as const;
-const tituloPanel = { fontSize: 12, color: C.textoSuave, marginBottom: 10, fontWeight: "700" } as const;
-
 // ---- Dibujos de las funciones ----
 function HoraChip({ texto, activa }: { texto: string; activa?: boolean }) {
+  const C = useColoresLanding();
   return (
     <View
       style={{
@@ -239,6 +246,7 @@ export function DibujoReservas() {
 }
 
 export function DibujoEquipo() {
+  const C = useColoresLanding();
   const fila = (letra: string, nombre: string, citas: string, valor: string, primera?: boolean) => (
     <Linea primera={primera}>
       <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
@@ -264,6 +272,7 @@ export function DibujoEquipo() {
 }
 
 export function DibujoFinanzas() {
+  const C = useColoresLanding();
   return (
     <Marco>
       <Tarjeta>
@@ -280,7 +289,7 @@ export function DibujoFinanzas() {
         </Linea>
         <Linea>
           <T style={{ fontSize: 14 }}>Para el negocio</T>
-          <T style={{ fontWeight: "700", fontSize: 14, color: C.verdeOscuro }}>$4.950.000</T>
+          <T style={{ fontWeight: "700", fontSize: 14, color: C.verde }}>$4.950.000</T>
         </Linea>
       </Tarjeta>
     </Marco>
@@ -288,11 +297,12 @@ export function DibujoFinanzas() {
 }
 
 export function DibujoCrecimiento() {
+  const C = useColoresLanding();
   const fila = (servicio: string, veces: string, valor: string, verde?: boolean, primera?: boolean) => (
     <Linea primera={primera}>
       <T style={{ fontSize: 14 }}>{servicio}</T>
       <T style={{ color: C.gris, fontSize: 13 }}>{veces}</T>
-      <T style={{ fontWeight: "700", fontSize: 14, color: verde ? C.verdeOscuro : C.texto }}>{valor}</T>
+      <T style={{ fontWeight: "700", fontSize: 14, color: verde ? C.verde : C.texto }}>{valor}</T>
     </Linea>
   );
   return (
@@ -310,7 +320,7 @@ export function DibujoCrecimiento() {
           <Etiq>Comparado con el mes anterior</Etiq>
           <T style={{ fontWeight: "700", fontSize: 20 }}>Ingresos en aumento</T>
         </View>
-        <Icono nombre="tendencia" color={C.verdeOscuro} tamano={36} />
+        <Icono nombre="tendencia" color={C.verde} tamano={36} />
       </Tarjeta>
     </Marco>
   );

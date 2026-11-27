@@ -1,8 +1,9 @@
 import { Href, Link } from "expo-router";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { Platform, Pressable, StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle, useWindowDimensions } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
-import { COLORES_LANDING as C } from "@/theme/paleta";
+import { crearColoresLanding } from "@/theme/paleta";
+import { useAppTheme } from "@/theme/ThemeProvider";
 
 // Piezas compartidas de la página principal web. Solo se usan en la web.
 
@@ -13,6 +14,37 @@ export const FUENTE = "'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI'
 export function useAnchos() {
   const { width } = useWindowDimensions();
   return { ancho: width, tablet: width < 980, movil: width < 640 };
+}
+
+// Colores de la página: siguen al tema claro u oscuro de la app
+export function useColoresLanding() {
+  const { tema } = useAppTheme();
+  return useMemo(() => crearColoresLanding(tema), [tema]);
+}
+
+// Dónde está un elemento: sobre la superficie de la página, sobre una banda oscura o sobre el amarillo.
+// Decide el color del anillo de foco y de los textos.
+export type Sobre = "superficie" | "banda" | "amarillo";
+
+// Anillo de foco solo cuando se llega con el teclado (no al hacer clic)
+export function useFoco() {
+  const [visible, setVisible] = useState(false);
+  return {
+    visible,
+    alEnfocar: (e: unknown) => {
+      const el = (e as { target?: { matches?: (s: string) => boolean } }).target;
+      setVisible(el?.matches?.(":focus-visible") ?? false);
+    },
+    alDesenfocar: () => setVisible(false),
+  };
+}
+
+export const anilloFoco = (visible: boolean, color: string): ViewStyle | null =>
+  visible ? ({ outlineWidth: 3, outlineStyle: "solid", outlineColor: color, outlineOffset: 2 } as ViewStyle) : null;
+
+export function useColorAnillo(sobre: Sobre) {
+  const C = useColoresLanding();
+  return sobre === "banda" ? C.focoSobreOscuro : sobre === "amarillo" ? C.tinta : C.foco;
 }
 
 // Cuadrícula de CSS (solo web). `plantilla` es el valor de grid-template-columns.
@@ -30,6 +62,7 @@ export function Contenedor({ children, style }: { children: ReactNode; style?: S
 }
 
 export function T({ children, style, ...resto }: { children: ReactNode; style?: StyleProp<TextStyle> } & Record<string, unknown>) {
+  const C = useColoresLanding();
   return (
     <Text style={[{ fontFamily: FUENTE, color: C.texto }, style]} {...resto}>
       {children}
@@ -48,18 +81,23 @@ type PropsBoton = {
   // Aún más pequeño (cabecera en celular angosto)
   compacto?: boolean;
   icono?: ReactNode;
+  sobre?: Sobre;
 };
 
-const COLORES_BOTON = {
-  amarillo: { fondo: C.amarillo, hover: C.amarilloOscuro, texto: C.oscuro, borde: "transparent" },
-  oscuro: { fondo: C.oscuro, hover: C.oscuro2, texto: C.blanco, borde: "transparent" },
-  contorno: { fondo: "transparent", hover: C.contornoHover, texto: C.blanco, borde: C.bordeBoton },
-} as const;
+const coloresBoton = (C: ReturnType<typeof useColoresLanding>) =>
+  ({
+    amarillo: { fondo: C.amarillo, hover: C.amarilloOscuro, texto: C.tinta, borde: "transparent", bordeHover: "transparent" },
+    oscuro: { fondo: C.oscuro, hover: C.oscuro2, texto: C.sobreOscuro, borde: C.bordeOscuro, bordeHover: C.sobreOscuro },
+    contorno: { fondo: "transparent", hover: C.contornoHover, texto: C.sobreOscuro, borde: C.bordeBoton, bordeHover: C.amarillo },
+  }) as const;
 
 // Botón que es un enlace real (<a href>) cuando lleva `href`
-export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCompleto, chico, compacto, icono }: PropsBoton) {
-  const c = COLORES_BOTON[variante];
+export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCompleto, chico, compacto, icono, sobre = "superficie" }: PropsBoton) {
+  const C = useColoresLanding();
+  const c = coloresBoton(C)[variante];
   const [encima, setEncima] = useState(false);
+  const foco = useFoco();
+  const colorAnillo = useColorAnillo(sobre);
   const boton = (
     <Pressable
       accessibilityRole={href ? "link" : "button"}
@@ -68,13 +106,16 @@ export function BotonLanding({ variante, etiqueta, href, onPress, ayuda, anchoCo
       onPress={onPress}
       onHoverIn={() => setEncima(true)}
       onHoverOut={() => setEncima(false)}
+      onFocus={foco.alEnfocar}
+      onBlur={foco.alDesenfocar}
       // Un solo objeto: el enlace de expo-router mezcla estilos y no entiende arreglos
       style={StyleSheet.flatten([
         estilos.boton,
         chico ? estilos.botonChico : null,
         compacto ? estilos.botonCompacto : null,
         anchoCompleto ? estilos.botonCompleto : null,
-        { backgroundColor: encima ? c.hover : c.fondo, borderColor: c.borde },
+        { backgroundColor: encima ? c.hover : c.fondo, borderColor: encima ? c.bordeHover : c.borde },
+        anilloFoco(foco.visible, colorAnillo),
       ])}
     >
       <T style={{ color: c.texto, fontWeight: "700", fontSize: compacto ? 13 : 15 }}>{etiqueta}</T>
@@ -97,14 +138,19 @@ export function EnlaceTexto({
   href,
   onPress,
   style,
+  sobre = "superficie",
 }: {
   etiqueta: string;
   ayuda: string;
   href?: Href;
   onPress?: () => void;
   style?: StyleProp<TextStyle>;
+  sobre?: Sobre;
 }) {
+  const C = useColoresLanding();
   const [encima, setEncima] = useState(false);
+  const foco = useFoco();
+  const colorAnillo = useColorAnillo(sobre);
   const contenido = (
     <Pressable
       accessibilityRole={href ? "link" : "button"}
@@ -113,9 +159,22 @@ export function EnlaceTexto({
       onPress={onPress}
       onHoverIn={() => setEncima(true)}
       onHoverOut={() => setEncima(false)}
-      style={estilos.enlace}
+      onFocus={foco.alEnfocar}
+      onBlur={foco.alDesenfocar}
+      // Un solo objeto: el enlace de expo-router mezcla estilos y no entiende arreglos
+      style={StyleSheet.flatten([estilos.enlace, anilloFoco(foco.visible, colorAnillo), foco.visible ? { borderRadius: 6 } : null])}
     >
-      <T style={[{ fontSize: 15, fontWeight: "500" }, encima && { textDecorationLine: "underline" }, style]}>{etiqueta}</T>
+      <T
+        style={[
+          { fontSize: 15, fontWeight: "500", color: C.texto },
+          style,
+          (encima || foco.visible) && { textDecorationLine: "underline" },
+          encima && sobre === "superficie" && { color: C.etiqueta },
+          encima && sobre !== "superficie" && { color: C.amarillo },
+        ]}
+      >
+        {etiqueta}
+      </T>
     </Pressable>
   );
   return href ? (
@@ -128,9 +187,9 @@ export function EnlaceTexto({
 }
 
 export function Etiqueta({ children }: { children: string }) {
+  const C = useColoresLanding();
   return (
     <T
-      accessibilityRole="header"
       style={{ fontSize: 13, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase", color: C.etiqueta }}
     >
       {children}
@@ -153,6 +212,7 @@ export function EncabezadoSeccion({
   margenInferior?: number;
 }) {
   const { movil } = useAnchos();
+  const C = useColoresLanding();
   const alin: ViewStyle = centrado ? { alignItems: "center" } : {};
   const centro: TextStyle = centrado ? { textAlign: "center" } : {};
   return (
@@ -187,10 +247,11 @@ export function Seccion({
   id?: string;
 }) {
   const { movil } = useAnchos();
+  const C = useColoresLanding();
   return (
     <View
       nativeID={id}
-      style={{ paddingVertical: movil ? 64 : 96, backgroundColor: gris ? C.fondoGris : C.blanco }}
+      style={{ paddingVertical: movil ? 64 : 96, backgroundColor: gris ? C.fondoGris : C.fondo }}
     >
       <Contenedor>{children}</Contenedor>
     </View>

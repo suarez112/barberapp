@@ -2,10 +2,9 @@ import { Image } from "expo-image";
 import Head from "expo-router/head";
 import { Href } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, type ScrollViewInstance, View } from "react-native";
+import { Pressable, ScrollView, type ScrollViewInstance, Text, View, type ViewStyle } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
 import { CONTACTO } from "@/config/app";
-import { COLORES_LANDING as C } from "@/theme/paleta";
 import {
   BotonLanding,
   CajaIcono,
@@ -18,14 +17,20 @@ import {
   NombreIcono,
   Seccion,
   T,
+  anilloFoco,
   columnasIguales,
   cuadricula,
   useAnchos,
+  useColoresLanding,
+  useFoco,
 } from "./componentes";
 import { DibujoCrecimiento, DibujoEquipo, DibujoFinanzas, DibujoReservas, PanelEjemplo } from "./Ilustraciones";
 import SeccionPlanes from "./SeccionPlanes";
 
 // Página principal de Agendality. Solo existe en la web (la importa app/index.tsx únicamente allí).
+
+// El <main> recibe el foco solo por código (tabIndex -1): no lleva contorno
+const SIN_CONTORNO = { outlineStyle: "none" } as unknown as ViewStyle;
 
 const logo = require("../../../assets/logo-app.webp");
 
@@ -173,22 +178,33 @@ const PREGUNTAS = [
 
 export default function LandingScreen() {
   const { tablet, movil, ancho } = useAnchos();
+  const C = useColoresLanding();
   // Cabecera en celular angosto: solo el logo (sin la palabra) para que quepan los dos botones
   const sinNombre = ancho < 420;
   const reducirMovimiento = useReducedMotion();
   const scroll = useRef<ScrollViewInstance>(null);
+  const logoFoco = useFoco();
 
   // Solo web: cada sección lleva su id en el HTML. La cabecera está fuera del scroll, así que no hace falta compensarla.
   const irA = (id: IdSeccion) =>
     document.getElementById(id)?.scrollIntoView({ behavior: reducirMovimiento ? "auto" : "smooth", block: "start" });
   const entrada = (retraso: number) => (reducirMovimiento ? undefined : FadeInDown.duration(700).delay(retraso));
+  // "Saltar al contenido": lleva el foco del teclado al <main>
+  const saltarAlContenido = () => {
+    // El <main> empieza con el hero: se sube el scroll al inicio y el foco queda en el <main>,
+    // de modo que el siguiente Tab cae en el botón del hero
+    scroll.current?.scrollTo({ y: 0, animated: false });
+    document.getElementById("contenido")?.focus({ preventScroll: true });
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.blanco, overflow: "hidden" }}>
+    <View style={{ flex: 1, backgroundColor: C.fondo, overflow: "hidden" }}>
       <Head>
         <title>{TITULO}</title>
         <meta name="description" content={DESCRIPCION} />
       </Head>
+
+      <EnlaceSaltar alPulsar={saltarAlContenido} />
 
       {/* CABECERA */}
       <View
@@ -202,7 +218,9 @@ export default function LandingScreen() {
               accessibilityLabel="Agendality, ir al inicio"
               accessibilityHint="Sube al comienzo de la página"
               onPress={() => scroll.current?.scrollTo({ y: 0, animated: !reducirMovimiento })}
-              style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 }}
+              onFocus={logoFoco.alEnfocar}
+              onBlur={logoFoco.alDesenfocar}
+              style={[{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, borderRadius: 8 }, anilloFoco(logoFoco.visible, C.foco)]}
             >
               <Image source={logo} accessibilityLabel="" style={{ width: movil ? 32 : 36, height: movil ? 32 : 36, borderRadius: 10 }} />
               {sinNombre ? null : (
@@ -236,11 +254,13 @@ export default function LandingScreen() {
       </View>
 
       <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+        {/* Contenido principal: el enlace "Saltar al contenido" lleva aquí el foco */}
+        <View role="main" nativeID="contenido" tabIndex={-1} style={SIN_CONTORNO}>
         {/* PORTADA */}
         <View
-          style={{ backgroundColor: C.oscuro, paddingTop: movil ? 56 : 88, paddingBottom: movil ? 72 : 96 }}
+          style={{ backgroundColor: C.oscuro, paddingTop: movil ? 40 : 88, paddingBottom: movil ? 56 : 96 }}
         >
-          <Contenedor style={tablet ? columnasIguales(1, 56) : { ...cuadricula("repeat(2, minmax(0, 1fr))", 56), alignItems: "center" }}>
+          <Contenedor style={tablet ? columnasIguales(1, movil ? 40 : 56) : { ...cuadricula("repeat(2, minmax(0, 1fr))", 56), alignItems: "center" }}>
             <View style={{ alignItems: "flex-start" }}>
               <View
                 style={{
@@ -265,7 +285,7 @@ export default function LandingScreen() {
                   accessibilityRole="header"
                   aria-level={1}
                   style={{
-                    color: C.blanco,
+                    color: C.sobreOscuro,
                     fontSize: movil ? 36 : tablet ? 44 : 58,
                     lineHeight: movil ? 38 : tablet ? 47 : 62,
                     fontWeight: "800",
@@ -288,7 +308,8 @@ export default function LandingScreen() {
                   href="/registro"
                   ayuda="Abre el registro de tu negocio"
                   anchoCompleto={movil}
-                  icono={<Icono nombre="flecha" color={C.oscuro} tamano={16} />}
+                  sobre="banda"
+                  icono={<Icono nombre="flecha" color={C.tinta} tamano={16} />}
                 />
                 <BotonLanding
                   variante="contorno"
@@ -296,13 +317,14 @@ export default function LandingScreen() {
                   href="/cliente"
                   ayuda="Abre la pantalla para reservar una cita como cliente"
                   anchoCompleto={movil}
+                  sobre="banda"
                 />
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18, marginTop: 18 }}>
                 {["Sin tarjeta de crédito", "Sin contratos", "Web y app móvil"].map((t) => (
                   <View key={t} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                     <Icono nombre="check" color={C.amarillo} tamano={16} />
-                    <T style={{ color: C.grisClaro, fontSize: 14 }}>{t}</T>
+                    <T style={{ color: C.grisMuyClaro, fontSize: 14 }}>{t}</T>
                   </View>
                 ))}
               </View>
@@ -319,18 +341,28 @@ export default function LandingScreen() {
             titulo="Menos tiempo administrando, más tiempo haciendo crecer tu negocio"
             texto="Agendality hace las tareas repetitivas por ti y te da la información para tomar mejores decisiones."
           />
-          <View style={columnasIguales(movil ? 1 : tablet ? 2 : 4, 20)}>
-            {VALORES.map((v) => (
-              <Tarjeta key={v.titulo} padding={movil ? 22 : 26}>
-                <View style={{ marginBottom: 18 }}>
-                  <CajaIcono fondo={C.oscuro}>
-                    <Icono nombre={v.icono} color={C.amarillo} />
-                  </CajaIcono>
-                </View>
-                <T accessibilityRole="header" style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>{v.titulo}</T>
-                <T style={{ fontSize: 15, lineHeight: 24, color: C.textoSuave }}>{v.texto}</T>
-              </Tarjeta>
-            ))}
+          {/* Bloque bento: 3 columnas en escritorio (tarjetas 1 y 4 más anchas), 2 en tablet y 1 en celular */}
+          <View style={columnasIguales(movil ? 1 : tablet ? 2 : 3, movil ? 14 : 20)}>
+            {VALORES.map((v, i) => {
+              const ancha = !movil && (i === 0 || i === 3);
+              return (
+                <Tarjeta key={v.titulo} padding={movil ? 22 : ancha ? 32 : 26} destacada={ancha} ancha={ancha}>
+                  <View style={{ marginBottom: 18 }}>
+                    <CajaIcono fondo={C.amarillo}>
+                      <Icono nombre={v.icono} color={C.tinta} />
+                    </CajaIcono>
+                  </View>
+                  <T
+                    accessibilityRole="header"
+                    aria-level={3}
+                    style={{ fontSize: ancha ? 22 : 18, lineHeight: ancha ? 28 : 24, fontWeight: "700", marginBottom: 8 }}
+                  >
+                    {v.titulo}
+                  </T>
+                  <T style={{ fontSize: ancha ? 16 : 15, lineHeight: 24, color: ancha ? C.texto : C.textoSuave, maxWidth: ancha ? 460 : undefined }}>{v.texto}</T>
+                </Tarjeta>
+              );
+            })}
           </View>
         </Seccion>
 
@@ -345,6 +377,7 @@ export default function LandingScreen() {
                 <Etiqueta>{f.etiqueta}</Etiqueta>
                 <T
                   accessibilityRole="header"
+                  aria-level={3}
                   style={{ fontSize: movil ? 24 : 30, lineHeight: movil ? 29 : 36, fontWeight: "800", letterSpacing: -0.5, marginTop: 10, marginBottom: 14 }}
                 >
                   {f.titulo}
@@ -391,7 +424,7 @@ export default function LandingScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 14,
-                  backgroundColor: C.blanco,
+                  backgroundColor: C.tarjeta,
                   borderColor: C.borde,
                   borderWidth: 1,
                   borderRadius: 16,
@@ -399,7 +432,7 @@ export default function LandingScreen() {
                 }}
               >
                 <CajaIcono fondo={C.amarilloClaro} tamano={42}>
-                  <Icono nombre={c.icono} color={C.oscuro} tamano={22} />
+                  <Icono nombre={c.icono} color={C.texto} tamano={22} />
                 </CajaIcono>
                 <T style={{ fontWeight: "700", fontSize: 15, flexShrink: 1 }}>{c.nombre}</T>
               </View>
@@ -410,17 +443,17 @@ export default function LandingScreen() {
                 alignItems: "center",
                 gap: 14,
                 backgroundColor: C.oscuro,
-                borderColor: C.oscuro,
+                borderColor: C.bordeOscuro,
                 borderWidth: 1,
                 borderRadius: 16,
                 padding: 20,
               }}
             >
               <CajaIcono fondo={C.amarillo} tamano={42}>
-                <Icono nombre="mas" color={C.oscuro} tamano={22} />
+                <Icono nombre="mas" color={C.tinta} tamano={22} />
               </CajaIcono>
               <View style={{ flexShrink: 1 }}>
-                <T style={{ color: C.blanco, fontWeight: "700", fontSize: 15 }}>Y muchos más</T>
+                <T style={{ color: C.sobreOscuro, fontWeight: "700", fontSize: 15 }}>Y muchos más</T>
                 <T style={{ color: C.grisMuyClaro, fontSize: 13, marginTop: 2 }}>Si atiendes con cita, es para ti</T>
               </View>
             </View>
@@ -436,7 +469,7 @@ export default function LandingScreen() {
           />
           <View style={columnasIguales(movil ? 1 : tablet ? 2 : 3, 20)}>
             {PASOS.map((p, i) => (
-              <View key={p.titulo} style={{ backgroundColor: C.oscuro, borderRadius: 18, padding: 28 }}>
+              <View key={p.titulo} style={{ backgroundColor: C.oscuro, borderColor: C.bordeOscuro, borderWidth: 1, borderRadius: 18, padding: 28 }}>
                 <View
                   style={{
                     width: 40,
@@ -448,9 +481,9 @@ export default function LandingScreen() {
                     marginBottom: 18,
                   }}
                 >
-                  <T style={{ fontWeight: "800" }}>{i + 1}</T>
+                  <T style={{ fontWeight: "800", color: C.tinta }}>{i + 1}</T>
                 </View>
-                <T accessibilityRole="header" style={{ color: C.blanco, fontSize: 19, fontWeight: "700", marginBottom: 8 }}>{p.titulo}</T>
+                <T accessibilityRole="header" aria-level={3} style={{ color: C.sobreOscuro, fontSize: 19, fontWeight: "700", marginBottom: 8 }}>{p.titulo}</T>
                 <T style={{ color: C.grisMuyClaro, lineHeight: 24, fontSize: 15 }}>{p.texto}</T>
               </View>
             ))}
@@ -468,10 +501,10 @@ export default function LandingScreen() {
             {POR_QUE.map((p) => (
               <Tarjeta key={p.titulo} padding={movil ? 22 : 26} fila>
                 <CajaIcono fondo={C.amarilloClaro}>
-                  <Icono nombre={p.icono} color={C.oscuro} tamano={22} />
+                  <Icono nombre={p.icono} color={C.texto} tamano={22} />
                 </CajaIcono>
                 <View style={{ flex: 1 }}>
-                  <T accessibilityRole="header" style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>{p.titulo}</T>
+                  <T accessibilityRole="header" aria-level={3} style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>{p.titulo}</T>
                   <T style={{ fontSize: 15, lineHeight: 24, color: C.textoSuave }}>{p.texto}</T>
                 </View>
               </Tarjeta>
@@ -505,22 +538,24 @@ export default function LandingScreen() {
               }}
             >
               <View style={{ flexShrink: 1, flexBasis: movil ? "100%" : 420, flexGrow: 1 }}>
-                <T accessibilityRole="header" style={{ fontSize: movil ? 28 : 36, lineHeight: movil ? 33 : 42, fontWeight: "800", letterSpacing: -0.6, marginBottom: 10 }}>
+                <T accessibilityRole="header" aria-level={2} style={{ color: C.tinta, fontSize: movil ? 28 : 36, lineHeight: movil ? 33 : 42, fontWeight: "800", letterSpacing: -0.6, marginBottom: 10 }}>
                   Dedica tu tiempo a lo que sabes hacer
                 </T>
-                <T style={{ fontSize: 17, color: C.oscuro2 }}>
+                <T style={{ fontSize: 17, color: C.tinta }}>
                   Crea tu negocio hoy y deja que Agendality se encargue de la agenda.
                 </T>
               </View>
               <View style={{ alignSelf: movil ? "stretch" : "auto", flexBasis: movil ? "100%" : "auto" }}>
-                <BotonLanding variante="oscuro" etiqueta="Prueba gratis 15 días" href="/registro" ayuda="Abre el registro de tu negocio" anchoCompleto={movil} />
+                <BotonLanding variante="oscuro" etiqueta="Prueba gratis 15 días" href="/registro" ayuda="Abre el registro de tu negocio" anchoCompleto={movil} sobre="amarillo" />
               </View>
             </View>
           </Contenedor>
         </View>
 
+        </View>
+
         {/* PIE DE PÁGINA */}
-        <View accessibilityRole="contentinfo" style={{ backgroundColor: C.oscuro, paddingTop: 64, paddingBottom: 32 }}>
+        <View accessibilityRole="contentinfo" style={{ backgroundColor: C.oscuro, borderTopWidth: 1, borderTopColor: C.bordeOscuro, paddingTop: 64, paddingBottom: 32 }}>
           <Contenedor>
             <View
               style={
@@ -534,7 +569,7 @@ export default function LandingScreen() {
               <View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
                   <Image source={logo} accessibilityLabel="" style={{ width: 36, height: 36, borderRadius: 10 }} />
-                  <T style={{ color: C.blanco, fontSize: 20, fontWeight: "800", letterSpacing: 0.5 }}>AGENDALITY</T>
+                  <T style={{ color: C.sobreOscuro, fontSize: 20, fontWeight: "800", letterSpacing: 0.5 }}>AGENDALITY</T>
                 </View>
                 <T style={{ color: C.grisMuyClaro, fontSize: 14, lineHeight: 22, maxWidth: 280 }}>Citas simples, negocios eficientes.</T>
               </View>
@@ -567,25 +602,103 @@ export default function LandingScreen() {
   );
 }
 
-function Tarjeta({ children, padding, fila }: { children: React.ReactNode; padding: number; fila?: boolean }) {
+// Tarjeta de la página. Al pasar el ratón sube un poco y marca el borde; no es tocable ni recibe foco.
+function Tarjeta({
+  children,
+  padding,
+  fila,
+  destacada,
+  ancha,
+}: {
+  children: React.ReactNode;
+  padding: number;
+  fila?: boolean;
+  destacada?: boolean;
+  ancha?: boolean;
+}) {
+  const C = useColoresLanding();
+  const reducirMovimiento = useReducedMotion();
+  const [encima, setEncima] = useState(false);
+  const efecto = {
+    transitionProperty: "transform, border-color, box-shadow",
+    transitionDuration: reducirMovimiento ? "0ms" : "180ms",
+    transform: [{ translateY: encima && !reducirMovimiento ? -3 : 0 }],
+    boxShadow: encima ? "0 14px 30px rgba(0, 0, 0, 0.14)" : "0 0 0 rgba(0, 0, 0, 0)",
+    ...(ancha ? { gridColumn: "span 2" } : null),
+  } as unknown as ViewStyle;
   return (
-    <View
-      style={{
-        backgroundColor: C.blanco,
-        borderColor: C.borde,
-        borderWidth: 1,
-        borderRadius: 18,
-        padding,
-        flexDirection: fila ? "row" : "column",
-        gap: fila ? 16 : 0,
-      }}
+    <Pressable
+      accessible={false}
+      focusable={false}
+      // En react-native-web un Pressable activo pone tabIndex 0 aunque focusable sea false
+      tabIndex={-1}
+      onHoverIn={() => setEncima(true)}
+      onHoverOut={() => setEncima(false)}
+      style={[
+        {
+          backgroundColor: destacada ? C.amarilloClaro : C.tarjeta,
+          borderColor: encima ? C.amarilloOscuro : destacada ? C.amarilloOscuro : C.borde,
+          borderWidth: 1,
+          borderRadius: 18,
+          padding,
+          flexDirection: fila ? "row" : "column",
+          gap: fila ? 16 : 0,
+        },
+        efecto,
+      ]}
     >
       {children}
-    </View>
+    </Pressable>
+  );
+}
+
+// Primer elemento de la página: un enlace real (<a href="#contenido">) que solo se ve al llegar con Tab
+function EnlaceSaltar({ alPulsar }: { alPulsar: () => void }) {
+  const C = useColoresLanding();
+  const [visible, setVisible] = useState(false);
+  return (
+    <Text
+      role="link"
+      // @ts-expect-error href es una prop solo web de react-native-web: dibuja un <a> de verdad
+      href="#contenido"
+      accessibilityLabel="Saltar al contenido"
+      accessibilityHint="Lleva el foco al contenido principal de la página"
+      onPress={(e: { preventDefault?: () => void }) => {
+        e.preventDefault?.();
+        alPulsar();
+      }}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+      style={[
+        {
+          position: "absolute",
+          top: 8,
+          left: 8,
+          zIndex: 20,
+          minHeight: 44,
+          lineHeight: 40,
+          paddingHorizontal: 18,
+          borderRadius: 10,
+          backgroundColor: C.amarillo,
+          borderWidth: 2,
+          borderColor: C.tinta,
+          color: C.tinta,
+          fontFamily: FUENTE,
+          fontWeight: "700",
+          fontSize: 15,
+          textDecorationLine: "none",
+        },
+        // Fuera de la pantalla hasta recibir foco (sigue disponible para el teclado y los lectores)
+        visible ? null : ({ transform: [{ translateY: -200 }] } as ViewStyle),
+      ]}
+    >
+      Saltar al contenido
+    </Text>
   );
 }
 
 function Preguntas() {
+  const C = useColoresLanding();
   const [abiertas, setAbiertas] = useState<Set<number>>(new Set([0]));
   const alternar = (i: number) =>
     setAbiertas((previas) => {
@@ -598,20 +711,17 @@ function Preguntas() {
       {PREGUNTAS.map((p, i) => {
         const abierta = abiertas.has(i);
         return (
-          <View key={p.q} style={{ backgroundColor: C.blanco, borderColor: C.borde, borderWidth: 1, borderRadius: 14, marginBottom: 12 }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={p.q}
-              accessibilityHint={abierta ? "Toca para cerrar la respuesta" : "Toca para ver la respuesta"}
-              accessibilityState={{ expanded: abierta }}
-              onPress={() => alternar(i)}
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12, padding: 20, paddingHorizontal: 22, minHeight: 44 }}
+          <View key={p.q} style={{ backgroundColor: C.tarjeta, borderColor: abierta ? C.amarilloOscuro : C.borde, borderWidth: 1, borderRadius: 14, marginBottom: 12 }}>
+            <PreguntaBoton
+              pregunta={p.q}
+              abierta={abierta}
+              alPulsar={() => alternar(i)}
             >
               <T style={{ fontWeight: "700", fontSize: 16, flex: 1 }}>{p.q}</T>
               <View style={{ transform: [{ rotate: abierta ? "180deg" : "0deg" }] }}>
-                <Icono nombre="chevron" color={C.oscuro} tamano={20} />
+                <Icono nombre="chevron" color={C.texto} tamano={20} />
               </View>
-            </Pressable>
+            </PreguntaBoton>
             {abierta && (
               <T style={{ paddingHorizontal: 22, paddingBottom: 20, color: C.textoSuave, lineHeight: 24, fontSize: 15 }}>{p.r}</T>
             )}
@@ -622,10 +732,57 @@ function Preguntas() {
   );
 }
 
+// Botón de una pregunta: fondo al pasar el ratón y anillo de foco con el teclado
+function PreguntaBoton({
+  pregunta,
+  abierta,
+  alPulsar,
+  children,
+}: {
+  pregunta: string;
+  abierta: boolean;
+  alPulsar: () => void;
+  children: React.ReactNode;
+}) {
+  const C = useColoresLanding();
+  const [encima, setEncima] = useState(false);
+  const foco = useFoco();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={pregunta}
+      accessibilityHint={abierta ? "Toca para cerrar la respuesta" : "Toca para ver la respuesta"}
+      accessibilityState={{ expanded: abierta }}
+      onPress={alPulsar}
+      onHoverIn={() => setEncima(true)}
+      onHoverOut={() => setEncima(false)}
+      onFocus={foco.alEnfocar}
+      onBlur={foco.alDesenfocar}
+      style={[
+        {
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          padding: 20,
+          paddingHorizontal: 22,
+          minHeight: 44,
+          borderRadius: 14,
+          backgroundColor: encima ? C.fondoGris : "transparent",
+        },
+        anilloFoco(foco.visible, C.foco),
+      ]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 function ColumnaPie({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  const C = useColoresLanding();
   return (
     <View>
-      <T accessibilityRole="header" style={{ color: C.blanco, fontSize: 14, fontWeight: "700", marginBottom: 14 }}>{titulo}</T>
+      <T accessibilityRole="header" aria-level={2} style={{ color: C.sobreOscuro, fontSize: 14, fontWeight: "700", marginBottom: 14 }}>{titulo}</T>
       {children}
     </View>
   );
@@ -644,12 +801,13 @@ function EnlacePie({
   href?: Href;
   externo?: string;
 }) {
+  const C = useColoresLanding();
   const alTocar = externo
     ? () => {
         window.location.href = externo;
       }
     : onPress;
   return (
-    <EnlaceTexto etiqueta={etiqueta} ayuda={ayuda} href={href} onPress={alTocar} style={{ color: C.grisMuyClaro, fontSize: 14, fontFamily: FUENTE }} />
+    <EnlaceTexto etiqueta={etiqueta} ayuda={ayuda} href={href} onPress={alTocar} sobre="banda" style={{ color: C.grisMuyClaro, fontSize: 14, fontFamily: FUENTE }} />
   );
 }
