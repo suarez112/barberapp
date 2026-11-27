@@ -2,7 +2,7 @@
 
 ## Tema y colores
 
-**Todo color vive en `theme/paleta.ts`** (`crearPaleta` por tema + `COLORES` para rellenos fijos; grupos propios: `COLORES_LANDING`, `COLORES_BLOQUEOS`, `COLORES_INICIO`, `COLORES_GRAFICOS`).
+**Todo color vive en `theme/paleta.ts`** (`crearPaleta` por tema + `COLORES` para rellenos fijos; grupos propios: `crearColoresLanding` (página principal web, sigue al tema claro/oscuro con `useColoresLanding`), `COLORES_LANDING` (franja oscura de las pantallas de entrada), `COLORES_BLOQUEOS`, `COLORES_INICIO`, `COLORES_GRAFICOS`).
 
 - Fondo de todo modal y de una foto que se está subiendo: `COLORES.velo` (una sola opacidad en toda la app).
 

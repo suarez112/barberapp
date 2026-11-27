@@ -264,3 +264,57 @@ export const crearPaleta = (
     zonaFotoTexto: esOscuro ? "#F8FAFC" : "#713F12",
   };
 };
+
+// Colores de la página principal web (features/landing) que siguen al tema claro u oscuro.
+// Se derivan de crearPaleta; solo el amarillo de la marca y las bandas oscuras (portada, pie,
+// tarjetas de precio) son propios de la página. COLORES_LANDING queda para las pantallas de
+// entrada de la app, que sí usan una franja siempre oscura.
+export const crearColoresLanding = (tema: Tema) => {
+  const p = crearPaleta(tema, null);
+  const noche = crearPaleta("OSCURO", null);
+  const dia = crearPaleta("CLARO", null);
+  const claro = tema === "CLARO";
+  return {
+    // Superficies: página, secciones alternas y tarjetas
+    fondo: claro ? p.cardBg : p.bg,
+    fondoGris: claro ? p.bg : p.inputBg,
+    tarjeta: p.cardBg,
+    // Tarjetas dentro de un marco oscuro o de la maqueta de la portada
+    panel: claro ? p.cardBg : noche.bg,
+    borde: p.cardBorder,
+    // Textos sobre esas superficies (4.5:1)
+    texto: p.textPrimary,
+    textoSuave: p.textSecondary,
+    gris: p.apagadoTexto,
+    etiqueta: p.zonaFotoIcono,
+    // Amarillo de la marca: relleno de botones y detalles; `tinta` es el texto que va encima
+    amarillo: COLORES.barra,
+    amarilloOscuro: COLORES.barraDestacada,
+    amarilloClaro: p.activoBg,
+    amarilloSuave: p.zonaFotoBg,
+    tinta: dia.textPrimary,
+    // Bandas oscuras: fondo, fondo de lo que va dentro, borde y textos encima
+    oscuro: claro ? noche.bg : noche.cardBg,
+    oscuro2: claro ? noche.cardBg : noche.bg,
+    bordeOscuro: noche.cardBorder,
+    bordeBoton: noche.inputBorder,
+    sobreOscuro: noche.textPrimary,
+    grisClaro: noche.textSecondary,
+    grisMuyClaro: dia.secundarioBorde,
+    // Estados
+    verde: p.exitoTexto,
+    verdeFondo: claro ? "#DCFCE7" : "rgba(74, 222, 128, 0.16)",
+    azul: p.infoTexto,
+    azulFondo: claro ? "#DBEAFE" : "rgba(96, 165, 250, 0.16)",
+    // Cabecera fija casi opaca y fondos translúcidos sobre la portada
+    cabeceraFondo: claro ? "rgba(255, 255, 255, 0.97)" : "rgba(15, 23, 42, 0.97)",
+    contornoHover: "rgba(255, 255, 255, 0.08)",
+    etiquetaAmarillaFondo: "rgba(250, 204, 21, 0.12)",
+    etiquetaAmarillaBorde: "rgba(250, 204, 21, 0.35)",
+    // Anillo del foco con teclado: sobre la superficie y sobre una banda oscura
+    foco: p.inputBorderFoco,
+    focoSobreOscuro: COLORES.barra,
+  } as const;
+};
+
+export type ColoresLanding = ReturnType<typeof crearColoresLanding>;
