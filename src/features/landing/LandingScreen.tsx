@@ -630,6 +630,8 @@ function Tarjeta({
     <Pressable
       accessible={false}
       focusable={false}
+      // En react-native-web un Pressable activo pone tabIndex 0 aunque focusable sea false
+      tabIndex={-1}
       onHoverIn={() => setEncima(true)}
       onHoverOut={() => setEncima(false)}
       style={[
